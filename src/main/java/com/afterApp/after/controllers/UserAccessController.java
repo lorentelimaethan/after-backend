@@ -24,7 +24,7 @@ public class UserAccessController {
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody UserAccess userAccess){
         try{
-            userAccessServices.saveUser(userAccess);
+            userAccessServices.registerUser(userAccess);
             return ResponseEntity.ok("Usuario creado correctamente");
         }catch (DataIntegrityViolationException e){
             return ResponseEntity.badRequest().body(e.getMessage());

@@ -1,7 +1,9 @@
 package com.afterApp.after.services;
 
 import com.afterApp.after.data.UserAccess;
+import com.afterApp.after.data.User;
 import com.afterApp.after.repositories.UserAccessRepository;
+import com.afterApp.after.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -12,11 +14,24 @@ import java.util.Optional;
 public class UserAccessServices {
     @Autowired
     private UserAccessRepository userAccessRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(16);
 
-    public UserAccess saveUser(UserAccess u){
+    public UserAccess registerUser(UserAccess u){
         u.setPassword(encoder.encode((u.getPassword())));
-        return userAccessRepository.save(u);
+
+        UserAccess savedAccess = userAccessRepository.save(u);
+
+        User user = new User();
+        user.setDisplayName(u.getUsername());
+        user.setUserAccess(savedAccess);
+
+        userRepository.save(user);
+
+        return savedAccess;
     }
 
     public boolean validateUser(UserAccess u){

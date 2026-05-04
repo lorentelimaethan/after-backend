@@ -6,7 +6,7 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "users")
-public class Users {
+public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Getter
@@ -26,4 +26,9 @@ public class Users {
 
     @Getter @Setter
     private String displayName; //Se copia directamente del Username de UserAcces? user.setDisplayName(userAccess.getUsername());
+
+    @OneToOne
+    @JoinColumn(name = "user_access_id")
+    @Getter @Setter
+    private UserAccess userAccess;
 }

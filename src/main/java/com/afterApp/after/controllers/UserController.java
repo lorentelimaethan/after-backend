@@ -1,6 +1,6 @@
 package com.afterApp.after.controllers;
 
-import com.afterApp.after.data.Users;
+import com.afterApp.after.data.User;
 import com.afterApp.after.exceptions.AlreadyExistsException;
 import com.afterApp.after.exceptions.FormatRequestException;
 import com.afterApp.after.exceptions.NotFoundException;
@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 @RestController
 @RequestMapping("/users")
 public class UserController {
@@ -40,7 +39,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody Users uDetails, @RequestHeader String authorization){
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User uDetails, @RequestHeader String authorization){
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
@@ -48,7 +47,7 @@ public class UserController {
         }
 
         try {
-            Users u = userServices.getUserById(id);
+            User u = userServices.getUserById(id);
 
             u.setName(uDetails.getName());
             u.setLastname(uDetails.getLastname());

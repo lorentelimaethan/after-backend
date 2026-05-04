@@ -18,4 +18,8 @@ public class UserAccess {
 
     @Getter @Setter
     private String password;
+
+    @OneToOne(mappedBy = "UserAccess")
+    @Getter @Setter
+    private User users;
 }
