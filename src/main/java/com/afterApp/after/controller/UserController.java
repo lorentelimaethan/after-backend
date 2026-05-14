@@ -1,6 +1,6 @@
 package com.afterApp.after.controller;
 
-import com.afterApp.after.entity.User;
+import com.afterApp.after.entity.Users;
 import com.afterApp.after.exceptions.AlreadyExistsException;
 import com.afterApp.after.exceptions.BadRequestException;
 import com.afterApp.after.exceptions.FormatRequestException;
@@ -41,7 +41,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @Valid @RequestBody User uDetails, @RequestHeader String authorization){
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @Valid @RequestBody Users uDetails, @RequestHeader String authorization){
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
@@ -60,7 +60,7 @@ public class UserController {
     }
 
     @PatchMapping("/{id}/display-name")
-    public ResponseEntity<?> updateDisplayName(@PathVariable Long id, @RequestHeader String authorization, @RequestBody User uDetails){
+    public ResponseEntity<?> updateDisplayName(@PathVariable Long id, @RequestHeader String authorization, @RequestBody Users uDetails){
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){

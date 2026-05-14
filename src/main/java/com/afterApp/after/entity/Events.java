@@ -17,7 +17,7 @@ import java.util.Set;
 
 @Entity
 @Table(name = "event")
-public class Event {
+public class Events {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Getter
@@ -51,7 +51,7 @@ public class Event {
     @ManyToOne
     @JoinColumn(name = "host_id")
     @Getter @Setter
-    private User host;
+    private Users host;
 
     @ManyToMany
     @Getter @Setter
@@ -60,7 +60,7 @@ public class Event {
             joinColumns = @JoinColumn(name = "event_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
-    private Set<User> users = new HashSet<>();
+    private Set<Users> users = new HashSet<>();
 
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "address_id")

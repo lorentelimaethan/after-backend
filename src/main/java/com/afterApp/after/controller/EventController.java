@@ -1,6 +1,6 @@
 package com.afterApp.after.controller;
 
-import com.afterApp.after.entity.Event;
+import com.afterApp.after.entity.Events;
 import com.afterApp.after.enums.EventType;
 import com.afterApp.after.enums.MusicStyle;
 import com.afterApp.after.exceptions.BadRequestException;
@@ -37,23 +37,23 @@ public class EventController {
         }
 
         try{
-            List<Event> event;
+            List<Events> events;
 
             if(type != null && style != null){
-                event = eventServices.getEventsByTypeAndStyle(type, style);
+                events = eventServices.getEventsByTypeAndStyle(type, style);
 
             } else if (type != null) {
-                event = eventServices.getEventsByType(type);
+                events = eventServices.getEventsByType(type);
 
             } else if(style != null){
-                event = eventServices.getEventsByStyle(style);
+                events = eventServices.getEventsByStyle(style);
 
             }
             else {
-                event = eventServices.getAllEvents();
+                events = eventServices.getAllEvents();
             }
 
-            return ResponseEntity.ok(event);
+            return ResponseEntity.ok(events);
 
         }catch (RuntimeException e){
             return ResponseEntity.internalServerError().body(e.getMessage());
@@ -79,7 +79,7 @@ public class EventController {
 
 
     @PostMapping
-    public ResponseEntity<?> createEvent(@Valid @RequestBody Event e, @RequestHeader String authorization){
+    public ResponseEntity<?> createEvent(@Valid @RequestBody Events e, @RequestHeader String authorization){
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){

@@ -22,7 +22,7 @@ public class UserAccessController {
     @Autowired
     private TokenUtil tokenUtil;
 
-    @PostMapping("/register")
+    @PostMapping("/auth/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody UserAccess userAccess){
         try{
             userAccessServices.registerUser(userAccess);
@@ -34,7 +34,7 @@ public class UserAccessController {
         }
     }
 
-    @PostMapping
+    @PostMapping("/auth/login")
     public ResponseEntity<?> createToken(@RequestBody UserAccess userAccess){
         if (userAccessServices.validateUser(userAccess)) {
             String token = tokenUtil.generateToken((userAccess.getUsername()));

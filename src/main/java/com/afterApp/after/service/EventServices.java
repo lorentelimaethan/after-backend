@@ -1,7 +1,7 @@
 package com.afterApp.after.service;
 
-import com.afterApp.after.entity.Event;
-import com.afterApp.after.entity.User;
+import com.afterApp.after.entity.Events;
+import com.afterApp.after.entity.Users;
 import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.enums.EventType;
 import com.afterApp.after.enums.MusicStyle;
@@ -15,7 +15,6 @@ import com.afterApp.after.utils.TokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -29,21 +28,21 @@ public class EventServices {
     @Autowired
     private UserRepository userRepository;
 
-    public List<Event> getAllEvents() { return eventRepository.findAll(); }
+    public List<Events> getAllEvents() { return eventRepository.findAll(); }
 
-    public Event getEvent(Long id) throws RuntimeException{
+    public Events getEvent(Long id) throws RuntimeException{
         return eventRepository.findById(id).orElseThrow(() -> new NotFoundException("Event not found"));
     }
 
-    public List<Event> getEventsByType(EventType type){
+    public List<Events> getEventsByType(EventType type){
         return eventRepository.findByEventType(type);
     }
-    public List<Event> getEventsByStyle(MusicStyle style){ return eventRepository.findByMusicStyle(style); }
-    public List<Event> getEventsByTypeAndStyle(EventType type, MusicStyle style){
+    public List<Events> getEventsByStyle(MusicStyle style){ return eventRepository.findByMusicStyle(style); }
+    public List<Events> getEventsByTypeAndStyle(EventType type, MusicStyle style){
         return eventRepository.findByEventTypeAndMusicStyle(type, style);
     }
 
-    private User extractUser(String authorization){
+    private Users extractUser(String authorization){
         String jwt = authorization.replace("Bearer ", "");
         String username = tokenUtil.extractUsername(jwt);
 
@@ -53,18 +52,18 @@ public class EventServices {
         return userAccess.getUser();
     }
 
-    public Event createEvent(Event e, String authorization){
-        User host = extractUser(authorization);
+    public Events createEvent(Events e, String authorization){
+        Users host = extractUser(authorization);
 
         e.setHost(host);
 
         return eventRepository.save(e);
     }
 
-    public Event joinEvent(String authorization, Long id){
-        User requester = extractUser(authorization);
+    public Events joinEvent(String authorization, Long id){
+        Users requester = extractUser(authorization);
 
-        Event e = eventRepository.findById(id)
+        Events e = eventRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Event not found"));
 
         if (e.getHost().getId().equals(requester.getId())) {
@@ -79,10 +78,10 @@ public class EventServices {
         return eventRepository.save(e);
     }
 
-    public Event leaveEvent(String authorization, Long id){
-        User requester = extractUser(authorization);
+    public Events leaveEvent(String authorization, Long id){
+        Users requester = extractUser(authorization);
 
-        Event e = eventRepository.findById(id)
+        Events e = eventRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Event not found"));
 
         if (e.getHost().getId().equals(requester.getId())) {
@@ -93,17 +92,17 @@ public class EventServices {
         return eventRepository.save(e);
     }
 
-    public Event kickUser(String authorization, Long eventId, Long userId) {
-        User requester = extractUser(authorization);
+    public Events kickUser(String authorization, Long eventId, Long userId) {
+        Users requester = extractUser(authorization);
 
-        Event e = eventRepository.findById(eventId)
+        Events e = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Event not found"));
 
         if(!e.getHost().getId().equals(requester.getId())){
             throw new UnauthorizedException("Only host can delete Users");
         }
 
-        User userToKick = userRepository.findById(userId)
+        Users userToKick = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
         if(!e.getUsers().contains(userToKick)){
@@ -119,17 +118,17 @@ public class EventServices {
         return eventRepository.save(e);
     }
 
-    public Event inviteUser(String authorization, Long eventId, Long userId){
-        User requester = extractUser(authorization);
+    public Events inviteUser(String authorization, Long eventId, Long userId){
+        Users requester = extractUser(authorization);
 
-        Event e = eventRepository.findById(eventId)
+        Events e = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Event not found"));
 
         if(!e.getHost().getId().equals(requester.getId())){
             throw new UnauthorizedException("Only host can delete Users");
         }
 
-        User userToInvite = userRepository.findById(userId)
+        Users userToInvite = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
         if(e.getUsers().contains(userToInvite)){
@@ -146,9 +145,9 @@ public class EventServices {
     }
 
     public void deleteEvent(Long id, String authorization) throws RuntimeException{
-        User user = extractUser(authorization);
+        Users user = extractUser(authorization);
 
-        Event e = eventRepository.findById(id)
+        Events e = eventRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Event not found"));
 
         if(!e.getHost().getId().equals(user.getId())){

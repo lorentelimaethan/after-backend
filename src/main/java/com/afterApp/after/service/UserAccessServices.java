@@ -1,7 +1,7 @@
 package com.afterApp.after.service;
 
 import com.afterApp.after.entity.UserAccess;
-import com.afterApp.after.entity.User;
+import com.afterApp.after.entity.Users;
 import com.afterApp.after.exceptions.BadRequestException;
 import com.afterApp.after.repositories.UserAccessRepository;
 import com.afterApp.after.repositories.UserRepository;
@@ -29,7 +29,7 @@ public class UserAccessServices {
 
         u.setPassword(encoder.encode((u.getPassword())));
 
-        User user = new User();
+        Users user = new Users();
         user.setDisplayName(u.getUsername());
 
         u.setUser(user);

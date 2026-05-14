@@ -1,6 +1,6 @@
 package com.afterApp.after.service;
 
-import com.afterApp.after.entity.User;
+import com.afterApp.after.entity.Users;
 import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.exceptions.AlreadyExistsException;
 import com.afterApp.after.exceptions.BadRequestException;
@@ -26,7 +26,7 @@ public class UserServices {
     private UserAccessRepository userAccessRepository;
 
 
-    private User extractUser(String authorization){
+    private Users extractUser(String authorization){
         String jwt = authorization.replace("Bearer ", "");
         String username = tokenUtil.extractUsername(jwt);
 
@@ -36,20 +36,20 @@ public class UserServices {
         return userAccess.getUser();
     }
 
-    public List<User> getAllUsers() { return userRepository.findAll(); }
+    public List<Users> getAllUsers() { return userRepository.findAll(); }
 
-    public User getUserById(Long id) throws RuntimeException{
+    public Users getUserById(Long id) throws RuntimeException{
         return userRepository.findById(id).orElseThrow(() -> new NotFoundException("User not Found"));
     }
 
-    public User updateUser(Long id, User uDetails, String authorization){
-        User requester = extractUser(authorization);
+    public Users updateUser(Long id, Users uDetails, String authorization){
+        Users requester = extractUser(authorization);
 
         if (!requester.getId().equals(id)){
             throw new BadRequestException("You can only update your own profile");
         }
 
-        User u = getUserById(id);
+        Users u = getUserById(id);
 
         if(uDetails.getName() != null) {u.setName(uDetails.getName());}
         if(uDetails.getLastname() != null) {u.setLastname(uDetails.getLastname());}
@@ -59,14 +59,14 @@ public class UserServices {
         return userRepository.save(u);
     }
 
-    public User updateDisplayName(Long id, String authorization, User uDetails){
-        User requester = extractUser(authorization);
+    public Users updateDisplayName(Long id, String authorization, Users uDetails){
+        Users requester = extractUser(authorization);
 
         if (!requester.getId().equals(id)){
             throw new BadRequestException("You can only update your own profile");
         }
 
-        User u = getUserById(id);
+        Users u = getUserById(id);
 
         String newDisplayName = uDetails.getDisplayName();
 

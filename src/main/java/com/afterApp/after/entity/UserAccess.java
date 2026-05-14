@@ -2,7 +2,6 @@ package com.afterApp.after.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -28,7 +27,7 @@ public class UserAccess {
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "user_id")
     @Getter @Setter
-    private User user;
+    private Users user;
 }
 
 // meter user acces dentro de user solo dejar user acees control y validar user directamente como user o que user accees
