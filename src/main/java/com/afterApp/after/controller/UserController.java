@@ -26,7 +26,7 @@ public class UserController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            return ResponseEntity.status(401).body("Acces denied");
+            return ResponseEntity.status(401).body("Access denied");
         }
 
         try{
@@ -43,7 +43,7 @@ public class UserController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            return ResponseEntity.status(401).body("Acces denied");
+            return ResponseEntity.status(401).body("Access denied");
         }
 
         try {

@@ -38,7 +38,7 @@ public class UserAccessController {
             String token = tokenUtil.generateToken((userAccess.getUsername()));
             return ResponseEntity.ok(token);
         }else{
-            return ResponseEntity.status(401).body("Acces denied");
+            return ResponseEntity.status(401).body("Access denied");
         }
     }
 

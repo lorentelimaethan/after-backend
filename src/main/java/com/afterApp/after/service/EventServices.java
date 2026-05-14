@@ -54,11 +54,11 @@ public class EventServices {
 
     public Event createEvent(Event e, String authorization){
         if(e.getCapacity() <= 0){
-            throw new RuntimeException("Capacity must be > 0");
+            throw new BadRequestException("Capacity must be > 0");
         }
 
         if(e.getName() == null || e.getName().isBlank()){
-            throw new RuntimeException("Name required");
+            throw new BadRequestException("Name required");
         }
 
 
