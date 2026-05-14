@@ -59,5 +59,33 @@ public class UserServices {
         return userRepository.save(u);
     }
 
+    public User updateDisplayName(Long id, String authorization, User uDetails){
+        User requester = extractUser(authorization);
+
+        if (!requester.getId().equals(id)){
+            throw new BadRequestException("You can only update your own profile");
+        }
+
+        User u = getUserById(id);
+
+        String newDisplayName = uDetails.getDisplayName();
+
+        if(newDisplayName == null || newDisplayName.isBlank()){
+            throw new BadRequestException("DisplayName cannot be null or empty");
+        }
+
+        if(!uDetails.getDisplayName().matches("^[a-zA-Z0-9](?:[a-zA-Z0-9._]{1,18}[a-zA-Z0-9])?$")){
+            throw new FormatRequestException("Incorrect username");
+        }
+
+        if(userRepository.existsByDisplayName(uDetails.getDisplayName())){
+            throw new AlreadyExistsException("Already Existing username");
+        }
+
+        u.setDisplayName(newDisplayName);
+
+        return userRepository.save(u);
+    }
+
 
 }

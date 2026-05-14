@@ -58,4 +58,25 @@ public class UserController {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
+
+    @PatchMapping("/{id}/display-name")
+    public ResponseEntity<?> updateDisplayName(@PathVariable Long id, @RequestHeader String authorization, @RequestBody User uDetails){
+        Boolean token = tokenUtil.validateToken(authorization);
+
+        if(!token){
+            return ResponseEntity.status(401).body("Access denied");
+        }
+
+        try{
+            return ResponseEntity.ok(userServices.updateDisplayName(id, authorization, uDetails));
+        }catch (NotFoundException e){
+            return ResponseEntity.notFound().build();
+        }catch (BadRequestException | FormatRequestException e){
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (AlreadyExistsException e){
+            return ResponseEntity.status(409).body(e.getMessage());
+        } catch (RuntimeException e){
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
 }
