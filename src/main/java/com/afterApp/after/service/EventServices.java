@@ -75,6 +75,10 @@ public class EventServices {
         Event e = eventRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Event not found"));
 
+        if (e.getHost().getId().equals(requester.getId())) {
+            throw new BadRequestException("Host cannot join own event");
+        }
+
         if(e.getUsers().size() >= e.getCapacity()){
             throw new BadRequestException("Event capacity is full");
         }
@@ -88,6 +92,10 @@ public class EventServices {
 
         Event e = eventRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Event not found"));
+
+        if (e.getHost().getId().equals(requester.getId())) {
+            throw new BadRequestException("Host cannot leave own event");
+        }
 
         e.getUsers().remove(requester);
         return eventRepository.save(e);
