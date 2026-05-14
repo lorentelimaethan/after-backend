@@ -47,15 +47,7 @@ public class UserController {
         }
 
         try {
-            User u = userServices.getUserById(id);
-
-            u.setName(uDetails.getName());
-            u.setLastname(uDetails.getLastname());
-            u.setPhoneNumber(uDetails.getPhoneNumber());
-            u.setEmail(uDetails.getEmail());
-            u.setDisplayName(uDetails.getDisplayName());
-
-            return ResponseEntity.ok(userServices.saveUser(u));
+            return ResponseEntity.ok(userServices.updateUser(id, uDetails, authorization));
         }catch (NotFoundException e){
             return ResponseEntity.notFound().build();
         }catch (FormatRequestException | AlreadyExistsException e){
