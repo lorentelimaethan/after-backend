@@ -75,7 +75,7 @@ public class EventServices {
         Event e = eventRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Event not found"));
 
-        if(e.getCapacity() >= e.getUsers().size()){
+        if(e.getUsers().size() >= e.getCapacity()){
             throw new BadRequestException("Event capacity is full");
         }
 
@@ -132,7 +132,7 @@ public class EventServices {
         User userToInvite = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        if(!e.getUsers().contains(userToInvite)){
+        if(e.getUsers().contains(userToInvite)){
             throw new NotFoundException("User is not in the Event");
         }
 
