@@ -106,6 +106,8 @@ public class EventController {
             return ResponseEntity.ok(eventServices.joinEvent(authorization, id));
         }catch (NotFoundException exception){
             return ResponseEntity.notFound().build();
+        }catch(BadRequestException exception){
+            return ResponseEntity.badRequest().body(exception.getMessage());
         }catch (RuntimeException exception){
             return ResponseEntity.internalServerError().body(exception.getMessage());
         }

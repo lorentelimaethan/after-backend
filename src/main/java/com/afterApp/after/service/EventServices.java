@@ -75,6 +75,10 @@ public class EventServices {
         Event e = eventRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Event not found"));
 
+        if(e.getCapacity() >= e.getUsers().size()){
+            throw new BadRequestException("Event capacity is full");
+        }
+
         e.getUsers().add(requester);
         return eventRepository.save(e);
     }
