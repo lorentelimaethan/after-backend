@@ -1,9 +1,8 @@
-package com.afterApp.after.controllers;
+package com.afterApp.after.controller;
 
-import com.afterApp.after.data.UserAccess;
-import com.afterApp.after.services.UserAccessServices;
+import com.afterApp.after.entity.UserAccess;
+import com.afterApp.after.service.UserAccessServices;
 import com.afterApp.after.utils.TokenUtil;
-import org.antlr.v4.runtime.Token;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;

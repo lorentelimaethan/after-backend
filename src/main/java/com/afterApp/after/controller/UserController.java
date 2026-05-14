@@ -1,10 +1,10 @@
-package com.afterApp.after.controllers;
+package com.afterApp.after.controller;
 
-import com.afterApp.after.data.User;
+import com.afterApp.after.entity.User;
 import com.afterApp.after.exceptions.AlreadyExistsException;
 import com.afterApp.after.exceptions.FormatRequestException;
 import com.afterApp.after.exceptions.NotFoundException;
-import com.afterApp.after.services.UserServices;
+import com.afterApp.after.service.UserServices;
 import com.afterApp.after.utils.TokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

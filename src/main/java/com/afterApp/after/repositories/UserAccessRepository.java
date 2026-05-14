@@ -1,6 +1,6 @@
 package com.afterApp.after.repositories;
 
-import com.afterApp.after.data.UserAccess;
+import com.afterApp.after.entity.UserAccess;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

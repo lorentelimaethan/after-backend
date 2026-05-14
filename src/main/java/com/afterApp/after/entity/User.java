@@ -1,4 +1,4 @@
-package com.afterApp.after.data;
+package com.afterApp.after.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -10,7 +10,7 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Getter
-    private Long Id;
+    private Long id;
 
     @Getter @Setter
     private String name;
@@ -25,10 +25,5 @@ public class User {
     private String email;
 
     @Getter @Setter
-    private String displayName; //Se copia directamente del Username de UserAcces? user.setDisplayName(userAccess.getUsername());
-
-    @OneToOne
-    @JoinColumn(name = "user_access_id")
-    @Getter @Setter
-    private UserAccess userAccess;
+    private String displayName;
 }

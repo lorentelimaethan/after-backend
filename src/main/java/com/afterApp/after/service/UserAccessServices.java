@@ -1,7 +1,7 @@
-package com.afterApp.after.services;
+package com.afterApp.after.service;
 
-import com.afterApp.after.data.UserAccess;
-import com.afterApp.after.data.User;
+import com.afterApp.after.entity.UserAccess;
+import com.afterApp.after.entity.User;
 import com.afterApp.after.repositories.UserAccessRepository;
 import com.afterApp.after.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,15 +23,12 @@ public class UserAccessServices {
     public UserAccess registerUser(UserAccess u){
         u.setPassword(encoder.encode((u.getPassword())));
 
-        UserAccess savedAccess = userAccessRepository.save(u);
-
         User user = new User();
         user.setDisplayName(u.getUsername());
-        user.setUserAccess(savedAccess);
 
-        userRepository.save(user);
+        u.setUser(user);
 
-        return savedAccess;
+        return userAccessRepository.save(u);
     }
 
     public boolean validateUser(UserAccess u){

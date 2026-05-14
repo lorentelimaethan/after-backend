@@ -41,4 +41,13 @@ public class TokenUtil {
             return false;
         }
     }
+
+    public String extractUsername(String token){
+        return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getSubject();
+    }
 }

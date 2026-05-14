@@ -1,6 +1,6 @@
-package com.afterApp.after.services;
+package com.afterApp.after.service;
 
-import com.afterApp.after.data.User;
+import com.afterApp.after.entity.User;
 import com.afterApp.after.exceptions.AlreadyExistsException;
 import com.afterApp.after.exceptions.FormatRequestException;
 import com.afterApp.after.exceptions.NotFoundException;
