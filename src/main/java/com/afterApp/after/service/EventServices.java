@@ -15,6 +15,7 @@ import com.afterApp.after.utils.TokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -53,15 +54,6 @@ public class EventServices {
     }
 
     public Event createEvent(Event e, String authorization){
-        if(e.getCapacity() <= 0){
-            throw new BadRequestException("Capacity must be > 0");
-        }
-
-        if(e.getName() == null || e.getName().isBlank()){
-            throw new BadRequestException("Name required");
-        }
-
-
         User host = extractUser(authorization);
 
         e.setHost(host);

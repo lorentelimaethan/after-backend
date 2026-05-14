@@ -1,8 +1,10 @@
 package com.afterApp.after.controller;
 
 import com.afterApp.after.entity.UserAccess;
+import com.afterApp.after.exceptions.BadRequestException;
 import com.afterApp.after.service.UserAccessServices;
 import com.afterApp.after.utils.TokenUtil;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
@@ -21,13 +23,13 @@ public class UserAccessController {
     private TokenUtil tokenUtil;
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody UserAccess userAccess){
+    public ResponseEntity<?> registerUser(@Valid @RequestBody UserAccess userAccess){
         try{
             userAccessServices.registerUser(userAccess);
             return ResponseEntity.ok("Usuario creado correctamente");
-        }catch (DataIntegrityViolationException e){
+        }catch (BadRequestException | DataIntegrityViolationException e){
             return ResponseEntity.badRequest().body(e.getMessage());
-        }catch (RuntimeException e){
+        } catch (RuntimeException e){
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }

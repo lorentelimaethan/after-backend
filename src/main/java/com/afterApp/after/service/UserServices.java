@@ -43,6 +43,10 @@ public class UserServices {
     }
 
     public User saveUser(User u) throws RuntimeException{
+        if(u.getPhoneNumber() == null || u.getEmail() == null){
+            throw new BadRequestException("Phonenumber and email must be valid");
+        }
+
         if(!u.getPhoneNumber().matches("^\\+?[0-9]{7,15}$")){
             throw new FormatRequestException("Incorrect Number");
         } else if (!u.getEmail().matches(".+@.+\\..+")){

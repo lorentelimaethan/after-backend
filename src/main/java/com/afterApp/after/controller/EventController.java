@@ -8,6 +8,7 @@ import com.afterApp.after.exceptions.NotFoundException;
 import com.afterApp.after.exceptions.UnauthorizedException;
 import com.afterApp.after.service.EventServices;
 import com.afterApp.after.utils.TokenUtil;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -78,7 +79,7 @@ public class EventController {
 
 
     @PostMapping
-    public ResponseEntity<?> createEvent(@RequestBody Event e, @RequestHeader String authorization){
+    public ResponseEntity<?> createEvent(@Valid @RequestBody Event e, @RequestHeader String authorization){
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){

@@ -2,6 +2,7 @@ package com.afterApp.after.service;
 
 import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.entity.User;
+import com.afterApp.after.exceptions.BadRequestException;
 import com.afterApp.after.repositories.UserAccessRepository;
 import com.afterApp.after.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,11 @@ public class UserAccessServices {
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(16);
 
     public UserAccess registerUser(UserAccess u){
+
+        if(userAccessRepository.existsByUsername(u.getUsername())){
+            throw new BadRequestException("Username already exists");
+        }
+
         u.setPassword(encoder.encode((u.getPassword())));
 
         User user = new User();
