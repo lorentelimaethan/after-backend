@@ -1,6 +1,8 @@
 package com.afterApp.after.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -18,9 +20,11 @@ public class User {
     @Getter @Setter
     private String lastname;
 
+    @Pattern(regexp = "^\\+?[0-9]{7,15}$", message = "Invalid phone")
     @Getter @Setter
     private String phoneNumber;
 
+    @Email(message = "Invalid email")
     @Getter @Setter
     private String email;
 

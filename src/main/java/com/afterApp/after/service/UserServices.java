@@ -42,40 +42,21 @@ public class UserServices {
         return userRepository.findById(id).orElseThrow(() -> new NotFoundException("User not Found"));
     }
 
-    public User saveUser(User u) throws RuntimeException{
-        if(u.getPhoneNumber() == null || u.getEmail() == null){
-            throw new BadRequestException("Phonenumber and email must be valid");
-        }
-
-        if(!u.getPhoneNumber().matches("^\\+?[0-9]{7,15}$")){
-            throw new FormatRequestException("Incorrect Number");
-        } else if (!u.getEmail().matches(".+@.+\\..+")){
-            throw new FormatRequestException("Incorrect Email");
-        } else if(!u.getDisplayName().matches("^[a-zA-Z0-9](?:[a-zA-Z0-9._]{1,18}[a-zA-Z0-9])?$")){
-            throw new FormatRequestException("Incorrect username");
-        } else if(userRepository.existsByDisplayName(u.getDisplayName())){
-            throw new AlreadyExistsException("Already Existing username");
-        } else {
-            return userRepository.save(u);
-        }
-    }
-
     public User updateUser(Long id, User uDetails, String authorization){
         User requester = extractUser(authorization);
 
-        User u = getUserById(id);
-
-        if (!requester.getId().equals(u.getId())){
+        if (!requester.getId().equals(id)){
             throw new BadRequestException("You can only update your own profile");
         }
 
-        u.setName(uDetails.getName());
-        u.setLastname(uDetails.getLastname());
-        u.setPhoneNumber(uDetails.getPhoneNumber());
-        u.setEmail(uDetails.getEmail());
-        u.setDisplayName(uDetails.getDisplayName());
+        User u = getUserById(id);
 
-        return saveUser(u);
+        if(uDetails.getName() != null) {u.setName(uDetails.getName());}
+        if(uDetails.getLastname() != null) {u.setLastname(uDetails.getLastname());}
+        if(uDetails.getPhoneNumber() != null) {u.setPhoneNumber(uDetails.getPhoneNumber());}
+        if(uDetails.getEmail() != null) {u.setEmail(uDetails.getEmail());}
+
+        return userRepository.save(u);
     }
 
 

@@ -2,10 +2,12 @@ package com.afterApp.after.controller;
 
 import com.afterApp.after.entity.User;
 import com.afterApp.after.exceptions.AlreadyExistsException;
+import com.afterApp.after.exceptions.BadRequestException;
 import com.afterApp.after.exceptions.FormatRequestException;
 import com.afterApp.after.exceptions.NotFoundException;
 import com.afterApp.after.service.UserServices;
 import com.afterApp.after.utils.TokenUtil;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -39,7 +41,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User uDetails, @RequestHeader String authorization){
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @Valid @RequestBody User uDetails, @RequestHeader String authorization){
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
@@ -50,7 +52,7 @@ public class UserController {
             return ResponseEntity.ok(userServices.updateUser(id, uDetails, authorization));
         }catch (NotFoundException e){
             return ResponseEntity.notFound().build();
-        }catch (FormatRequestException | AlreadyExistsException e){
+        }catch (BadRequestException e){
             return ResponseEntity.badRequest().body(e.getMessage());
         }catch (RuntimeException e){
             return ResponseEntity.internalServerError().body(e.getMessage());
