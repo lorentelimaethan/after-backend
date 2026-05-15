@@ -74,6 +74,13 @@ public class EventServices {
             throw new BadRequestException("Event capacity is full");
         }
 
+        boolean alreadyJoined = e.getUsers().stream()
+                        .anyMatch(u -> u.getId().equals(requester.getId()));
+
+        if(alreadyJoined){
+            throw new BadRequestException("User already joined");
+        }
+
         e.getUsers().add(requester);
         return eventRepository.save(e);
     }
@@ -88,7 +95,14 @@ public class EventServices {
             throw new BadRequestException("Host cannot leave own event");
         }
 
-        e.getUsers().remove(requester);
+        boolean isInEvent = e.getUsers().stream()
+                        .anyMatch(u -> u.getId().equals(requester.getId()));
+
+        if (!isInEvent){
+            throw new NotFoundException("User not in event");
+        }
+
+        e.getUsers().removeIf(u -> u.getId().equals(requester.getId()));
         return eventRepository.save(e);
     }
 
@@ -105,15 +119,18 @@ public class EventServices {
         Users userToKick = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        if(!e.getUsers().contains(userToKick)){
-            throw new NotFoundException("User is not in the Event");
-        }
-
         if(e.getHost().getId().equals(userToKick.getId())){
             throw new BadRequestException("Host can not be kicked");
         }
 
-        e.getUsers().remove(userToKick);
+        boolean isInEvent = e.getUsers().stream()
+                .anyMatch(u -> u.getId().equals(userToKick.getId()));
+
+        if(!isInEvent){
+            throw new NotFoundException("User is not in the Event");
+        }
+
+        e.getUsers().removeIf(u -> u.getId().equals(userToKick.getId()));
 
         return eventRepository.save(e);
     }
@@ -131,7 +148,10 @@ public class EventServices {
         Users userToInvite = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        if(e.getUsers().contains(userToInvite)){
+        boolean isInEvent = e.getUsers().stream()
+                .anyMatch(u -> u.getId().equals(userToInvite.getId()));
+
+            if(isInEvent){
             throw new BadRequestException("User is already in the Event");
         }
 
