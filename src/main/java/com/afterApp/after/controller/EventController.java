@@ -128,6 +128,8 @@ public class EventController {
             return ResponseEntity.ok(eventServices.leaveEvent(authorization, id));
         }catch (NotFoundException exception){
             return ResponseEntity.notFound().build();
+        }catch (BadRequestException exception){
+            return ResponseEntity.badRequest().body(exception.getMessage());
         }catch (RuntimeException exception){
             return ResponseEntity.internalServerError().body(exception.getMessage());
         }
@@ -164,7 +166,9 @@ public class EventController {
 
         try{
             return ResponseEntity.ok(eventServices.kickUser(authorization, eventId, userId));
-        }catch (UnauthorizedException | BadRequestException e){
+        }catch (UnauthorizedException e){
+            return ResponseEntity.status(403).body(e.getMessage());
+        }catch (BadRequestException e){
             return ResponseEntity.badRequest().body(e.getMessage());
         }catch (NotFoundException e){
             return ResponseEntity.notFound().build();
@@ -185,7 +189,7 @@ public class EventController {
             eventServices.deleteEvent(id, authorization);
             return ResponseEntity.noContent().build();
         }catch (UnauthorizedException e){
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.status(403).body(e.getMessage());
         }catch (NotFoundException e){
             return ResponseEntity.notFound().build();
         }catch (RuntimeException e){
