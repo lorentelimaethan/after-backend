@@ -27,10 +27,12 @@ public class Events {
     @Getter @Setter
     private String name;
 
+    @Enumerated(EnumType.STRING)
     @NotNull(message = "Event must have a type")
     @Getter @Setter
     private EventType eventType;
 
+    @Enumerated(EnumType.STRING)
     @NotNull(message = "Event must have a music Style")
     @Getter @Setter
     private MusicStyle musicStyle;

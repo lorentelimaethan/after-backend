@@ -143,9 +143,11 @@ public class EventController {
 
         try{
             return ResponseEntity.ok(eventServices.inviteUser(authorization, eventId, userId));
-        }catch (UnauthorizedException | BadRequestException e){
+        }catch (UnauthorizedException e){
+            return ResponseEntity.status(403).body(e.getMessage());
+        }catch (BadRequestException e){
             return ResponseEntity.badRequest().body(e.getMessage());
-        }catch (NotFoundException e){
+        } catch (NotFoundException e){
             return ResponseEntity.notFound().build();
         }catch (RuntimeException e){
             return ResponseEntity.internalServerError().body(e.getMessage());
