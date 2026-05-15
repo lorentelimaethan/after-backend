@@ -33,9 +33,14 @@ public class TokenUtil {
                 .compact();
     }
 
-    public Boolean validateToken(String token){
+    public Boolean validateToken(String authorization){
         try {
-            Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
+            String token = authorization.replace("Bearer ", "");
+
+            Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token);
             return true;
         }catch (JwtException | IllegalArgumentException exception){
             return false;
