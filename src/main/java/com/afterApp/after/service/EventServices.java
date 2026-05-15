@@ -132,11 +132,15 @@ public class EventServices {
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
         if(e.getUsers().contains(userToInvite)){
-            throw new NotFoundException("User is not in the Event");
+            throw new BadRequestException("User is already in the Event");
         }
 
         if(e.getHost().getId().equals(userToInvite.getId())){
             throw new BadRequestException("Host already in the event");
+        }
+
+        if(e.getUsers().size() >= e.getCapacity()){
+            throw new BadRequestException("Event capacity is full");
         }
 
         e.getUsers().add(userToInvite);
