@@ -1,5 +1,6 @@
 package com.afterApp.after.controller;
 
+import com.afterApp.after.dto.CreateEventDTO;
 import com.afterApp.after.entity.Events;
 import com.afterApp.after.enums.EventType;
 import com.afterApp.after.enums.MusicStyle;
@@ -173,7 +174,7 @@ public class EventController {
 
 
     @PostMapping
-    public ResponseEntity<?> createEvent(@Valid @RequestBody Events e, @RequestHeader String authorization){
+    public ResponseEntity<?> createEvent(@Valid @RequestBody CreateEventDTO dto, @RequestHeader String authorization){
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
@@ -181,7 +182,7 @@ public class EventController {
         }
 
         try{
-            return ResponseEntity.ok(eventServices.createEvent(e, authorization));
+            return ResponseEntity.ok(eventServices.createEvent(dto, authorization));
         }catch (NotFoundException exception){
             return ResponseEntity.notFound().build();
         }catch(BadRequestException exception){

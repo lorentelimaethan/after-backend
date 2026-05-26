@@ -1,5 +1,7 @@
 package com.afterApp.after.service;
 
+import com.afterApp.after.dto.CreateEventDTO;
+import com.afterApp.after.entity.Address;
 import com.afterApp.after.entity.Events;
 import com.afterApp.after.entity.Users;
 import com.afterApp.after.entity.UserAccess;
@@ -52,8 +54,27 @@ public class EventServices {
         return userAccess.getUser();
     }
 
-    public Events createEvent(Events e, String authorization){
+    public Events createEvent(CreateEventDTO dto, String authorization){
         Users host = extractUser(authorization);
+
+        Events e = new Events();
+
+        e.setEventType(dto.getEventType());
+        e.setCapacity(dto.getCapacity());
+        e.setName(dto.getName());
+        e.setDescription(dto.getDescription());
+        e.setDateTime(dto.getDateTime());
+        e.setMusicStyle(dto.getMusicStyle());
+
+        Address address = new Address();
+        address.setStreetNum(dto.getAddress().getStreetNum());
+        address.setStreet(dto.getAddress().getStreet());
+        address.setCity(dto.getAddress().getCity());
+        address.setProvince(dto.getAddress().getProvince());
+        address.setPostalCode(dto.getAddress().getPostalCode());
+        address.setAditionalInfo(dto.getAddress().getAditionalInfo());
+
+        e.setAddress(address);
 
         e.setHost(host);
 

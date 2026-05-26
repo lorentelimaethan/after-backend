@@ -23,30 +23,23 @@ public class Events {
     @Getter
     private Long id;
 
-    @NotBlank(message = "Name required")
     @Getter @Setter
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @NotNull(message = "Event must have a type")
     @Getter @Setter
     private EventType eventType;
 
     @Enumerated(EnumType.STRING)
-    @NotNull(message = "Event must have a music Style")
     @Getter @Setter
     private MusicStyle musicStyle;
 
-    @NotBlank(message = "Event must have a description")
     @Getter @Setter
     private String description;
 
-    @NotNull(message = "Event must have a date and time")
-    @Future(message = "Event date and time must be in the future")
     @Getter @Setter
     private LocalDateTime dateTime;
 
-    @Positive(message = "Event capacity must be > 0")
     @Getter @Setter
     private int capacity;
 
@@ -66,8 +59,6 @@ public class Events {
 
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "address_id")
-    @Valid
-    @NotNull(message = "Event must have and address")
     @Getter @Setter
     private Address address;
 }
