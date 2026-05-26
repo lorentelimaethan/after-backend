@@ -15,12 +15,9 @@ public class UserAccess {
     private long id;
 
     @Column(unique = true)
-    @NotBlank(message = "Username required")
     @Getter @Setter
     private String username;
 
-    @NotBlank(message = "Password required")
-    @Size(min = 6, message = "Password must contain at least 6 characters")
     @Getter @Setter
     private String password;
 

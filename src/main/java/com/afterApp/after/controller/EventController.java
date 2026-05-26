@@ -8,6 +8,11 @@ import com.afterApp.after.exceptions.NotFoundException;
 import com.afterApp.after.exceptions.UnauthorizedException;
 import com.afterApp.after.service.EventServices;
 import com.afterApp.after.utils.TokenUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +30,95 @@ public class EventController {
     private TokenUtil tokenUtil;
 
     @GetMapping
+    @Operation(summary = "Get all Events")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "All events return",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Response Example",
+                                    value =  """
+                                        [
+                                            {
+                                                "address": {
+                                                    "aditionalInfo": "Industrial warehouse near the beach",
+                                                    "city": "Barcelona",
+                                                    "id": 4,
+                                                    "postalCode": "08005",
+                                                    "province": "Catalonia",
+                                                    "street": "Carrer Marina",
+                                                    "streetNum": "25"
+                                                },
+                                                "capacity": 150,
+                                                "dateTime": "2026-08-15T23:00:00",
+                                                "description": "Underground techno party in Barcelona",
+                                                "eventType": "CHILL",
+                                                "host": {
+                                                    "displayName": "ethanlo2",
+                                                    "email": "ethanlo@gmail.com",
+                                                    "id": 7,
+                                                    "lastname": "Lorente",
+                                                    "name": "Ethan",
+                                                    "phoneNumber": "+34111111222"
+                                                },
+                                                "id": 6,
+                                                "musicStyle": "HOUSE",
+                                                "name": "Techno Underground Barcelona",
+                                                "users": [
+                                                    {
+                                                        "displayName": "EthanLorente",
+                                                        "email": "admin@gmail.com",
+                                                        "id": 8,
+                                                        "lastname": "Lorente",
+                                                        "name": "Ethan",
+                                                        "phoneNumber": "111111111"
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                        """
+                            )
+                    )
+            ),
+            @ApiResponse(responseCode = "401",
+                    description = "Access Denied",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Response Example",
+                                    value = """
+                                        {
+                                            "timestamp": "2026-05-05T12:00:00",
+                                            "status": 401,
+                                            "error": "Access Denied",
+                                            "message": "Acceso Denegado",
+                                            "path": "/contactos"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+            @ApiResponse(responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Response Example",
+                                    value = """
+                                            {
+                                                "timestamp": "2026-05-05T12:00:00",
+                                                "status": 500,
+                                                "error": "InternalServerError",
+                                                "message": "Unexpected server error",
+                                                "path": "/contactos"
+                                            }
+                                            """
+                            )
+                    )
+            )
+    })
     public ResponseEntity<?> getAllEvents(
             @RequestHeader String authorization,
             @RequestParam(required = false)EventType type,

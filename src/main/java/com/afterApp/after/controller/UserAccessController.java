@@ -1,5 +1,6 @@
 package com.afterApp.after.controller;
 
+import com.afterApp.after.dto.RegisterDTO;
 import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.exceptions.BadRequestException;
 import com.afterApp.after.service.UserAccessServices;
@@ -23,9 +24,9 @@ public class UserAccessController {
     private TokenUtil tokenUtil;
 
     @PostMapping("/auth/register")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody UserAccess userAccess){
+    public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterDTO dto){
         try{
-            userAccessServices.registerUser(userAccess);
+            userAccessServices.registerUser(dto);
             return ResponseEntity.ok("Usuario creado correctamente");
         }catch (BadRequestException | DataIntegrityViolationException e){
             return ResponseEntity.badRequest().body(e.getMessage());

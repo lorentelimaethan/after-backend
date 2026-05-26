@@ -181,3 +181,5 @@ public class EventServices {
         eventRepository.delete(e);
     }
 }
+
+// pedir a codex que me revise los controllers y cree DTO y añadir info relevante como respuesta.

@@ -1,5 +1,6 @@
 package com.afterApp.after.service;
 
+import com.afterApp.after.dto.RegisterDTO;
 import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.entity.Users;
 import com.afterApp.after.exceptions.BadRequestException;
@@ -21,16 +22,19 @@ public class UserAccessServices {
 
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(16);
 
-    public UserAccess registerUser(UserAccess u){
+    public UserAccess registerUser(RegisterDTO dto){
 
-        if(userAccessRepository.existsByUsername(u.getUsername())){
+        if(userAccessRepository.existsByUsername(dto.getUsername())){
             throw new BadRequestException("Username already exists");
         }
 
-        u.setPassword(encoder.encode((u.getPassword())));
+        UserAccess u = new UserAccess();
+
+        u.setUsername(dto.getUsername());
+        u.setPassword(encoder.encode((dto.getPassword())));
 
         Users user = new Users();
-        user.setDisplayName(u.getUsername());
+        user.setDisplayName(dto.getUsername());
 
         u.setUser(user);
 
