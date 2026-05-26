@@ -1,5 +1,6 @@
 package com.afterApp.after.controller;
 
+import com.afterApp.after.dto.LoginDTO;
 import com.afterApp.after.dto.RegisterDTO;
 import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.exceptions.BadRequestException;
@@ -36,9 +37,9 @@ public class UserAccessController {
     }
 
     @PostMapping("/auth/login")
-    public ResponseEntity<?> createToken(@RequestBody UserAccess userAccess){
-        if (userAccessServices.validateUser(userAccess)) {
-            String token = tokenUtil.generateToken((userAccess.getUsername()));
+    public ResponseEntity<?> createToken(@RequestBody LoginDTO dto){
+        if (userAccessServices.validateUser(dto)) {
+            String token = tokenUtil.generateToken((dto.getUsername()));
             return ResponseEntity.ok(token);
         }else{
             return ResponseEntity.status(401).body("Access denied");

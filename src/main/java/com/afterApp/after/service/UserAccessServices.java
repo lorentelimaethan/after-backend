@@ -1,5 +1,6 @@
 package com.afterApp.after.service;
 
+import com.afterApp.after.dto.LoginDTO;
 import com.afterApp.after.dto.RegisterDTO;
 import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.entity.Users;
@@ -41,13 +42,13 @@ public class UserAccessServices {
         return userAccessRepository.save(u);
     }
 
-    public boolean validateUser(UserAccess u){
-        Optional<UserAccess> userAccess = userAccessRepository.findByUsername(u.getUsername());
+    public boolean validateUser(LoginDTO dto){
+        Optional<UserAccess> userAccess = userAccessRepository.findByUsername(dto.getUsername());
 
         if(userAccess.isPresent()){
             UserAccess access = userAccess.get();
 
-            return encoder.matches(u.getPassword(), access.getPassword());
+            return encoder.matches(dto.getPassword(), access.getPassword());
         }
         return false;
     }
