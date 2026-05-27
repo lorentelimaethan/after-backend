@@ -1,5 +1,7 @@
 package com.afterApp.after.service;
 
+import com.afterApp.after.dto.UpdateDisplayNameDTO;
+import com.afterApp.after.dto.UpdateUserDTO;
 import com.afterApp.after.entity.Users;
 import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.exceptions.AlreadyExistsException;
@@ -36,13 +38,11 @@ public class UserServices {
         return userAccess.getUser();
     }
 
-    public List<Users> getAllUsers() { return userRepository.findAll(); }
-
     public Users getUserById(Long id) throws RuntimeException{
         return userRepository.findById(id).orElseThrow(() -> new NotFoundException("User not Found"));
     }
 
-    public Users updateUser(Long id, Users uDetails, String authorization){
+    public Users updateUser(Long id, UpdateUserDTO uDtoDetails, String authorization){
         Users requester = extractUser(authorization);
 
         if (!requester.getId().equals(id)){
@@ -51,15 +51,15 @@ public class UserServices {
 
         Users u = getUserById(id);
 
-        if(uDetails.getName() != null) {u.setName(uDetails.getName());}
-        if(uDetails.getLastname() != null) {u.setLastname(uDetails.getLastname());}
-        if(uDetails.getPhoneNumber() != null) {u.setPhoneNumber(uDetails.getPhoneNumber());}
-        if(uDetails.getEmail() != null) {u.setEmail(uDetails.getEmail());}
+        if(uDtoDetails.getName() != null) {u.setName(uDtoDetails.getName());}
+        if(uDtoDetails.getLastname() != null) {u.setLastname(uDtoDetails.getLastname());}
+        if(uDtoDetails.getPhoneNumber() != null) {u.setPhoneNumber(uDtoDetails.getPhoneNumber());}
+        if(uDtoDetails.getEmail() != null) {u.setEmail(uDtoDetails.getEmail());}
 
         return userRepository.save(u);
     }
 
-    public Users updateDisplayName(Long id, String authorization, Users uDetails){
+    public Users updateDisplayName(Long id, String authorization, UpdateDisplayNameDTO uDetails){
         Users requester = extractUser(authorization);
 
         if (!requester.getId().equals(id)){
@@ -69,14 +69,6 @@ public class UserServices {
         Users u = getUserById(id);
 
         String newDisplayName = uDetails.getDisplayName();
-
-        if(newDisplayName == null || newDisplayName.isBlank()){
-            throw new BadRequestException("DisplayName cannot be null or empty");
-        }
-
-        if(!uDetails.getDisplayName().matches("^[a-zA-Z0-9](?:[a-zA-Z0-9._]{1,18}[a-zA-Z0-9])?$")){
-            throw new FormatRequestException("Incorrect username");
-        }
 
         if(userRepository.existsByDisplayName(uDetails.getDisplayName())){
             throw new AlreadyExistsException("Already Existing username");

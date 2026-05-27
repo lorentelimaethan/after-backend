@@ -1,6 +1,7 @@
 package com.afterApp.after.controller;
 
 import com.afterApp.after.dto.CreateEventDTO;
+import com.afterApp.after.dto.EventResponseDTO;
 import com.afterApp.after.entity.Events;
 import com.afterApp.after.enums.EventType;
 import com.afterApp.after.enums.MusicStyle;
@@ -132,7 +133,7 @@ public class EventController {
         }
 
         try{
-            List<Events> events;
+            List<EventResponseDTO> events;
 
             if(type != null && style != null){
                 events = eventServices.getEventsByTypeAndStyle(type, style);

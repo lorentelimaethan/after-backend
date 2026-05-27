@@ -1,5 +1,7 @@
 package com.afterApp.after.controller;
 
+import com.afterApp.after.dto.UpdateDisplayNameDTO;
+import com.afterApp.after.dto.UpdateUserDTO;
 import com.afterApp.after.entity.Users;
 import com.afterApp.after.exceptions.AlreadyExistsException;
 import com.afterApp.after.exceptions.BadRequestException;
@@ -41,7 +43,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @Valid @RequestBody Users uDetails, @RequestHeader String authorization){
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @Valid @RequestBody UpdateUserDTO uDetails, @RequestHeader String authorization){
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
@@ -60,7 +62,7 @@ public class UserController {
     }
 
     @PatchMapping("/{id}/display-name")
-    public ResponseEntity<?> updateDisplayName(@PathVariable Long id, @RequestHeader String authorization, @RequestBody Users uDetails){
+    public ResponseEntity<?> updateDisplayName(@PathVariable Long id, @RequestHeader String authorization, @Valid @RequestBody UpdateDisplayNameDTO uDetails){
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
