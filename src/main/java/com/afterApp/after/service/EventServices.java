@@ -50,7 +50,7 @@ public class EventServices {
     public List<EventResponseDTO> getAllEvents() {
         List<Events> events = eventRepository.findAll();
 
-        return events.stream().map(this::toDto).toList(); //REPASAR COMO FUNCIONA ESTO!!!
+        return events.stream().map(this::toDto).toList();
     }
 
     public EventResponseDTO getEvent(Long id) throws RuntimeException{
@@ -59,12 +59,22 @@ public class EventServices {
         return toDto(e);
     }
 
-    public List<Events> getEventsByType(EventType type){
-        return eventRepository.findByEventType(type);
+    public List<EventResponseDTO> getEventsByType(EventType type){
+        List<Events> events = eventRepository.findByEventType(type);
+
+        return events.stream().map(this::toDto).toList();
     }
-    public List<Events> getEventsByStyle(MusicStyle style){ return eventRepository.findByMusicStyle(style); }
-    public List<Events> getEventsByTypeAndStyle(EventType type, MusicStyle style){
-        return eventRepository.findByEventTypeAndMusicStyle(type, style);
+
+    public List<EventResponseDTO> getEventsByStyle(MusicStyle style){
+        List<Events> events = eventRepository.findByMusicStyle(style);
+
+        return  events.stream().map(this::toDto).toList();
+    }
+
+    public List<EventResponseDTO> getEventsByTypeAndStyle(EventType type, MusicStyle style){
+        List<Events> events = eventRepository.findByEventTypeAndMusicStyle(type, style);
+
+        return events.stream().map(this::toDto).toList();
     }
 
     private Users extractUser(String authorization){
@@ -77,7 +87,7 @@ public class EventServices {
         return userAccess.getUser();
     }
 
-    public Events createEvent(CreateEventDTO dto, String authorization){
+    public EventResponseDTO createEvent(CreateEventDTO dto, String authorization){
         Users host = extractUser(authorization);
 
         Events e = new Events();
@@ -101,10 +111,10 @@ public class EventServices {
 
         e.setHost(host);
 
-        return eventRepository.save(e);
+       return toDto(eventRepository.save(e));
     }
 
-    public Events joinEvent(String authorization, Long id){
+    public EventResponseDTO joinEvent(String authorization, Long id){
         Users requester = extractUser(authorization);
 
         Events e = eventRepository.findById(id)
@@ -126,10 +136,10 @@ public class EventServices {
         }
 
         e.getUsers().add(requester);
-        return eventRepository.save(e);
+        return toDto(eventRepository.save(e));
     }
 
-    public Events leaveEvent(String authorization, Long id){
+    public EventResponseDTO leaveEvent(String authorization, Long id){
         Users requester = extractUser(authorization);
 
         Events e = eventRepository.findById(id)
@@ -147,10 +157,10 @@ public class EventServices {
         }
 
         e.getUsers().removeIf(u -> u.getId().equals(requester.getId()));
-        return eventRepository.save(e);
+        return toDto(eventRepository.save(e));
     }
 
-    public Events kickUser(String authorization, Long eventId, Long userId) {
+    public EventResponseDTO kickUser(String authorization, Long eventId, Long userId) {
         Users requester = extractUser(authorization);
 
         Events e = eventRepository.findById(eventId)
@@ -176,10 +186,10 @@ public class EventServices {
 
         e.getUsers().removeIf(u -> u.getId().equals(userToKick.getId()));
 
-        return eventRepository.save(e);
+        return toDto(eventRepository.save(e));
     }
 
-    public Events inviteUser(String authorization, Long eventId, Long userId){
+    public EventResponseDTO inviteUser(String authorization, Long eventId, Long userId){
         Users requester = extractUser(authorization);
 
         Events e = eventRepository.findById(eventId)
@@ -209,7 +219,7 @@ public class EventServices {
 
         e.getUsers().add(userToInvite);
 
-        return eventRepository.save(e);
+        return toDto(eventRepository.save(e));
     }
 
     public void deleteEvent(Long id, String authorization) throws RuntimeException{
@@ -226,4 +236,3 @@ public class EventServices {
     }
 }
 
-// pedir a codex que me revise los controllers y cree DTO y añadir info relevante como respuesta.
