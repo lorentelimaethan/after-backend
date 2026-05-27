@@ -38,5 +38,5 @@ public class CreateEventDTO {
 
     @Valid
     @NotNull(message = "Event must have and address")
-    private Address address;
+    private AddressDTO address;
 }

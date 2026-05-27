@@ -1,6 +1,7 @@
 package com.afterApp.after.service;
 
 import com.afterApp.after.dto.CreateEventDTO;
+import com.afterApp.after.dto.EventResponseDTO;
 import com.afterApp.after.entity.Address;
 import com.afterApp.after.entity.Events;
 import com.afterApp.after.entity.Users;
@@ -30,10 +31,32 @@ public class EventServices {
     @Autowired
     private UserRepository userRepository;
 
-    public List<Events> getAllEvents() { return eventRepository.findAll(); }
+    public EventResponseDTO toDto(Events e){
+        EventResponseDTO dto = new EventResponseDTO();
 
-    public Events getEvent(Long id) throws RuntimeException{
-        return eventRepository.findById(id).orElseThrow(() -> new NotFoundException("Event not found"));
+        dto.setId(e.getId());
+        dto.setName(e.getName());
+        dto.setDescription(e.getDescription());
+        dto.setDateTime(e.getDateTime());
+        dto.setCapacity(e.getCapacity());
+        dto.setEventType(e.getEventType());
+        dto.setMusicStyle(e.getMusicStyle());
+        dto.setHostDisplayName(e.getHost().getDisplayName());
+        dto.setUsersCount(e.getUsers().size());
+
+        return dto;
+    }
+
+    public List<EventResponseDTO> getAllEvents() {
+        List<Events> events = eventRepository.findAll();
+
+        return events.stream().map(this::toDto).toList(); //REPASAR COMO FUNCIONA ESTO!!!
+    }
+
+    public EventResponseDTO getEvent(Long id) throws RuntimeException{
+        Events e = eventRepository.findById(id).orElseThrow(() -> new NotFoundException("Event not found"));
+
+        return toDto(e);
     }
 
     public List<Events> getEventsByType(EventType type){
@@ -72,7 +95,7 @@ public class EventServices {
         address.setCity(dto.getAddress().getCity());
         address.setProvince(dto.getAddress().getProvince());
         address.setPostalCode(dto.getAddress().getPostalCode());
-        address.setAditionalInfo(dto.getAddress().getAditionalInfo());
+        address.setAditionalInfo(dto.getAddress().getAdditionalInfo());
 
         e.setAddress(address);
 
