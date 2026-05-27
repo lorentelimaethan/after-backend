@@ -2,6 +2,7 @@ package com.afterApp.after.service;
 
 import com.afterApp.after.dto.UpdateDisplayNameDTO;
 import com.afterApp.after.dto.UpdateUserDTO;
+import com.afterApp.after.dto.UserResponseDTO;
 import com.afterApp.after.entity.Users;
 import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.exceptions.AlreadyExistsException;
@@ -38,35 +39,54 @@ public class UserServices {
         return userAccess.getUser();
     }
 
-    public Users getUserById(Long id) throws RuntimeException{
-        return userRepository.findById(id).orElseThrow(() -> new NotFoundException("User not Found"));
+    public UserResponseDTO toDto(Users u){
+        UserResponseDTO dto = new UserResponseDTO();
+
+        dto.setId(u.getId());
+        dto.setName(u.getName());
+        dto.setLastname(u.getLastname());
+        dto.setEmail(u.getEmail());
+        dto.setPhoneNumber(u.getPhoneNumber());
+        dto.setDisplayName(u.getDisplayName());
+
+        return dto;
     }
 
-    public Users updateUser(Long id, UpdateUserDTO uDtoDetails, String authorization){
+    public UserResponseDTO getUserById(Long id) throws RuntimeException{
+        Users u = userRepository.findById(id).orElseThrow(() -> new NotFoundException("User not Found"));
+
+        return toDto(u);
+    }
+
+    public Users getUserEntityById(Long id) throws RuntimeException{
+        return userRepository.findById(id).orElseThrow(() -> new NotFoundException("User not found"));
+    }
+
+    public UserResponseDTO updateUser(Long id, UpdateUserDTO uDtoDetails, String authorization){
         Users requester = extractUser(authorization);
 
         if (!requester.getId().equals(id)){
             throw new BadRequestException("You can only update your own profile");
         }
 
-        Users u = getUserById(id);
+        Users u = getUserEntityById(id);
 
         if(uDtoDetails.getName() != null) {u.setName(uDtoDetails.getName());}
         if(uDtoDetails.getLastname() != null) {u.setLastname(uDtoDetails.getLastname());}
         if(uDtoDetails.getPhoneNumber() != null) {u.setPhoneNumber(uDtoDetails.getPhoneNumber());}
         if(uDtoDetails.getEmail() != null) {u.setEmail(uDtoDetails.getEmail());}
 
-        return userRepository.save(u);
+        return toDto(userRepository.save(u));
     }
 
-    public Users updateDisplayName(Long id, String authorization, UpdateDisplayNameDTO uDetails){
+    public UserResponseDTO updateDisplayName(Long id, String authorization, UpdateDisplayNameDTO uDetails){
         Users requester = extractUser(authorization);
 
         if (!requester.getId().equals(id)){
             throw new BadRequestException("You can only update your own profile");
         }
 
-        Users u = getUserById(id);
+        Users u = getUserEntityById(id);
 
         String newDisplayName = uDetails.getDisplayName();
 
@@ -76,7 +96,7 @@ public class UserServices {
 
         u.setDisplayName(newDisplayName);
 
-        return userRepository.save(u);
+        return toDto(userRepository.save(u));
     }
 
 
