@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/event")
+@RequestMapping("/events")
 public class EventController {
     @Autowired
     private EventServices eventServices;
@@ -32,91 +32,76 @@ public class EventController {
     private TokenUtil tokenUtil;
 
     @GetMapping
-    @Operation(summary = "Get all Events")
+    @Operation(summary = "Get all events")
     @ApiResponses(value = {
+
             @ApiResponse(
                     responseCode = "200",
-                    description = "All events return",
+                    description = "Events retrieved successfully",
                     content = @Content(
                             mediaType = "application/json",
                             examples = @ExampleObject(
-                                    name = "Response Example",
-                                    value =  """
+                                    name = "Success Response",
+                                    value = """
                                         [
                                             {
-                                                "address": {
-                                                    "aditionalInfo": "Industrial warehouse near the beach",
-                                                    "city": "Barcelona",
-                                                    "id": 4,
-                                                    "postalCode": "08005",
-                                                    "province": "Catalonia",
-                                                    "street": "Carrer Marina",
-                                                    "streetNum": "25"
-                                                },
-                                                "capacity": 150,
-                                                "dateTime": "2026-08-15T23:00:00",
-                                                "description": "Underground techno party in Barcelona",
-                                                "eventType": "CHILL",
-                                                "host": {
-                                                    "displayName": "ethanlo2",
-                                                    "email": "ethanlo@gmail.com",
-                                                    "id": 7,
-                                                    "lastname": "Lorente",
-                                                    "name": "Ethan",
-                                                    "phoneNumber": "+34111111222"
-                                                },
                                                 "id": 6,
-                                                "musicStyle": "HOUSE",
                                                 "name": "Techno Underground Barcelona",
-                                                "users": [
-                                                    {
-                                                        "displayName": "EthanLorente",
-                                                        "email": "admin@gmail.com",
-                                                        "id": 8,
-                                                        "lastname": "Lorente",
-                                                        "name": "Ethan",
-                                                        "phoneNumber": "111111111"
-                                                    }
-                                                ]
+                                                "description": "Underground techno party in Barcelona",
+                                                "dateTime": "2026-08-15T23:00:00",
+                                                "capacity": 150,
+                                                "eventType": "CHILL",
+                                                "musicStyle": "HOUSE",
+                                                "hostDisplayName": "ethanlo2",
+                                                "usersCount": 1,
+                                                "address": {
+                                                    "id": 4,
+                                                    "street": "Carrer Marina",
+                                                    "streetNum": "25",
+                                                    "city": "Barcelona",
+                                                    "province": "Catalonia",
+                                                    "postalCode": "08005",
+                                                    "aditionalInfo": "Industrial warehouse near the beach"
+                                                }
                                             }
                                         ]
                                         """
                             )
                     )
             ),
-            @ApiResponse(responseCode = "401",
-                    description = "Access Denied",
+
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - Invalid or missing token",
                     content = @Content(
                             mediaType = "application/json",
                             examples = @ExampleObject(
-                                    name = "Response Example",
+                                    name = "Unauthorized",
                                     value = """
                                         {
-                                            "timestamp": "2026-05-05T12:00:00",
-                                            "status": 401,
-                                            "error": "Access Denied",
-                                            "message": "Acceso Denegado",
-                                            "path": "/contactos"
+                                            "message": "Access denied"
                                         }
                                         """
                             )
                     )
             ),
-            @ApiResponse(responseCode = "500",
+
+            @ApiResponse(
+                    responseCode = "500",
                     description = "Internal server error",
                     content = @Content(
                             mediaType = "application/json",
                             examples = @ExampleObject(
-                                    name = "Response Example",
+                                    name = "Internal Server Error",
                                     value = """
-                                            {
-                                                "timestamp": "2026-05-05T12:00:00",
-                                                "status": 500,
-                                                "error": "InternalServerError",
-                                                "message": "Unexpected server error",
-                                                "path": "/contactos"
-                                            }
-                                            """
+                                        {
+                                            "timestamp": "2026-05-05T12:00:00",
+                                            "status": 500,
+                                            "error": "Internal Server Error",
+                                            "message": "Unexpected server error",
+                                            "path": "/events"
+                                        }
+                                        """
                             )
                     )
             )
@@ -157,6 +142,99 @@ public class EventController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get an event by id")
+    @ApiResponses(value = {
+
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Event retrieved successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Success Response",
+                                    value = """
+                                        [
+                                            {
+                                                "id": 6,
+                                                "name": "Techno Underground Barcelona",
+                                                "description": "Underground techno party in Barcelona",
+                                                "dateTime": "2026-08-15T23:00:00",
+                                                "capacity": 150,
+                                                "eventType": "CHILL",
+                                                "musicStyle": "HOUSE",
+                                                "hostDisplayName": "ethanlo2",
+                                                "usersCount": 1,
+                                                "address": {
+                                                    "id": 4,
+                                                    "street": "Carrer Marina",
+                                                    "streetNum": "25",
+                                                    "city": "Barcelona",
+                                                    "province": "Catalonia",
+                                                    "postalCode": "08005",
+                                                    "aditionalInfo": "Industrial warehouse near the beach"
+                                                }
+                                            }
+                                        ]
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - Invalid or missing token",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Unauthorized",
+                                    value = """
+                                        {
+                                            "message": "Access denied"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Event not found",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Response Example",
+                                    value = """
+                                    {
+                                      "timestamp": "2026-05-05T12:00:00",
+                                      "status": 404,
+                                      "error": "NotFoundException",
+                                      "message": "Usuario no encontrado",
+                                      "path": "/events/1"
+                                    }
+                                    """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Internal Server Error",
+                                    value = """
+                                        {
+                                            "timestamp": "2026-05-05T12:00:00",
+                                            "status": 500,
+                                            "error": "Internal Server Error",
+                                            "message": "Unexpected server error",
+                                            "path": "/events/1"
+                                        }
+                                        """
+                            )
+                    )
+            )
+    })
     public ResponseEntity<?> getEventById(@PathVariable Long id, @RequestHeader String authorization){
         Boolean token = tokenUtil.validateToken(authorization);
 
@@ -175,6 +253,118 @@ public class EventController {
 
 
     @PostMapping
+    @Operation(summary = "Create a new event")
+    @ApiResponses(value = {
+
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Event created successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Success Response",
+                                    value = """
+                                        {
+                                            "id": 6,
+                                            "name": "Techno Underground Barcelona",
+                                            "description": "Underground techno party in Barcelona",
+                                            "dateTime": "2026-08-15T23:00:00",
+                                            "capacity": 150,
+                                            "eventType": "CHILL",
+                                            "musicStyle": "HOUSE",
+                                            "hostDisplayName": "ethanlo2",
+                                            "usersCount": 1,
+                                            "address": {
+                                                "id": 4,
+                                                "street": "Carrer Marina",
+                                                "streetNum": "25",
+                                                "city": "Barcelona",
+                                                "province": "Catalonia",
+                                                "postalCode": "08005",
+                                                "aditionalInfo": "Industrial warehouse near the beach"
+                                            }
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid event data",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Bad Request",
+                                    value = """
+                                        {
+                                            "timestamp": "2026-05-05T12:00:00",
+                                            "status": 400,
+                                            "error": "Bad Request",
+                                            "message": "Event capacity must be greater than 0",
+                                            "path": "/events"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - Invalid or missing token",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Unauthorized",
+                                    value = """
+                                        {
+                                            "message": "Access denied"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Host user not found",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Not Found",
+                                    value = """
+                                        {
+                                            "timestamp": "2026-05-05T12:00:00",
+                                            "status": 404,
+                                            "error": "Not Found",
+                                            "message": "User not found",
+                                            "path": "/events"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Internal Server Error",
+                                    value = """
+                                        {
+                                            "timestamp": "2026-05-05T12:00:00",
+                                            "status": 500,
+                                            "error": "Internal Server Error",
+                                            "message": "Unexpected server error",
+                                            "path": "/events"
+                                        }
+                                        """
+                            )
+                    )
+            )
+    })
     public ResponseEntity<?> createEvent(@Valid @RequestBody CreateEventDTO dto, @RequestHeader String authorization){
         Boolean token = tokenUtil.validateToken(authorization);
 
@@ -193,7 +383,126 @@ public class EventController {
         }
     }
 
+
     @PatchMapping("/{id}/join")
+    @Operation(summary = "Join an event")
+    @ApiResponses(value = {
+
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "User joined the event successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Success Response",
+                                    value = """
+                                        {
+                                            "id": 6,
+                                            "name": "Techno Underground Barcelona",
+                                            "description": "Underground techno party in Barcelona",
+                                            "dateTime": "2026-08-15T23:00:00",
+                                            "capacity": 150,
+                                            "eventType": "CHILL",
+                                            "musicStyle": "HOUSE",
+                                            "hostDisplayName": "ethanlo2",
+                                            "usersCount": 2,
+                                            "address": {
+                                                "id": 4,
+                                                "street": "Carrer Marina",
+                                                "streetNum": "25",
+                                                "city": "Barcelona",
+                                                "province": "Catalonia",
+                                                "postalCode": "08005",
+                                                "aditionalInfo": "Industrial warehouse near the beach"
+                                            }
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "User already joined or event is full",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = {
+                                    @ExampleObject(
+                                            name = "Already Joined",
+                                            value = """
+                                                {
+                                                    "message": "User already joined this event"
+                                                }
+                                                """
+                                    ),
+                                    @ExampleObject(
+                                            name = "Event Full",
+                                            value = """
+                                                {
+                                                    "message": "Event is already full"
+                                                }
+                                                """
+                                    )
+                            }
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - Invalid or missing token",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Unauthorized",
+                                    value = """
+                                        {
+                                            "message": "Access denied"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Event or user not found",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Not Found",
+                                    value = """
+                                        {
+                                            "timestamp": "2026-05-05T12:00:00",
+                                            "status": 404,
+                                            "error": "Not Found",
+                                            "message": "Event not found",
+                                            "path": "/events/6/join"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Internal Server Error",
+                                    value = """
+                                        {
+                                            "timestamp": "2026-05-05T12:00:00",
+                                            "status": 500,
+                                            "error": "Internal Server Error",
+                                            "message": "Unexpected server error",
+                                            "path": "/events/6/join"
+                                        }
+                                        """
+                            )
+                    )
+            )
+    })
     public ResponseEntity<?> JoinEvent(@PathVariable Long id, @RequestHeader String authorization){
         Boolean token = tokenUtil.validateToken(authorization);
 
@@ -213,6 +522,124 @@ public class EventController {
     }
 
     @PatchMapping("/{id}/leave")
+    @Operation(summary = "Leave an event")
+    @ApiResponses(value = {
+
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "User left the event successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Success Response",
+                                    value = """
+                                        {
+                                            "id": 6,
+                                            "name": "Techno Underground Barcelona",
+                                            "description": "Underground techno party in Barcelona",
+                                            "dateTime": "2026-08-15T23:00:00",
+                                            "capacity": 150,
+                                            "eventType": "CHILL",
+                                            "musicStyle": "HOUSE",
+                                            "hostDisplayName": "ethanlo2",
+                                            "usersCount": 1,
+                                            "address": {
+                                                "id": 4,
+                                                "street": "Carrer Marina",
+                                                "streetNum": "25",
+                                                "city": "Barcelona",
+                                                "province": "Catalonia",
+                                                "postalCode": "08005",
+                                                "aditionalInfo": "Industrial warehouse near the beach"
+                                            }
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "User is not part of the event or host cannot leave",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = {
+                                    @ExampleObject(
+                                            name = "User Not Joined",
+                                            value = """
+                                                {
+                                                    "message": "User is not part of this event"
+                                                }
+                                                """
+                                    ),
+                                    @ExampleObject(
+                                            name = "Host Cannot Leave",
+                                            value = """
+                                                {
+                                                    "message": "Host cannot leave their own event"
+                                                }
+                                                """
+                                    )
+                            }
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - Invalid or missing token",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Unauthorized",
+                                    value = """
+                                        {
+                                            "message": "Access denied"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Event or user not found",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Not Found",
+                                    value = """
+                                        {
+                                            "timestamp": "2026-05-05T12:00:00",
+                                            "status": 404,
+                                            "error": "Not Found",
+                                            "message": "Event not found",
+                                            "path": "/events/6/leave"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Internal Server Error",
+                                    value = """
+                                        {
+                                            "timestamp": "2026-05-05T12:00:00",
+                                            "status": 500,
+                                            "error": "Internal Server Error",
+                                            "message": "Unexpected server error",
+                                            "path": "/events/6/leave"
+                                        }
+                                        """
+                            )
+                    )
+            )
+    })
     public ResponseEntity<?> leaveEvent(@PathVariable Long id, @RequestHeader String authorization){
         Boolean token = tokenUtil.validateToken(authorization);
 
@@ -232,6 +659,148 @@ public class EventController {
     }
 
     @PatchMapping("/{eventId}/invite/user/{userId}")
+    @Operation(summary = "Invite a user to an event (host only)")
+    @ApiResponses(value = {
+
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "User invited successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Success Response",
+                                    value = """
+                                        {
+                                            "id": 6,
+                                            "name": "Techno Underground Barcelona",
+                                            "description": "Underground techno party in Barcelona",
+                                            "dateTime": "2026-08-15T23:00:00",
+                                            "capacity": 150,
+                                            "eventType": "CHILL",
+                                            "musicStyle": "HOUSE",
+                                            "hostDisplayName": "ethanlo2",
+                                            "usersCount": 3,
+                                            "address": {
+                                                "id": 4,
+                                                "street": "Carrer Marina",
+                                                "streetNum": "25",
+                                                "city": "Barcelona",
+                                                "province": "Catalonia",
+                                                "postalCode": "08005",
+                                                "aditionalInfo": "Industrial warehouse near the beach"
+                                            }
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "User already in event, host cannot be invited, or event is full",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = {
+                                    @ExampleObject(
+                                            name = "Already in Event",
+                                            value = """
+                                                {
+                                                    "message": "User is already in the event"
+                                                }
+                                                """
+                                    ),
+                                    @ExampleObject(
+                                            name = "Event Full",
+                                            value = """
+                                                {
+                                                    "message": "Event capacity is full"
+                                                }
+                                                """
+                                    ),
+                                    @ExampleObject(
+                                            name = "Host Error",
+                                            value = """
+                                                {
+                                                    "message": "Host already in the event"
+                                                }
+                                                """
+                                    )
+                            }
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - Invalid or missing token",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Unauthorized",
+                                    value = """
+                                        {
+                                            "message": "Access denied"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - Only host can invite users",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Forbidden",
+                                    value = """
+                                        {
+                                            "message": "Only host can invite users"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Event or user not found",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Not Found",
+                                    value = """
+                                        {
+                                            "timestamp": "2026-05-05T12:00:00",
+                                            "status": 404,
+                                            "error": "Not Found",
+                                            "message": "User not found",
+                                            "path": "/events/6/invite/user/3"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Internal Server Error",
+                                    value = """
+                                        {
+                                            "timestamp": "2026-05-05T12:00:00",
+                                            "status": 500,
+                                            "error": "Internal Server Error",
+                                            "message": "Unexpected server error",
+                                            "path": "/events/6/invite/user/3"
+                                        }
+                                        """
+                            )
+                    )
+            )
+    })
     public ResponseEntity<?> inviteUser(@PathVariable Long eventId, @PathVariable Long userId, @RequestHeader String authorization){
         Boolean token = tokenUtil.validateToken(authorization);
 
@@ -253,6 +822,132 @@ public class EventController {
     }
 
     @DeleteMapping("/{eventId}/kick/user/{userId}")
+    @Operation(summary = "Kick a user from an event (host only)")
+    @ApiResponses(value = {
+
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "User kicked successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Success Response",
+                                    value = """
+                                        {
+                                            "id": 6,
+                                            "name": "Techno Underground Barcelona",
+                                            "description": "Underground techno party in Barcelona",
+                                            "dateTime": "2026-08-15T23:00:00",
+                                            "capacity": 150,
+                                            "eventType": "CHILL",
+                                            "musicStyle": "HOUSE",
+                                            "hostDisplayName": "ethanlo2",
+                                            "usersCount": 2,
+                                            "address": {
+                                                "id": 4,
+                                                "street": "Carrer Marina",
+                                                "streetNum": "25",
+                                                "city": "Barcelona",
+                                                "province": "Catalonia",
+                                                "postalCode": "08005",
+                                                "aditionalInfo": "Industrial warehouse near the beach"
+                                            }
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Bad request (host cannot be kicked or invalid state)",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = {
+                                    @ExampleObject(
+                                            name = "Host Cannot Be Kicked",
+                                            value = """
+                                                {
+                                                    "message": "Host cannot be kicked from the event"
+                                                }
+                                                """
+                                    )
+                            }
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - Invalid or missing token",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Unauthorized",
+                                    value = """
+                                        {
+                                            "message": "Access denied"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - Only host can kick users",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Forbidden",
+                                    value = """
+                                        {
+                                            "message": "Only host can kick users"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Event or user not found",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Not Found",
+                                    value = """
+                                        {
+                                            "timestamp": "2026-05-05T12:00:00",
+                                            "status": 404,
+                                            "error": "Not Found",
+                                            "message": "User not found",
+                                            "path": "/events/6/kick/user/3"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Internal Server Error",
+                                    value = """
+                                        {
+                                            "timestamp": "2026-05-05T12:00:00",
+                                            "status": 500,
+                                            "error": "Internal Server Error",
+                                            "message": "Unexpected server error",
+                                            "path": "/events/6/kick/user/3"
+                                        }
+                                        """
+                            )
+                    )
+            )
+    })
     public ResponseEntity<?> kickUser(@PathVariable Long eventId, @PathVariable Long userId, @RequestHeader String authorization ){
         Boolean token = tokenUtil.validateToken(authorization);
 
@@ -274,6 +969,89 @@ public class EventController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete an event (host only)")
+    @ApiResponses(value = {
+
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Event deleted successfully",
+                    content = @Content(
+                            mediaType = "application/json"
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - Invalid or missing token",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Unauthorized",
+                                    value = """
+                                        {
+                                            "message": "Access denied"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - Only host can delete the event",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Forbidden",
+                                    value = """
+                                        {
+                                            "message": "Only host can delete the event"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Event not found",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Not Found",
+                                    value = """
+                                        {
+                                            "timestamp": "2026-05-05T12:00:00",
+                                            "status": 404,
+                                            "error": "Not Found",
+                                            "message": "Event not found",
+                                            "path": "/events/6"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Internal Server Error",
+                                    value = """
+                                        {
+                                            "timestamp": "2026-05-05T12:00:00",
+                                            "status": 500,
+                                            "error": "Internal Server Error",
+                                            "message": "Unexpected server error",
+                                            "path": "/events/6"
+                                        }
+                                        """
+                            )
+                    )
+            )
+    })
     public ResponseEntity<?> deleteEvent(@PathVariable Long id, @RequestHeader String authorization){
         Boolean token = tokenUtil.validateToken(authorization);
 
