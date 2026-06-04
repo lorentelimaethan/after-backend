@@ -5,25 +5,22 @@ import com.afterApp.after.entity.Events;
 import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.entity.Users;
 import com.afterApp.after.exceptions.BadRequestException;
+import com.afterApp.after.exceptions.NotFoundException;
 import com.afterApp.after.repositories.EventRepository;
 import com.afterApp.after.repositories.UserAccessRepository;
 import com.afterApp.after.repositories.UserRepository;
 import com.afterApp.after.service.EventServices;
 import com.afterApp.after.utils.TokenUtil;
-import org.hsqldb.rights.User;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Optional;
-import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -70,17 +67,11 @@ public class EventServiceTest {
     void shouldJoinEventSuccessfully(){
         Users user = new Users();
         user.setId(1L);
-        user.setDisplayName("John");
+        user.setDisplayName("Requester");
 
         UserAccess access = new UserAccess();
         access.setUsername("Requester");
         access.setUser(user);
-
-        when(tokenUtil.extractUsername("fake-token"))
-                .thenReturn("John");
-
-        when(userAccessRepository.findByUsername("John"))
-                .thenReturn(Optional.of(access));
 
         Users host = new Users();
         host.setId(2L);
@@ -90,6 +81,12 @@ public class EventServiceTest {
         event.setId(10L);
         event.setHost(host);
         event.setCapacity(10);
+
+        when(tokenUtil.extractUsername("fake-token"))
+                .thenReturn("Requester");
+
+        when(userAccessRepository.findByUsername("Requester"))
+                .thenReturn(Optional.of(access));
 
         when(eventRepository.findById(10L))
                 .thenReturn(Optional.of(event));
@@ -101,16 +98,17 @@ public class EventServiceTest {
                 eventServices.joinEvent("fake-token", 10L);
 
         assertEquals(1, result.getUsersCount());
+        assertTrue(event.getUsers().contains(user));
     }
 
     @Test
     void shouldThrowUserAlreadyJoinedEvent(){
         Users user = new Users();
         user.setId(1L);
-        user.setDisplayName("John");
+        user.setDisplayName("Requester");
 
         UserAccess access = new UserAccess();
-        access.setUsername("John");
+        access.setUsername("Requester");
         access.setUser(user);
 
         Users host = new Users();
@@ -125,9 +123,9 @@ public class EventServiceTest {
         event.getUsers().add(user);
 
         when(tokenUtil.extractUsername("fake-token"))
-                .thenReturn("John");
+                .thenReturn("Requester");
 
-        when(userAccessRepository.findByUsername("John"))
+        when(userAccessRepository.findByUsername("Requester"))
                 .thenReturn(Optional.of(access));
 
         when(eventRepository.findById(10L))
@@ -183,10 +181,10 @@ public class EventServiceTest {
     void ShouldThrowWhenEventIsFull(){
         Users requester = new Users();
         requester.setId(1L);
-        requester.setDisplayName("John");
+        requester.setDisplayName("Requester");
 
         UserAccess access = new UserAccess();
-        access.setUsername("John");
+        access.setUsername("Requester");
         access.setUser(requester);
 
         Users host = new Users();
@@ -204,9 +202,9 @@ public class EventServiceTest {
         event.getUsers().add(attendee);
 
         when(tokenUtil.extractUsername("fake-token"))
-                .thenReturn("John");
+                .thenReturn("Requester");
 
-        when(userAccessRepository.findByUsername("John"))
+        when(userAccessRepository.findByUsername("Requester"))
                 .thenReturn(Optional.of(access));
 
         when(eventRepository.findById(10L))
@@ -221,6 +219,123 @@ public class EventServiceTest {
                 "Event capacity is full",
                 exception.getMessage()
         );
+    }
+
+    @Test
+    void ShouldLeaveEventSuccessfully(){
+        Users user = new Users();
+        user.setId(1L);
+        user.setDisplayName("Requester");
+
+        UserAccess access = new UserAccess();
+        access.setUsername("Requester");
+        access.setUser(user);
+
+        Users host = new Users();
+        host.setId(2L);
+        host.setDisplayName("Host");
+
+        Events event = new Events();
+        event.setId(10L);
+        event.setHost(host);
+        event.setCapacity(10);
+
+        event.getUsers().add(user);
+
+        when(tokenUtil.extractUsername("fake-token"))
+                .thenReturn("Requester");
+
+        when(userAccessRepository.findByUsername("Requester"))
+                .thenReturn(Optional.of(access));
+
+        when(eventRepository.findById(10L))
+                .thenReturn(Optional.of(event));
+
+        when(eventRepository.save(any(Events.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        EventResponseDTO result =
+                eventServices.leaveEvent("fake-token", 10L);
+
+        assertFalse(event.getUsers().contains(user));
+
+        assertEquals(0, result.getUsersCount());
+    }
+
+    @Test
+    void ShouldThrowWhenHostTriesToLeaveEvent(){
+        Users host = new Users();
+        host.setId(1L);
+        host.setDisplayName("Host");
+
+        UserAccess access = new UserAccess();
+        access.setUsername("Host");
+        access.setUser(host);
+
+        Events event = new Events();
+        event.setId(10L);
+        event.setHost(host);
+        event.setCapacity(10);
+
+        when(tokenUtil.extractUsername("fake-token"))
+                .thenReturn("Host");
+
+        when(userAccessRepository.findByUsername("Host"))
+                .thenReturn(Optional.of(access));
+
+        when(eventRepository.findById(10L))
+                .thenReturn(Optional.of(event));
+
+        BadRequestException exception = assertThrows(
+                BadRequestException.class,
+                () -> eventServices.leaveEvent("fake-token", 10L)
+        );
+
+        assertEquals(
+                "Host cannot leave own event",
+                exception.getMessage()
+        );
+
+    }
+
+    @Test
+    void ShouldThrowWhenUserIsNotInEvent(){
+        Users user = new Users();
+        user.setId(1L);
+        user.setDisplayName("Requester");
+
+        Users host = new Users();
+        host.setId(2L);
+        host.setDisplayName("Host");
+
+        UserAccess access = new UserAccess();
+        access.setUsername("Requester");
+        access.setUser(user);
+
+        Events event = new Events();
+        event.setId(10L);
+        event.setHost(host);
+        event.setCapacity(10);
+
+        when(tokenUtil.extractUsername("fake-token"))
+                .thenReturn("Requester");
+
+        when(userAccessRepository.findByUsername("Requester"))
+                .thenReturn(Optional.of(access));
+
+        when(eventRepository.findById(10L))
+                .thenReturn(Optional.of(event));
+
+        NotFoundException exception = assertThrows(
+                NotFoundException.class,
+                () -> eventServices.leaveEvent("fake-token", 10L)
+        );
+
+        assertEquals(
+                "User not in event",
+                exception.getMessage()
+        );
+
     }
 
 
