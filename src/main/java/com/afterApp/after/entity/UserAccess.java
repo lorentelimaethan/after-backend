@@ -11,7 +11,7 @@ import lombok.Setter;
 public class UserAccess {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Getter
+    @Getter @Setter
     private long id;
 
     @Column(unique = true)
