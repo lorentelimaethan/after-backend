@@ -469,5 +469,166 @@ public class EventServiceTest {
 
     }
 
+    @Test
+    void shouldKickUserSuccessfully(){
+        Users host = new Users();
+        host.setId(1L);
+        host.setDisplayName("Host");
 
+        Users target = new Users();
+        target.setId(2L);
+        target.setDisplayName("Target");
+
+        UserAccess access = new UserAccess();
+        access.setUsername("Host");
+        access.setUser(host);
+
+        Events event = new Events();
+        event.setId(10L);
+        event.setHost(host);
+        event.getUsers().add(target);
+
+        when(tokenUtil.extractUsername("fake-token"))
+                .thenReturn("Host");
+
+        when(userAccessRepository.findByUsername("Host"))
+                .thenReturn(Optional.of(access));
+
+        when(eventRepository.findById(10L))
+                .thenReturn(Optional.of(event));
+
+        when(userRepository.findById(2L))
+                .thenReturn(Optional.of(target));
+
+        when(eventRepository.save(any(Events.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        EventResponseDTO result =
+                eventServices.kickUser("fake-token", 10L, 2L);
+
+        assertEquals(0, result.getUsersCount());
+
+        assertFalse(event.getUsers().contains(target));
+    }
+
+    @Test
+    void shouldThrowWhenNonHostTriesToKickUser(){
+        Users host = new Users();
+        host.setId(1L);
+        host.setDisplayName("Host");
+
+        Users normalUser = new Users();
+        normalUser.setId(2L);
+        normalUser.setDisplayName("Normal");
+
+        Users target;
+        target = new Users();
+        target.setId(3L);
+
+        UserAccess access = new UserAccess();
+        access.setUsername("Normal");
+        access.setUser(normalUser);
+
+        Events event = new Events();
+        event.setId(10L);
+        event.setHost(host);
+
+        when(tokenUtil.extractUsername("fake-token"))
+                .thenReturn("Normal");
+
+        when(userAccessRepository.findByUsername("Normal"))
+                .thenReturn(Optional.of(access));
+
+        when(eventRepository.findById(10L))
+                .thenReturn(Optional.of(event));
+
+        UnauthorizedException exception = assertThrows(
+                UnauthorizedException.class,
+                () -> eventServices.kickUser("fake-token", 10L, 3L)
+        );
+
+        assertEquals(
+                "Only host can delete Users",
+                exception.getMessage()
+        );
+    }
+
+    @Test
+    void shouldThrowWhenTryingToKickHost(){
+        Users host = new Users();
+        host.setId(1L);
+        host.setDisplayName("Host");
+
+        UserAccess access = new UserAccess();
+        access.setUsername("Host");
+        access.setUser(host);
+
+        Events event = new Events();
+        event.setId(10L);
+        event.setHost(host);
+
+        when(tokenUtil.extractUsername("fake-token"))
+                .thenReturn("Host");
+
+        when(userAccessRepository.findByUsername("Host"))
+                .thenReturn(Optional.of(access));
+
+        when(eventRepository.findById(10L))
+                .thenReturn(Optional.of(event));
+
+        when(userRepository.findById(1L))
+                .thenReturn(Optional.of(host));
+
+        BadRequestException exception = assertThrows(
+                BadRequestException.class,
+                () -> eventServices.kickUser("fake-token", 10L, 1L)
+        );
+
+        assertEquals(
+                "Host can not be kicked",
+                exception.getMessage()
+        );
+    }
+
+    @Test
+    void shouldThrowWhenUserIsNotInEvent() {
+
+        Users host = new Users();
+        host.setId(1L);
+        host.setDisplayName("Host");
+
+        Users target = new Users();
+        target.setId(2L);
+        target.setDisplayName("Target");
+
+        UserAccess access = new UserAccess();
+        access.setUsername("host");
+        access.setUser(host);
+
+        Events event = new Events();
+        event.setId(10L);
+        event.setHost(host);
+
+        when(tokenUtil.extractUsername("fake-token"))
+                .thenReturn("host");
+
+        when(userAccessRepository.findByUsername("host"))
+                .thenReturn(Optional.of(access));
+
+        when(eventRepository.findById(10L))
+                .thenReturn(Optional.of(event));
+
+        when(userRepository.findById(2L))
+                .thenReturn(Optional.of(target));
+
+        NotFoundException exception = assertThrows(
+                NotFoundException.class,
+                () -> eventServices.kickUser("fake-token", 10L, 2L)
+        );
+
+        assertEquals(
+                "User is not in the Event",
+                exception.getMessage()
+        );
+    }
 }
