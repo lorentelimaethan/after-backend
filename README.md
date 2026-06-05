@@ -35,6 +35,7 @@ El proyecto actualmente incluye:
 - Lombok
 - Springdoc OpenAPI / Swagger UI
 - Maven
+- HSQLDB para tests en memoria
 
 ## Modelo de dominio
 
@@ -322,7 +323,35 @@ http://localhost:8081
 ./mvnw test
 ```
 
-Actualmente existe una prueba basica de arranque de contexto. La siguiente fase del proyecto es ampliar la cobertura con tests de flujo reales.
+La suite actual incluye tests unitarios de servicios e integration tests HTTP con `MockMvc`.
+
+Los tests de integracion levantan el contexto de Spring Boot y usan una base de datos HSQL en memoria configurada en:
+
+```text
+src/test/resources/application.properties
+```
+
+Esto permite probar los flujos HTTP sin depender de MySQL local ni de datos reales.
+
+Cobertura actual:
+
+- Arranque del contexto de Spring Boot.
+- Logica de servicios de usuarios, acceso y eventos.
+- Registro y login por HTTP.
+- Generacion y validacion de JWT en flujos protegidos.
+- Consulta y actualizacion de usuarios por HTTP.
+- Creacion, consulta, listado y filtrado de eventos por HTTP.
+- Join, leave, invite, kick y delete de eventos por HTTP.
+- Validaciones de DTOs.
+- Errores principales: token invalido, not found, bad request, conflict y forbidden.
+
+Resultado de la ultima ejecucion:
+
+```text
+Tests run: 52, Failures: 0, Errors: 0, Skipped: 0
+```
+
+Nota: los tests que pasan por BCrypt real pueden tardar algo mas porque el encoder usa un coste alto.
 
 ## Swagger
 
@@ -357,6 +386,20 @@ Responsabilidades:
 - `utils`: utilidades como generacion y validacion de JWT.
 - `exceptions`: excepciones de dominio/API.
 
+## Tests
+
+La carpeta de tests esta dividida por responsabilidad:
+
+```text
+src/test/java/com/afterApp/after/services/
+src/test/java/com/afterApp/after/controller/
+```
+
+- `services`: unit tests de logica de negocio con Mockito.
+- `controller`: integration tests de flujo HTTP con `@SpringBootTest`, `@AutoConfigureMockMvc`, JWT real y repositorios reales sobre HSQLDB.
+
+Los tests de controller no dependen de una API externa ni de un servidor levantado manualmente. `MockMvc` ejecuta las peticiones contra el contexto de Spring dentro del propio test.
+
 ## Decisiones tecnicas
 
 - Passwords cifrados con BCrypt.
@@ -365,6 +408,8 @@ Responsabilidades:
 - Enums guardados como texto para evitar problemas si cambia el orden.
 - Validaciones en DTOs para controlar datos de entrada.
 - El host se guarda separado de la lista de asistentes.
+- Configuracion de test aislada con HSQLDB en memoria.
+- Mockito se carga como `javaagent` en Surefire para compatibilidad con el JDK actual.
 
 ## Limitaciones actuales
 
@@ -372,14 +417,12 @@ Este proyecto es un MVP. Algunas partes estan preparadas para evolucionar:
 
 - La seguridad todavia no usa Spring Security completo con filtros JWT.
 - Los errores no estan centralizados con un `ControllerAdvice`.
-- Los tests de flujo aun estan pendientes.
 - No hay frontend conectado todavia.
 - No hay roles avanzados ni estados de evento.
 - La visibilidad de asistentes/direccion puede evolucionar segun reglas de privacidad.
 
 ## Roadmap cercano
 
-- Tests de flujo con registro, login, creacion de evento y operaciones de asistentes.
 - Refactor de seguridad hacia Spring Security.
 - Manejo global de errores.
 - Mejoras de documentacion Swagger.
@@ -390,4 +433,3 @@ Este proyecto es un MVP. Algunas partes estan preparadas para evolucionar:
 ## Autor
 
 Proyecto desarrollado como MVP de aprendizaje y portfolio backend/full stack.
-
