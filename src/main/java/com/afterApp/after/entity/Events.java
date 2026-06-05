@@ -20,7 +20,7 @@ import java.util.Set;
 public class Events {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Getter
+    @Getter @Setter
     private Long id;
 
     @Getter @Setter

@@ -39,6 +39,7 @@ public class EventServices {
      * DTOs por nivel (public/private/admin)
      * decidir como y cuando se ven los usuarios en una fiesta.
      * lógica de visibilidad avanzada
+     * Host decide si Usuario se puede unir o no (hacer public/private events o no?)
      */
 
     public EventResponseDTO toDto(Events e){
@@ -206,7 +207,7 @@ public class EventServices {
                 .orElseThrow(() -> new NotFoundException("Event not found"));
 
         if(!e.getHost().getId().equals(requester.getId())){
-            throw new UnauthorizedException("Only host can delete Users");
+            throw new UnauthorizedException("Only host can invite Users");
         }
 
         Users userToInvite = userRepository.findById(userId)
