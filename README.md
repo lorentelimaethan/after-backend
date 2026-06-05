@@ -1,115 +1,115 @@
 # After
 
-After es una API REST para gestionar eventos privados en espacios personales: casas, pisos, chalets, fincas u otros lugares donde un anfitrion puede organizar una fiesta y permitir que otros usuarios se apunten.
+After is a REST API for managing private events in personal spaces: houses, apartments, villas, estates, or other places where a host can organize a party and allow other users to join.
 
-La idea del MVP es validar el flujo principal de una plataforma tipo "Airbnb de fiestas": un usuario se registra, crea un evento como host, otros usuarios pueden unirse, salir, ser invitados o ser expulsados por el anfitrion.
+The goal of the MVP is to validate the main flow of an "Airbnb for parties" style platform: a user registers, creates an event as the host, and other users can join, leave, be invited, or be kicked by the host.
 
-## Estado del proyecto
+## Project Status
 
-MVP backend en desarrollo.
+Backend MVP in development.
 
-El proyecto actualmente incluye:
+The project currently includes:
 
-- Registro y login de usuarios.
-- Autenticacion mediante JWT.
-- Gestion de perfiles de usuario.
-- Creacion y consulta de eventos.
-- Filtros por tipo de evento y estilo musical.
-- Union y salida de usuarios en eventos.
-- Invitacion y expulsion de usuarios por parte del host.
-- Control de capacidad del evento.
-- Validaciones con DTOs.
-- Respuestas publicas mediante DTOs.
-- Documentacion OpenAPI/Swagger.
+- User registration and login.
+- JWT authentication.
+- User profile management.
+- Event creation and retrieval.
+- Filters by event type and music style.
+- Users joining and leaving events.
+- User invitation and removal by the host.
+- Event capacity control.
+- DTO-based validation.
+- Public responses through DTOs.
+- OpenAPI/Swagger documentation.
 
-## Stack tecnico
+## Tech Stack
 
 - Java 21
 - Spring Boot 4
 - Spring Web MVC
 - Spring Data JPA
 - MySQL
-- JWT con JJWT
-- BCrypt para passwords
+- JWT with JJWT
+- BCrypt for passwords
 - Jakarta Validation
 - Lombok
 - Springdoc OpenAPI / Swagger UI
 - Maven
-- HSQLDB para tests en memoria
+- HSQLDB for in-memory tests
 
-## Modelo de dominio
+## Domain Model
 
-El MVP se organiza alrededor de tres conceptos principales:
+The MVP is organized around three main concepts:
 
-- `UserAccess`: credenciales de acceso, username, password cifrado y relacion con usuario.
-- `Users`: perfil publico del usuario.
-- `Events`: evento creado por un host, con datos de fiesta, direccion, capacidad y asistentes.
+- `UserAccess`: access credentials, username, encrypted password, and relation with the user.
+- `Users`: public user profile.
+- `Events`: event created by a host, with party details, address, capacity, and attendees.
 
-Un evento tiene:
+An event has:
 
-- Nombre.
-- Descripcion.
-- Fecha y hora.
-- Capacidad.
-- Tipo de evento.
-- Estilo musical.
+- Name.
+- Description.
+- Date and time.
+- Capacity.
+- Event type.
+- Music style.
 - Host.
-- Lista de usuarios asistentes.
-- Direccion asociada.
+- List of attendee users.
+- Associated address.
 
-## Funcionalidades principales
+## Main Features
 
-### Autenticacion
+### Authentication
 
-Los usuarios pueden registrarse y hacer login.
+Users can register and log in.
 
-Al hacer login, la API devuelve un JWT que debe enviarse en las peticiones protegidas:
+After login, the API returns a JWT that must be sent in protected requests:
 
 ```http
 Authorization: Bearer <token>
 ```
 
-### Usuarios
+### Users
 
-Un usuario autenticado puede:
+An authenticated user can:
 
-- Consultar un perfil.
-- Actualizar su propio perfil.
-- Actualizar su display name.
+- Retrieve a profile.
+- Update their own profile.
+- Update their display name.
 
-La API impide que un usuario modifique el perfil de otro.
+The API prevents users from modifying another user's profile.
 
-### Eventos
+### Events
 
-Un usuario autenticado puede:
+An authenticated user can:
 
-- Listar eventos.
-- Filtrar eventos por tipo y estilo musical.
-- Consultar un evento por id.
-- Crear un evento como host.
-- Unirse a un evento.
-- Salir de un evento.
+- List events.
+- Filter events by type and music style.
+- Retrieve an event by id.
+- Create an event as host.
+- Join an event.
+- Leave an event.
 
-El host de un evento puede:
+The host of an event can:
 
-- Invitar usuarios.
-- Expulsar usuarios.
-- Eliminar el evento.
+- Invite users.
+- Kick users.
+- Delete the event.
 
-Reglas principales implementadas:
+Main implemented rules:
 
-- El host no puede unirse a su propio evento como asistente.
-- El host no puede salir de su propio evento.
-- El host no puede ser expulsado.
-- No se puede superar la capacidad del evento.
-- Un usuario no puede unirse dos veces al mismo evento.
-- Solo el host puede invitar, expulsar o eliminar el evento.
+- The host cannot join their own event as an attendee.
+- The host cannot leave their own event.
+- The host cannot be kicked.
+- Event capacity cannot be exceeded.
+- A user cannot join the same event twice.
+- Only the host can invite, kick, or delete the event.
 
 ## DTOs
 
-El proyecto evita exponer entidades directamente en las operaciones principales de la API.
+The project avoids exposing entities directly in the main API operations.
 
-DTOs actuales:
+Current DTOs:
 
 - `RegisterDTO`
 - `LoginDTO`
@@ -120,42 +120,42 @@ DTOs actuales:
 - `UserResponseDTO`
 - `EventResponseDTO`
 
-Esto permite separar el contrato publico de la API del modelo interno de persistencia.
+This separates the public API contract from the internal persistence model.
 
-## Endpoints principales
+## Main Endpoints
 
 ### Auth
 
-| Metodo | Endpoint | Descripcion |
+| Method | Endpoint | Description |
 | --- | --- | --- |
-| POST | `/token/auth/register` | Registrar usuario |
-| POST | `/token/auth/login` | Login y generacion de JWT |
+| POST | `/token/auth/register` | Register user |
+| POST | `/token/auth/login` | Login and JWT generation |
 
 ### Users
 
-| Metodo | Endpoint | Descripcion |
+| Method | Endpoint | Description |
 | --- | --- | --- |
-| GET | `/users/{id}` | Obtener usuario por id |
-| PUT | `/users/{id}` | Actualizar perfil propio |
-| PATCH | `/users/{id}/display-name` | Actualizar display name |
+| GET | `/users/{id}` | Get user by id |
+| PUT | `/users/{id}` | Update own profile |
+| PATCH | `/users/{id}/display-name` | Update display name |
 
 ### Events
 
-| Metodo | Endpoint | Descripcion |
+| Method | Endpoint | Description |
 | --- | --- | --- |
-| GET | `/events` | Listar eventos |
-| GET | `/events?type=AFTER` | Filtrar por tipo |
-| GET | `/events?style=TECHNO` | Filtrar por estilo musical |
-| GET | `/events?type=AFTER&style=TECHNO` | Filtrar por tipo y estilo |
-| GET | `/events/{id}` | Obtener evento por id |
-| POST | `/events` | Crear evento |
-| PATCH | `/events/{id}/join` | Unirse a evento |
-| PATCH | `/events/{id}/leave` | Salir de evento |
-| PATCH | `/events/{eventId}/invite/user/{userId}` | Invitar usuario |
-| DELETE | `/events/{eventId}/kick/user/{userId}` | Expulsar usuario |
-| DELETE | `/events/{id}` | Eliminar evento |
+| GET | `/events` | List events |
+| GET | `/events?type=AFTER` | Filter by type |
+| GET | `/events?style=TECHNO` | Filter by music style |
+| GET | `/events?type=AFTER&style=TECHNO` | Filter by type and style |
+| GET | `/events/{id}` | Get event by id |
+| POST | `/events` | Create event |
+| PATCH | `/events/{id}/join` | Join event |
+| PATCH | `/events/{id}/leave` | Leave event |
+| PATCH | `/events/{eventId}/invite/user/{userId}` | Invite user |
+| DELETE | `/events/{eventId}/kick/user/{userId}` | Kick user |
+| DELETE | `/events/{id}` | Delete event |
 
-## Valores permitidos
+## Allowed Values
 
 ### EventType
 
@@ -179,9 +179,9 @@ POP
 MIXED
 ```
 
-## Ejemplos de uso
+## Usage Examples
 
-### Registro
+### Register
 
 ```http
 POST /token/auth/register
@@ -209,13 +209,13 @@ Content-Type: application/json
 }
 ```
 
-Respuesta:
+Response:
 
 ```text
 eyJhbGciOiJIUzI1NiJ9...
 ```
 
-### Crear evento
+### Create Event
 
 ```http
 POST /events
@@ -242,7 +242,7 @@ Content-Type: application/json
 }
 ```
 
-Respuesta:
+Response:
 
 ```json
 {
@@ -258,30 +258,30 @@ Respuesta:
 }
 ```
 
-## Instalacion y ejecucion
+## Installation and Execution
 
-### Requisitos
+### Requirements
 
 - Java 21
-- Maven Wrapper incluido en el proyecto
-- MySQL en local
-- Base de datos `after`
+- Maven Wrapper included in the project
+- Local MySQL
+- `after` database
 
-### Crear base de datos
+### Create Database
 
 ```sql
 CREATE DATABASE after;
 ```
 
-### Configuracion
+### Configuration
 
-La configuracion principal esta en:
+The main configuration is located at:
 
 ```text
 src/main/resources/application.properties
 ```
 
-Valores actuales por defecto:
+Current default values:
 
 ```properties
 server.port=8081
@@ -291,79 +291,79 @@ spring.datasource.password=
 spring.jpa.hibernate.ddl-auto=update
 ```
 
-El secreto JWT se lee desde la variable de entorno `JWT_SECRET`.
+The JWT secret is read from the `JWT_SECRET` environment variable.
 
-Si no existe, se usa un valor de desarrollo en Base64:
+If it does not exist, a Base64 development value is used:
 
 ```properties
 jwt.secret=${JWT_SECRET:ZGV2LXNlY3JldC1kZXYtc2VjcmV0LWRldi1zZWNyZXQ=}
 ```
 
-Para un entorno real, se debe definir un secreto propio:
+For a real environment, a custom secret should be defined:
 
 ```bash
 export JWT_SECRET=<base64-secret>
 ```
 
-### Ejecutar la aplicacion
+### Run the Application
 
 ```bash
 ./mvnw spring-boot:run
 ```
 
-La API queda disponible en:
+The API will be available at:
 
 ```text
 http://localhost:8081
 ```
 
-### Ejecutar tests
+### Run Tests
 
 ```bash
 ./mvnw test
 ```
 
-La suite actual incluye tests unitarios de servicios e integration tests HTTP con `MockMvc`.
+The current suite includes service unit tests and HTTP integration tests with `MockMvc`.
 
-Los tests de integracion levantan el contexto de Spring Boot y usan una base de datos HSQL en memoria configurada en:
+The integration tests start the Spring Boot context and use an in-memory HSQL database configured in:
 
 ```text
 src/test/resources/application.properties
 ```
 
-Esto permite probar los flujos HTTP sin depender de MySQL local ni de datos reales.
+This makes it possible to test HTTP flows without depending on local MySQL or real data.
 
-Cobertura actual:
+Current coverage:
 
-- Arranque del contexto de Spring Boot.
-- Logica de servicios de usuarios, acceso y eventos.
-- Registro y login por HTTP.
-- Generacion y validacion de JWT en flujos protegidos.
-- Consulta y actualizacion de usuarios por HTTP.
-- Creacion, consulta, listado y filtrado de eventos por HTTP.
-- Join, leave, invite, kick y delete de eventos por HTTP.
-- Validaciones de DTOs.
-- Errores principales: token invalido, not found, bad request, conflict y forbidden.
+- Spring Boot context startup.
+- Service logic for users, access, and events.
+- Registration and login through HTTP.
+- JWT generation and validation in protected flows.
+- User retrieval and update through HTTP.
+- Event creation, retrieval, listing, and filtering through HTTP.
+- Event join, leave, invite, kick, and delete through HTTP.
+- DTO validations.
+- Main errors: invalid token, not found, bad request, conflict, and forbidden.
 
-Resultado de la ultima ejecucion:
+Latest test execution result:
 
 ```text
 Tests run: 52, Failures: 0, Errors: 0, Skipped: 0
 ```
 
-Nota: los tests que pasan por BCrypt real pueden tardar algo mas porque el encoder usa un coste alto.
+Note: tests that go through real BCrypt may take a little longer because the encoder uses a high cost.
 
 ## Swagger
 
-Con la aplicacion arrancada, la documentacion Swagger UI esta disponible en:
+With the application running, Swagger UI is available at:
 
 ```text
 http://localhost:8081/swagger-ui/index.html
 ```
 
-## Arquitectura actual
+## Current Architecture
 
-El proyecto sigue una estructura clasica de Spring Boot:
+The project follows a classic Spring Boot structure:
 
 ```text
 controller/
@@ -376,60 +376,60 @@ enums/
 utils/
 ```
 
-Responsabilidades:
+Responsibilities:
 
-- `controller`: expone endpoints REST y valida autorizacion basica por token.
-- `service`: contiene la logica de negocio.
-- `repositories`: acceso a base de datos mediante Spring Data JPA.
-- `entity`: modelo persistido.
-- `dto`: contratos de entrada y salida de la API.
-- `utils`: utilidades como generacion y validacion de JWT.
-- `exceptions`: excepciones de dominio/API.
+- `controller`: exposes REST endpoints and performs basic token authorization validation.
+- `service`: contains business logic.
+- `repositories`: database access through Spring Data JPA.
+- `entity`: persisted model.
+- `dto`: input and output API contracts.
+- `utils`: utilities such as JWT generation and validation.
+- `exceptions`: domain/API exceptions.
 
 ## Tests
 
-La carpeta de tests esta dividida por responsabilidad:
+The test folder is split by responsibility:
 
 ```text
 src/test/java/com/afterApp/after/services/
 src/test/java/com/afterApp/after/controller/
 ```
 
-- `services`: unit tests de logica de negocio con Mockito.
-- `controller`: integration tests de flujo HTTP con `@SpringBootTest`, `@AutoConfigureMockMvc`, JWT real y repositorios reales sobre HSQLDB.
+- `services`: business logic unit tests with Mockito.
+- `controller`: HTTP flow integration tests with `@SpringBootTest`, `@AutoConfigureMockMvc`, real JWT, and real repositories over HSQLDB.
 
-Los tests de controller no dependen de una API externa ni de un servidor levantado manualmente. `MockMvc` ejecuta las peticiones contra el contexto de Spring dentro del propio test.
+Controller tests do not depend on an external API or a manually started server. `MockMvc` executes requests against the Spring context inside the test itself.
 
-## Decisiones tecnicas
+## Technical Decisions
 
-- Passwords cifrados con BCrypt.
-- JWT con expiracion de una hora.
-- DTOs para separar API publica de entidades JPA.
-- Enums guardados como texto para evitar problemas si cambia el orden.
-- Validaciones en DTOs para controlar datos de entrada.
-- El host se guarda separado de la lista de asistentes.
-- Configuracion de test aislada con HSQLDB en memoria.
-- Mockito se carga como `javaagent` en Surefire para compatibilidad con el JDK actual.
+- Passwords encrypted with BCrypt.
+- JWT with a one-hour expiration.
+- DTOs to separate the public API from JPA entities.
+- Enums stored as text to avoid issues if their order changes.
+- DTO validations to control input data.
+- The host is stored separately from the attendee list.
+- Isolated test configuration with in-memory HSQLDB.
+- Mockito is loaded as a `javaagent` in Surefire for compatibility with the current JDK.
 
-## Limitaciones actuales
+## Current Limitations
 
-Este proyecto es un MVP. Algunas partes estan preparadas para evolucionar:
+This project is an MVP. Some parts are prepared to evolve:
 
-- La seguridad todavia no usa Spring Security completo con filtros JWT.
-- Los errores no estan centralizados con un `ControllerAdvice`.
-- No hay frontend conectado todavia.
-- No hay roles avanzados ni estados de evento.
-- La visibilidad de asistentes/direccion puede evolucionar segun reglas de privacidad.
+- Security does not yet use full Spring Security with JWT filters.
+- Errors are not yet centralized with a `ControllerAdvice`.
+- There is no connected frontend yet.
+- There are no advanced roles or event states yet.
+- Attendee/address visibility can evolve depending on privacy rules.
 
-## Roadmap cercano
+## Near-Term Roadmap
 
-- Refactor de seguridad hacia Spring Security.
-- Manejo global de errores.
-- Mejoras de documentacion Swagger.
-- Posible frontend web o mobile para consumir la API.
-- Estados de evento: abierto, lleno, cancelado, finalizado.
-- Politicas de privacidad para direccion y asistentes.
+- Refactor security toward Spring Security.
+- Global error handling.
+- Swagger documentation improvements.
+- Possible web or mobile frontend to consume the API.
+- Event states: open, full, cancelled, finished.
+- Privacy policies for address and attendees.
 
-## Autor
+## Author
 
-Proyecto desarrollado como MVP de aprendizaje y portfolio backend/full stack.
+Project developed as a learning and backend/full stack portfolio MVP.
