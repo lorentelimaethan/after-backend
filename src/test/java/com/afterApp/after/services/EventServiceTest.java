@@ -28,7 +28,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class EventServiceTest {
@@ -48,7 +48,7 @@ public class EventServiceTest {
     private EventServices eventServices;
 
     @Test
-    void shouldCreateEventSuccessfully() {
+    void shouldCreateEventSuccessfully(){
 
         AddressDTO addressDto = new AddressDTO();
         addressDto.setStreet("Diagonal");
@@ -96,6 +96,8 @@ public class EventServiceTest {
         assertEquals("After Party", result.getName());
         assertEquals(100, result.getCapacity());
         assertEquals("Host", result.getHostDisplayName());
+
+        verify(eventRepository).save(any(Events.class));
     }
 
     @Test
@@ -156,6 +158,8 @@ public class EventServiceTest {
 
         assertEquals(1, result.getUsersCount());
         assertTrue(event.getUsers().contains(user));
+
+        verify(eventRepository).save(any(Events.class));
     }
 
     @Test
@@ -197,6 +201,9 @@ public class EventServiceTest {
                 "User already joined",
                 exception.getMessage()
         );
+
+        verify(eventRepository, never())
+                .save(any(Events.class));
     }
 
     @Test
@@ -232,6 +239,9 @@ public class EventServiceTest {
                 "Host cannot join own event",
                 exception.getMessage()
         );
+
+        verify(eventRepository, never())
+                .save(any(Events.class));
     }
 
     @Test
@@ -276,6 +286,9 @@ public class EventServiceTest {
                 "Event capacity is full",
                 exception.getMessage()
         );
+
+        verify(eventRepository, never())
+                .save(any(Events.class));
     }
 
     @Test
@@ -317,6 +330,8 @@ public class EventServiceTest {
         assertFalse(event.getUsers().contains(user));
 
         assertEquals(0, result.getUsersCount());
+
+        verify(eventRepository).save(any(Events.class));
     }
 
     @Test
@@ -352,6 +367,9 @@ public class EventServiceTest {
                 "Host cannot leave own event",
                 exception.getMessage()
         );
+
+        verify(eventRepository, never())
+                .save(any(Events.class));
 
     }
 
@@ -392,6 +410,9 @@ public class EventServiceTest {
                 "User not in event",
                 exception.getMessage()
         );
+
+        verify(eventRepository, never())
+                .save(any(Events.class));
 
     }
 
@@ -435,6 +456,8 @@ public class EventServiceTest {
         assertEquals(1, result.getUsersCount());
 
         assertTrue(event.getUsers().contains(target));
+
+        verify(eventRepository).save(any(Events.class));
     }
 
     @Test
@@ -478,6 +501,9 @@ public class EventServiceTest {
                 "Only host can invite Users",
                 exception.getMessage()
         );
+
+        verify(eventRepository, never())
+                .save(any(Events.class));
     }
 
     @Test
@@ -522,6 +548,8 @@ public class EventServiceTest {
                 exception.getMessage()
         );
 
+        verify(eventRepository, never())
+                .save(any(Events.class));
 
     }
 
@@ -565,6 +593,8 @@ public class EventServiceTest {
         assertEquals(0, result.getUsersCount());
 
         assertFalse(event.getUsers().contains(target));
+
+        verify(eventRepository).save(any(Events.class));
     }
 
     @Test
@@ -607,6 +637,9 @@ public class EventServiceTest {
                 "Only host can delete Users",
                 exception.getMessage()
         );
+
+        verify(eventRepository, never())
+                .save(any(Events.class));
     }
 
     @Test
@@ -644,10 +677,13 @@ public class EventServiceTest {
                 "Host can not be kicked",
                 exception.getMessage()
         );
+
+        verify(eventRepository, never())
+                .save(any(Events.class));
     }
 
     @Test
-    void shouldThrowWhenUserIsNotInEvent() {
+    void shouldThrowWhenUserIsNotInEvent(){
 
         Users host = new Users();
         host.setId(1L);
