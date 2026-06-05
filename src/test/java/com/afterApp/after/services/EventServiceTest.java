@@ -6,6 +6,7 @@ import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.entity.Users;
 import com.afterApp.after.exceptions.BadRequestException;
 import com.afterApp.after.exceptions.NotFoundException;
+import com.afterApp.after.exceptions.UnauthorizedException;
 import com.afterApp.after.repositories.EventRepository;
 import com.afterApp.after.repositories.UserAccessRepository;
 import com.afterApp.after.repositories.UserRepository;
@@ -335,6 +336,136 @@ public class EventServiceTest {
                 "User not in event",
                 exception.getMessage()
         );
+
+    }
+
+    @Test
+    void ShouldInviteUserSuccessfully(){
+        Users host = new Users();
+        host.setId(1L);
+        host.setDisplayName("Host");
+
+        Users target = new Users();
+        target.setId(2L);
+        target.setDisplayName("Invited");
+
+        UserAccess hostAccess = new UserAccess();
+        hostAccess.setUsername("Host");
+        hostAccess.setUser(host);
+
+        Events event = new Events();
+        event.setId(10L);
+        event.setHost(host);
+        event.setCapacity(10);
+
+        when(tokenUtil.extractUsername("fake-token"))
+                .thenReturn("Host");
+
+        when(userAccessRepository.findByUsername("Host"))
+                .thenReturn(Optional.of(hostAccess));
+
+        when(eventRepository.findById(10L))
+                .thenReturn(Optional.of(event));
+
+        when(userRepository.findById(2L))
+                .thenReturn(Optional.of(target));
+
+        when(eventRepository.save(any(Events.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        EventResponseDTO result =
+                eventServices.inviteUser("fake-token", 10L, 2L);
+
+        assertEquals(1, result.getUsersCount());
+
+        assertTrue(event.getUsers().contains(target));
+    }
+
+    @Test
+    void shouldThrowWhenUserIsNotHostTryingToInvite(){
+        Users host = new Users();
+        host.setId(1L);
+        host.setDisplayName("Host");
+
+        Users normalUser = new Users();
+        normalUser.setId(2L);
+        normalUser.setDisplayName("Normal");
+
+        Users target;
+        target = new Users();
+        target.setId(3L);
+
+        UserAccess access = new UserAccess();
+        access.setUsername("Normal");
+        access.setUser(normalUser);
+
+        Events event = new Events();
+        event.setId(10L);
+        event.setHost(host);
+        event.setCapacity(10);
+
+        when(tokenUtil.extractUsername("fake-token"))
+                .thenReturn("Normal");
+
+        when(userAccessRepository.findByUsername("Normal"))
+                .thenReturn(Optional.of(access));
+
+        when(eventRepository.findById(10L))
+                .thenReturn(Optional.of(event));
+
+        UnauthorizedException exception = assertThrows(
+                UnauthorizedException.class,
+                () -> eventServices.inviteUser("fake-token", 10L, 3L)
+        );
+
+        assertEquals(
+                "Only host can invite Users",
+                exception.getMessage()
+        );
+    }
+
+    @Test
+    void shouldThrowWhenUserAlreadyInEvent(){
+        Users host = new Users();
+        host.setId(1L);
+        host.setDisplayName("Host");
+
+        Users target = new Users();
+        target.setId(2L);
+        target.setDisplayName("Target");
+
+        UserAccess hostAccess = new UserAccess();
+        hostAccess.setUsername("Host");
+        hostAccess.setUser(host);
+
+        Events event = new Events();
+        event.setId(10L);
+        event.setHost(host);
+
+        event.getUsers().add(target);
+
+        when(tokenUtil.extractUsername("fake-token"))
+                .thenReturn("Host");
+
+        when(userAccessRepository.findByUsername("Host"))
+                .thenReturn(Optional.of(hostAccess));
+
+        when(eventRepository.findById(10L))
+                .thenReturn(Optional.of(event));
+
+        when(userRepository.findById(2L))
+                .thenReturn(Optional.of(target));
+
+        BadRequestException exception = assertThrows(
+                BadRequestException.class,
+                () -> eventServices.inviteUser("fake-token", 10L, 2L)
+        );
+
+        assertEquals(
+                "User is already in the Event",
+                exception.getMessage()
+        );
+
 
     }
 

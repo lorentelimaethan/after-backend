@@ -207,7 +207,7 @@ public class EventServices {
                 .orElseThrow(() -> new NotFoundException("Event not found"));
 
         if(!e.getHost().getId().equals(requester.getId())){
-            throw new UnauthorizedException("Only host can delete Users");
+            throw new UnauthorizedException("Only host can invite Users");
         }
 
         Users userToInvite = userRepository.findById(userId)
