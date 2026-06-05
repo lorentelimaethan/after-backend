@@ -1,9 +1,13 @@
 package com.afterApp.after.services;
 
+import com.afterApp.after.dto.AddressDTO;
+import com.afterApp.after.dto.CreateEventDTO;
 import com.afterApp.after.dto.EventResponseDTO;
 import com.afterApp.after.entity.Events;
 import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.entity.Users;
+import com.afterApp.after.enums.EventType;
+import com.afterApp.after.enums.MusicStyle;
 import com.afterApp.after.exceptions.BadRequestException;
 import com.afterApp.after.exceptions.NotFoundException;
 import com.afterApp.after.exceptions.UnauthorizedException;
@@ -18,6 +22,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Optional;
 
@@ -41,6 +46,57 @@ public class EventServiceTest {
 
     @InjectMocks
     private EventServices eventServices;
+
+    @Test
+    void shouldCreateEventSuccessfully() {
+
+        AddressDTO addressDto = new AddressDTO();
+        addressDto.setStreet("Diagonal");
+        addressDto.setStreetNum("123");
+        addressDto.setCity("Barcelona");
+        addressDto.setProvince("Catalonia");
+        addressDto.setPostalCode("08001");
+        addressDto.setAdditionalInfo("Near beach");
+
+        CreateEventDTO dto = new CreateEventDTO();
+        dto.setName("After Party");
+        dto.setDescription("Techno night");
+        dto.setCapacity(100);
+        dto.setDateTime(LocalDateTime.now().plusDays(10));
+        dto.setEventType(EventType.CHILL);
+        dto.setMusicStyle(MusicStyle.HOUSE);
+        dto.setAddress(addressDto);
+
+        Users host = new Users();
+        host.setId(1L);
+        host.setDisplayName("Host");
+
+        UserAccess access = new UserAccess();
+        access.setUsername("Host");
+        access.setUser(host);
+
+        when(tokenUtil.extractUsername("fake-token"))
+                .thenReturn("Host");
+
+        when(userAccessRepository.findByUsername("Host"))
+                .thenReturn(Optional.of(access));
+
+        when(eventRepository.save(any(Events.class)))
+                .thenAnswer(invocation -> {
+
+                    Events saved = invocation.getArgument(0);
+                    saved.setId(10L);
+
+                    return saved;
+                });
+
+        EventResponseDTO result =
+                eventServices.createEvent(dto, "fake-token");
+
+        assertEquals("After Party", result.getName());
+        assertEquals(100, result.getCapacity());
+        assertEquals("Host", result.getHostDisplayName());
+    }
 
     @Test
     void shouldReturnEventWhenExists(){
