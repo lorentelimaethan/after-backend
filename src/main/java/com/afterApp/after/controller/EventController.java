@@ -1073,9 +1073,4 @@ public class EventController {
 
 
 
-
-    //Gestionar exceptions y docs
-
-
-
 }
