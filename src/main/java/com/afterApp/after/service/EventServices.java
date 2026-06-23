@@ -31,17 +31,6 @@ public class EventServices {
     @Autowired
     private UserRepository userRepository;
 
-    /**
-     * Cuando escales:
-     *
-     * usersPreview -- ver 2 o 3 ususarios en la fiesta en getEventById
-     * endpoints separados por permisos, host por ejemplo puede ver que usuarios se unen: GET /events/{id}/admin
-     * DTOs por nivel (public/private/admin)
-     * decidir como y cuando se ven los usuarios en una fiesta.
-     * lógica de visibilidad avanzada
-     * Host decide si Usuario se puede unir o no (hacer public/private events o no?)
-     */
-
     public EventResponseDTO toDto(Events e){
         EventResponseDTO dto = new EventResponseDTO();
 
@@ -247,3 +236,4 @@ public class EventServices {
     }
 }
 
+//test
