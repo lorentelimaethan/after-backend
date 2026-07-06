@@ -11,6 +11,7 @@ import com.afterApp.after.enums.MusicStyle;
 import com.afterApp.after.exceptions.BadRequestException;
 import com.afterApp.after.exceptions.NotFoundException;
 import com.afterApp.after.exceptions.UnauthorizedException;
+import com.afterApp.after.mappers.EventMapper;
 import com.afterApp.after.repositories.EventRepository;
 import com.afterApp.after.repositories.UserAccessRepository;
 import com.afterApp.after.repositories.UserRepository;
@@ -31,50 +32,35 @@ public class EventServices {
     @Autowired
     private UserRepository userRepository;
 
-    public EventResponseDTO toDto(Events e){
-        EventResponseDTO dto = new EventResponseDTO();
-
-        dto.setId(e.getId());
-        dto.setName(e.getName());
-        dto.setDescription(e.getDescription());
-        dto.setDateTime(e.getDateTime());
-        dto.setCapacity(e.getCapacity());
-        dto.setEventType(e.getEventType());
-        dto.setMusicStyle(e.getMusicStyle());
-        dto.setHostDisplayName(e.getHost().getDisplayName());
-        dto.setUsersCount(e.getUsers().size());
-
-        return dto;
-    }
 
     public List<EventResponseDTO> getAllEvents() {
         List<Events> events = eventRepository.findAll();
 
-        return events.stream().map(this::toDto).toList();
+        return events.stream().map(EventMapper::toDto).toList();
     }
 
     public EventResponseDTO getEvent(Long id) throws RuntimeException{
         Events e = eventRepository.findById(id).orElseThrow(() -> new NotFoundException("Event not found"));
 
-        return toDto(e);
+        return EventMapper.toDto(e);
     }
 
     public List<EventResponseDTO> getEventsByType(EventType type){
         List<Events> events = eventRepository.findByEventType(type);
 
-        return events.stream().map(this::toDto).toList();
+        return events.stream().map(EventMapper::toDto).toList();
     }
 
     public List<EventResponseDTO> getEventsByStyle(MusicStyle style){
         List<Events> events = eventRepository.findByMusicStyle(style);
 
-        return  events.stream().map(this::toDto).toList();
+        return  events.stream().map(EventMapper::toDto).toList();
     }
 
     public List<EventResponseDTO> getEventsByTypeAndStyle(EventType type, MusicStyle style){
         List<Events> events = eventRepository.findByEventTypeAndMusicStyle(type, style);
 
-        return events.stream().map(this::toDto).toList();
+        return events.stream().map(EventMapper::toDto).toList();
     }
 
     private Users extractUser(String authorization){
@@ -90,28 +76,11 @@ public class EventServices {
     public EventResponseDTO createEvent(CreateEventDTO dto, String authorization){
         Users host = extractUser(authorization);
 
-        Events e = new Events();
-
-        e.setEventType(dto.getEventType());
-        e.setCapacity(dto.getCapacity());
-        e.setName(dto.getName());
-        e.setDescription(dto.getDescription());
-        e.setDateTime(dto.getDateTime());
-        e.setMusicStyle(dto.getMusicStyle());
-
-        Address address = new Address();
-        address.setStreetNum(dto.getAddress().getStreetNum());
-        address.setStreet(dto.getAddress().getStreet());
-        address.setCity(dto.getAddress().getCity());
-        address.setProvince(dto.getAddress().getProvince());
-        address.setPostalCode(dto.getAddress().getPostalCode());
-        address.setAditionalInfo(dto.getAddress().getAdditionalInfo());
-
-        e.setAddress(address);
+        Events e = EventMapper.fromDto(dto);
 
         e.setHost(host);
 
-       return toDto(eventRepository.save(e));
+       return EventMapper.toDto(eventRepository.save(e));
     }
 
     public EventResponseDTO joinEvent(String authorization, Long id){
@@ -136,7 +105,7 @@ public class EventServices {
         }
 
         e.getUsers().add(requester);
-        return toDto(eventRepository.save(e));
+        return EventMapper.toDto(eventRepository.save(e));
     }
 
     public EventResponseDTO leaveEvent(String authorization, Long id){
@@ -157,7 +126,7 @@ public class EventServices {
         }
 
         e.getUsers().removeIf(u -> u.getId().equals(requester.getId()));
-        return toDto(eventRepository.save(e));
+        return EventMapper.toDto(eventRepository.save(e));
     }
 
     public EventResponseDTO kickUser(String authorization, Long eventId, Long userId) {
@@ -186,7 +155,7 @@ public class EventServices {
 
         e.getUsers().removeIf(u -> u.getId().equals(userToKick.getId()));
 
-        return toDto(eventRepository.save(e));
+        return EventMapper.toDto(eventRepository.save(e));
     }
 
     public EventResponseDTO inviteUser(String authorization, Long eventId, Long userId){
@@ -219,7 +188,7 @@ public class EventServices {
 
         e.getUsers().add(userToInvite);
 
-        return toDto(eventRepository.save(e));
+        return EventMapper.toDto(eventRepository.save(e));
     }
 
     public void deleteEvent(Long id, String authorization) throws RuntimeException{
@@ -236,4 +205,3 @@ public class EventServices {
     }
 }
 
-//test
