@@ -4,8 +4,7 @@ import com.afterApp.after.dto.LoginDTO;
 import com.afterApp.after.dto.RegisterDTO;
 import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.exceptions.BadRequestException;
-import com.afterApp.after.repositories.UserAccessRepository;
-import com.afterApp.after.repositories.UserRepository;
+import com.afterApp.after.loader.UserAccessLoader;
 import com.afterApp.after.service.UserAccessServices;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,10 +23,7 @@ import static org.mockito.Mockito.*;
 class UserAccessServicesTest {
 
     @Mock
-    private UserAccessRepository userAccessRepository;
-
-    @Mock
-    private UserRepository userRepository;
+    private UserAccessLoader userAccessLoader;
 
     @InjectMocks
     private UserAccessServices userAccessServices;
@@ -39,10 +35,7 @@ class UserAccessServicesTest {
         dto.setUsername("Admin");
         dto.setPassword("1234");
 
-        when(userAccessRepository.existsByUsername("Admin"))
-                .thenReturn(false);
-
-        when(userAccessRepository.save(any(UserAccess.class)))
+        when(userAccessLoader.saveUserAccess(any(UserAccess.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         UserAccess result = userAccessServices.registerUser(dto);
@@ -50,7 +43,7 @@ class UserAccessServicesTest {
         assertEquals("Admin", result.getUsername());
         assertNotNull(result.getPassword());
 
-        verify(userAccessRepository).save(any(UserAccess.class));
+        verify(userAccessLoader).saveUserAccess(any(UserAccess.class));
     }
 
     @Test
@@ -60,8 +53,9 @@ class UserAccessServicesTest {
         dto.setUsername("Admin");
         dto.setPassword("1234");
 
-        when(userAccessRepository.existsByUsername("Admin"))
-                .thenReturn(true);
+        doThrow(new BadRequestException("Username already exists"))
+                .when(userAccessLoader)
+                .existByUsername(dto);
 
         BadRequestException ex = assertThrows(
                 BadRequestException.class,
@@ -70,7 +64,7 @@ class UserAccessServicesTest {
 
         assertEquals("Username already exists", ex.getMessage());
 
-        verify(userAccessRepository, never()).save(any());
+        verify(userAccessLoader, never()).saveUserAccess(any());
     }
 
     @Test
@@ -85,7 +79,7 @@ class UserAccessServicesTest {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(16);
         access.setPassword(encoder.encode("1234"));
 
-        when(userAccessRepository.findByUsername("Admin"))
+        when(userAccessLoader.findByUsername(dto))
                 .thenReturn(Optional.of(access));
 
         boolean result = userAccessServices.validateUser(dto);
@@ -106,7 +100,7 @@ class UserAccessServicesTest {
         access.setUsername("Admin");
         access.setPassword(encoder.encode("1234"));
 
-        when(userAccessRepository.findByUsername("Admin"))
+        when(userAccessLoader.findByUsername(dto))
                 .thenReturn(Optional.of(access));
 
         boolean result = userAccessServices.validateUser(dto);

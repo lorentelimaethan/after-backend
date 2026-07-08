@@ -7,8 +7,7 @@ import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.entity.Users;
 import com.afterApp.after.exceptions.AlreadyExistsException;
 import com.afterApp.after.exceptions.BadRequestException;
-import com.afterApp.after.repositories.UserAccessRepository;
-import com.afterApp.after.repositories.UserRepository;
+import com.afterApp.after.loader.UserLoader;
 import com.afterApp.after.service.UserServices;
 import com.afterApp.after.utils.TokenUtil;
 import org.junit.jupiter.api.Test;
@@ -16,8 +15,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -27,13 +24,10 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 public class UserServiceTest {
     @Mock
-    private UserRepository userRepository;
-
-    @Mock
     private TokenUtil tokenUtil;
 
     @Mock
-    private UserAccessRepository userAccessRepository;
+    private UserLoader userLoader;
 
     @InjectMocks
     private UserServices userServices;
@@ -56,13 +50,13 @@ public class UserServiceTest {
         when(tokenUtil.extractUsername("fake-token"))
                 .thenReturn("Admin");
 
-        when(userAccessRepository.findByUsername("Admin"))
-                .thenReturn(Optional.of(access));
+        when(userLoader.findByUsername("Admin"))
+                .thenReturn(access);
 
-        when(userRepository.findById(1L))
-                .thenReturn(Optional.of(user));
+        when(userLoader.findById(1L))
+                .thenReturn(user);
 
-        when(userRepository.save(any(Users.class)))
+        when(userLoader.saveUser(any(Users.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         UserResponseDTO result =
@@ -71,7 +65,7 @@ public class UserServiceTest {
         assertEquals("NewName", result.getName());
         assertEquals("NewLast", result.getLastname());
 
-        verify(userRepository).save(any(Users.class));
+        verify(userLoader).saveUser(any(Users.class));
     }
 
     @Test
@@ -94,8 +88,8 @@ public class UserServiceTest {
         when(tokenUtil.extractUsername("fake-token"))
                 .thenReturn("User");
 
-        when(userAccessRepository.findByUsername("User"))
-                .thenReturn(Optional.of(access));
+        when(userLoader.findByUsername("User"))
+                .thenReturn(access);
 
         BadRequestException ex = assertThrows(
                 BadRequestException.class,
@@ -107,7 +101,7 @@ public class UserServiceTest {
                 ex.getMessage()
         );
 
-        verify(userRepository, never()).save(any());
+        verify(userLoader, never()).saveUser(any());
     }
 
     @Test
@@ -126,16 +120,13 @@ public class UserServiceTest {
         when(tokenUtil.extractUsername("fake-token"))
                 .thenReturn("User");
 
-        when(userAccessRepository.findByUsername("User"))
-                .thenReturn(Optional.of(access));
+        when(userLoader.findByUsername("User"))
+                .thenReturn(access);
 
-        when(userRepository.findById(1L))
-                .thenReturn(Optional.of(user));
+        when(userLoader.findById(1L))
+                .thenReturn(user);
 
-        when(userRepository.existsByDisplayName("NewName"))
-                .thenReturn(false);
-
-        when(userRepository.save(any(Users.class)))
+        when(userLoader.saveUser(any(Users.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         UserResponseDTO result =
@@ -143,7 +134,7 @@ public class UserServiceTest {
 
         assertEquals("NewName", result.getDisplayName());
 
-        verify(userRepository).save(any(Users.class));
+        verify(userLoader).saveUser(any(Users.class));
     }
 
     @Test
@@ -162,14 +153,15 @@ public class UserServiceTest {
         when(tokenUtil.extractUsername("fake-token"))
                 .thenReturn("User");
 
-        when(userAccessRepository.findByUsername("User"))
-                .thenReturn(Optional.of(access));
+        when(userLoader.findByUsername("User"))
+                .thenReturn(access);
 
-        when(userRepository.findById(1L))
-                .thenReturn(Optional.of(user));
+        when(userLoader.findById(1L))
+                .thenReturn(user);
 
-        when(userRepository.existsByDisplayName("takenName"))
-                .thenReturn(true);
+        doThrow(new AlreadyExistsException("Already Existing username"))
+                .when(userLoader)
+                .existByDisplayName(dto);
 
         AlreadyExistsException exception = assertThrows(
                 AlreadyExistsException.class,
@@ -181,6 +173,6 @@ public class UserServiceTest {
                 exception.getMessage()
         );
 
-        verify(userRepository, never()).save(any());
+        verify(userLoader, never()).saveUser(any());
     }
 }
