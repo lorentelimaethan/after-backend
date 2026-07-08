@@ -32,10 +32,10 @@ public class UserAccessServices {
         UserAccess u = new UserAccess();
 
         u.setUsername(dto.getUsername());
-        u.setPassword(encoder.encode((dto.getPassword())));
+        u.setPassword(encoder.encode((dto.getPassword()))); //pasar a mapper
 
         Users user = new Users();
-        user.setDisplayName(dto.getUsername());
+        user.setDisplayName(dto.getUsername()); // pasar a mapper
 
         u.setUser(user);
 

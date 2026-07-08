@@ -49,7 +49,7 @@ public class UserServices {
         dto.setPhoneNumber(u.getPhoneNumber());
         dto.setDisplayName(u.getDisplayName());
 
-        return dto;
+        return dto; //mapper
     }
 
     public UserResponseDTO getUserById(Long id) throws RuntimeException{
@@ -76,7 +76,7 @@ public class UserServices {
         if(uDtoDetails.getPhoneNumber() != null) {u.setPhoneNumber(uDtoDetails.getPhoneNumber());}
         if(uDtoDetails.getEmail() != null) {u.setEmail(uDtoDetails.getEmail());}
 
-        return toDto(userRepository.save(u));
+        return toDto(userRepository.save(u)); // mapper + unitTest
     }
 
     public UserResponseDTO updateDisplayName(Long id, String authorization, UpdateDisplayNameDTO uDetails){

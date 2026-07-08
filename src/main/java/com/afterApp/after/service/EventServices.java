@@ -11,6 +11,7 @@ import com.afterApp.after.enums.MusicStyle;
 import com.afterApp.after.exceptions.BadRequestException;
 import com.afterApp.after.exceptions.NotFoundException;
 import com.afterApp.after.exceptions.UnauthorizedException;
+import com.afterApp.after.loader.EventLoader;
 import com.afterApp.after.mappers.EventMapper;
 import com.afterApp.after.repositories.EventRepository;
 import com.afterApp.after.repositories.UserAccessRepository;
@@ -24,41 +25,41 @@ import java.util.List;
 @Service
 public class EventServices {
     @Autowired
-    private EventRepository eventRepository;
-    @Autowired
     private TokenUtil tokenUtil;
     @Autowired
     private UserAccessRepository userAccessRepository;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private EventLoader eventLoader;
 
 
     public List<EventResponseDTO> getAllEvents() {
-        List<Events> events = eventRepository.findAll();
+        List<Events> events = eventLoader.getAllEvents();
 
         return events.stream().map(EventMapper::toDto).toList();
     }
 
     public EventResponseDTO getEvent(Long id) throws RuntimeException{
-        Events e = eventRepository.findById(id).orElseThrow(() -> new NotFoundException("Event not found"));
+        Events e = eventLoader.getEventById(id);
 
         return EventMapper.toDto(e);
     }
 
     public List<EventResponseDTO> getEventsByType(EventType type){
-        List<Events> events = eventRepository.findByEventType(type);
+        List<Events> events = eventLoader.getEventsByType(type);
 
         return events.stream().map(EventMapper::toDto).toList();
     }
 
     public List<EventResponseDTO> getEventsByStyle(MusicStyle style){
-        List<Events> events = eventRepository.findByMusicStyle(style);
+        List<Events> events = eventLoader.getEventsByMusicStyle(style);
 
         return  events.stream().map(EventMapper::toDto).toList();
     }
 
     public List<EventResponseDTO> getEventsByTypeAndStyle(EventType type, MusicStyle style){
-        List<Events> events = eventRepository.findByEventTypeAndMusicStyle(type, style);
+        List<Events> events = eventLoader.getEventsByTypeAndStyle(type, style);
 
         return events.stream().map(EventMapper::toDto).toList();
     }
@@ -80,14 +81,13 @@ public class EventServices {
 
         e.setHost(host);
 
-       return EventMapper.toDto(eventRepository.save(e));
+       return EventMapper.toDto(eventLoader.saveEvent(e));
     }
 
     public EventResponseDTO joinEvent(String authorization, Long id){
         Users requester = extractUser(authorization);
 
-        Events e = eventRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Event not found"));
+        Events e = eventLoader.getEventById(id);
 
         if (e.getHost().getId().equals(requester.getId())) {
             throw new BadRequestException("Host cannot join own event");
@@ -105,14 +105,14 @@ public class EventServices {
         }
 
         e.getUsers().add(requester);
-        return EventMapper.toDto(eventRepository.save(e));
+        return EventMapper.toDto(eventLoader.saveEvent(e));
     }
 
     public EventResponseDTO leaveEvent(String authorization, Long id){
         Users requester = extractUser(authorization);
 
-        Events e = eventRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Event not found"));
+        Events e = eventLoader.getEventById(id);
+
 
         if (e.getHost().getId().equals(requester.getId())) {
             throw new BadRequestException("Host cannot leave own event");
@@ -126,14 +126,13 @@ public class EventServices {
         }
 
         e.getUsers().removeIf(u -> u.getId().equals(requester.getId()));
-        return EventMapper.toDto(eventRepository.save(e));
+        return EventMapper.toDto(eventLoader.saveEvent(e));
     }
 
     public EventResponseDTO kickUser(String authorization, Long eventId, Long userId) {
         Users requester = extractUser(authorization);
 
-        Events e = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException("Event not found"));
+        Events e = eventLoader.getEventById(eventId);
 
         if(!e.getHost().getId().equals(requester.getId())){
             throw new UnauthorizedException("Only host can delete Users");
@@ -155,14 +154,13 @@ public class EventServices {
 
         e.getUsers().removeIf(u -> u.getId().equals(userToKick.getId()));
 
-        return EventMapper.toDto(eventRepository.save(e));
+        return EventMapper.toDto(eventLoader.saveEvent(e));
     }
 
     public EventResponseDTO inviteUser(String authorization, Long eventId, Long userId){
         Users requester = extractUser(authorization);
 
-        Events e = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException("Event not found"));
+        Events e = eventLoader.getEventById(eventId);
 
         if(!e.getHost().getId().equals(requester.getId())){
             throw new UnauthorizedException("Only host can invite Users");
@@ -188,20 +186,19 @@ public class EventServices {
 
         e.getUsers().add(userToInvite);
 
-        return EventMapper.toDto(eventRepository.save(e));
+        return EventMapper.toDto(eventLoader.saveEvent(e));
     }
 
     public void deleteEvent(Long id, String authorization) throws RuntimeException{
         Users user = extractUser(authorization);
 
-        Events e = eventRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Event not found"));
+        Events e = eventLoader.getEventById(id);
 
         if(!e.getHost().getId().equals(user.getId())){
             throw new UnauthorizedException("Only host can add Users");
         }
 
-        eventRepository.delete(e);
+        eventLoader.deleteEvent(e);
     }
 }
 
