@@ -17,6 +17,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+import static com.afterApp.after.mappers.UserMapper.toDto;
+import static com.afterApp.after.mappers.UserMapper.updateUserData;
+
 @Service
 public class UserServices {
     @Autowired
@@ -39,19 +42,6 @@ public class UserServices {
         return userAccess.getUser();
     }
 
-    public UserResponseDTO toDto(Users u){
-        UserResponseDTO dto = new UserResponseDTO();
-
-        dto.setId(u.getId());
-        dto.setName(u.getName());
-        dto.setLastname(u.getLastname());
-        dto.setEmail(u.getEmail());
-        dto.setPhoneNumber(u.getPhoneNumber());
-        dto.setDisplayName(u.getDisplayName());
-
-        return dto; //mapper
-    }
-
     public UserResponseDTO getUserById(Long id) throws RuntimeException{
         Users u = userRepository.findById(id).orElseThrow(() -> new NotFoundException("User not Found"));
 
@@ -71,12 +61,9 @@ public class UserServices {
 
         Users u = getUserEntityById(id);
 
-        if(uDtoDetails.getName() != null) {u.setName(uDtoDetails.getName());}
-        if(uDtoDetails.getLastname() != null) {u.setLastname(uDtoDetails.getLastname());}
-        if(uDtoDetails.getPhoneNumber() != null) {u.setPhoneNumber(uDtoDetails.getPhoneNumber());}
-        if(uDtoDetails.getEmail() != null) {u.setEmail(uDtoDetails.getEmail());}
+        updateUserData(u, uDtoDetails);
 
-        return toDto(userRepository.save(u)); // mapper + unitTest
+        return toDto(userRepository.save(u)); //unitTest
     }
 
     public UserResponseDTO updateDisplayName(Long id, String authorization, UpdateDisplayNameDTO uDetails){

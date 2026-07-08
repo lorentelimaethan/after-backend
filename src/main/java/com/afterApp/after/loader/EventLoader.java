@@ -4,12 +4,13 @@ import com.afterApp.after.entity.Events;
 import com.afterApp.after.enums.EventType;
 import com.afterApp.after.enums.MusicStyle;
 import com.afterApp.after.exceptions.NotFoundException;
-import com.afterApp.after.mappers.EventMapper;
 import com.afterApp.after.repositories.EventRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+@Component
 public class EventLoader {
     @Autowired
     private EventRepository eventRepository;
