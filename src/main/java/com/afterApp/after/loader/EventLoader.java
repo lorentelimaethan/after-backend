@@ -15,7 +15,6 @@ public class EventLoader {
     @Autowired
     private EventRepository eventRepository;
 
-
     public List<Events> getAllEvents(){
         return eventRepository.findAll();
     }

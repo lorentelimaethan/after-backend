@@ -9,6 +9,7 @@ import com.afterApp.after.exceptions.AlreadyExistsException;
 import com.afterApp.after.exceptions.BadRequestException;
 import com.afterApp.after.exceptions.FormatRequestException;
 import com.afterApp.after.exceptions.NotFoundException;
+import com.afterApp.after.loader.UserLoader;
 import com.afterApp.after.repositories.UserAccessRepository;
 import com.afterApp.after.repositories.UserRepository;
 import com.afterApp.after.utils.TokenUtil;
@@ -24,20 +25,19 @@ import static com.afterApp.after.mappers.UserMapper.updateUserData;
 public class UserServices {
     @Autowired
     UserRepository userRepository;
-
     @Autowired
     private TokenUtil tokenUtil;
-
     @Autowired
     private UserAccessRepository userAccessRepository;
+    @Autowired
+    UserLoader userLoader;
 
 
     private Users extractUser(String authorization){
         String jwt = authorization.replace("Bearer ", "");
         String username = tokenUtil.extractUsername(jwt);
 
-        UserAccess userAccess = userAccessRepository.findByUsername(username)
-                .orElseThrow(() -> new NotFoundException("User not Found"));
+        UserAccess userAccess = userLoader.findByUsername(username);
 
         return userAccess.getUser();
     }
@@ -49,7 +49,7 @@ public class UserServices {
     }
 
     public Users getUserEntityById(Long id) throws RuntimeException{
-        return userRepository.findById(id).orElseThrow(() -> new NotFoundException("User not found"));
+        return userLoader.findById(id);
     }
 
     public UserResponseDTO updateUser(Long id, UpdateUserDTO uDtoDetails, String authorization){
@@ -63,7 +63,7 @@ public class UserServices {
 
         updateUserData(u, uDtoDetails);
 
-        return toDto(userRepository.save(u)); //unitTest
+        return toDto(userLoader.saveUser(u)); // mapper + unitTest
     }
 
     public UserResponseDTO updateDisplayName(Long id, String authorization, UpdateDisplayNameDTO uDetails){
@@ -77,13 +77,11 @@ public class UserServices {
 
         String newDisplayName = uDetails.getDisplayName();
 
-        if(userRepository.existsByDisplayName(uDetails.getDisplayName())){
-            throw new AlreadyExistsException("Already Existing username");
-        }
+        userLoader.existByDisplayName(uDetails);
 
         u.setDisplayName(newDisplayName);
 
-        return toDto(userRepository.save(u));
+        return toDto(userLoader.saveUser(u));
     }
 
 
