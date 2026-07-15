@@ -11,7 +11,7 @@ import com.afterApp.after.enums.MusicStyle;
 import com.afterApp.after.exceptions.BadRequestException;
 import com.afterApp.after.exceptions.NotFoundException;
 import com.afterApp.after.exceptions.UnauthorizedException;
-import com.afterApp.after.repositories.EventRepository;
+import com.afterApp.after.loader.EventLoader;
 import com.afterApp.after.repositories.UserAccessRepository;
 import com.afterApp.after.repositories.UserRepository;
 import com.afterApp.after.service.EventServices;
@@ -33,7 +33,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 public class EventServiceTest {
     @Mock
-    private EventRepository eventRepository;
+    private EventLoader eventLoader;
 
     @Mock
     private UserRepository userRepository;
@@ -81,7 +81,7 @@ public class EventServiceTest {
         when(userAccessRepository.findByUsername("Host"))
                 .thenReturn(Optional.of(access));
 
-        when(eventRepository.save(any(Events.class)))
+        when(eventLoader.saveEvent(any(Events.class)))
                 .thenAnswer(invocation -> {
 
                     Events saved = invocation.getArgument(0);
@@ -97,7 +97,7 @@ public class EventServiceTest {
         assertEquals(100, result.getCapacity());
         assertEquals("Host", result.getHostDisplayName());
 
-        verify(eventRepository).save(any(Events.class));
+        verify(eventLoader).saveEvent(any(Events.class));
     }
 
     @Test
@@ -112,8 +112,8 @@ public class EventServiceTest {
         event.setHost(host);
         event.setUsers(new HashSet<>());
 
-        when(eventRepository.findById(10L))
-                .thenReturn(Optional.of(event));
+        when(eventLoader.getEventById(10L))
+                .thenReturn(event);
 
         EventResponseDTO result =
                 eventServices.getEvent(10L);
@@ -147,10 +147,10 @@ public class EventServiceTest {
         when(userAccessRepository.findByUsername("Requester"))
                 .thenReturn(Optional.of(access));
 
-        when(eventRepository.findById(10L))
-                .thenReturn(Optional.of(event));
+        when(eventLoader.getEventById(10L))
+                .thenReturn(event);
 
-        when(eventRepository.save(any(Events.class)))
+        when(eventLoader.saveEvent(any(Events.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         EventResponseDTO result =
@@ -159,7 +159,7 @@ public class EventServiceTest {
         assertEquals(1, result.getUsersCount());
         assertTrue(event.getUsers().contains(user));
 
-        verify(eventRepository).save(any(Events.class));
+        verify(eventLoader).saveEvent(any(Events.class));
     }
 
     @Test
@@ -189,8 +189,8 @@ public class EventServiceTest {
         when(userAccessRepository.findByUsername("Requester"))
                 .thenReturn(Optional.of(access));
 
-        when(eventRepository.findById(10L))
-                .thenReturn(Optional.of(event));
+        when(eventLoader.getEventById(10L))
+                .thenReturn(event);
 
         BadRequestException exception = assertThrows(
                 BadRequestException.class,
@@ -202,8 +202,8 @@ public class EventServiceTest {
                 exception.getMessage()
         );
 
-        verify(eventRepository, never())
-                .save(any(Events.class));
+        verify(eventLoader, never())
+                .saveEvent(any(Events.class));
     }
 
     @Test
@@ -227,8 +227,8 @@ public class EventServiceTest {
         when(userAccessRepository.findByUsername("Host"))
                 .thenReturn(Optional.of(access));
 
-        when(eventRepository.findById(10L))
-                .thenReturn(Optional.of(event));
+        when(eventLoader.getEventById(10L))
+                .thenReturn(event);
 
         BadRequestException exception = assertThrows(
                 BadRequestException.class,
@@ -240,8 +240,8 @@ public class EventServiceTest {
                 exception.getMessage()
         );
 
-        verify(eventRepository, never())
-                .save(any(Events.class));
+        verify(eventLoader, never())
+                .saveEvent(any(Events.class));
     }
 
     @Test
@@ -274,8 +274,8 @@ public class EventServiceTest {
         when(userAccessRepository.findByUsername("Requester"))
                 .thenReturn(Optional.of(access));
 
-        when(eventRepository.findById(10L))
-                .thenReturn(Optional.of(event));
+        when(eventLoader.getEventById(10L))
+                .thenReturn(event);
 
         BadRequestException exception = assertThrows(
                 BadRequestException.class,
@@ -287,8 +287,8 @@ public class EventServiceTest {
                 exception.getMessage()
         );
 
-        verify(eventRepository, never())
-                .save(any(Events.class));
+        verify(eventLoader, never())
+                .saveEvent(any(Events.class));
     }
 
     @Test
@@ -318,10 +318,10 @@ public class EventServiceTest {
         when(userAccessRepository.findByUsername("Requester"))
                 .thenReturn(Optional.of(access));
 
-        when(eventRepository.findById(10L))
-                .thenReturn(Optional.of(event));
+        when(eventLoader.getEventById(10L))
+                .thenReturn(event);
 
-        when(eventRepository.save(any(Events.class)))
+        when(eventLoader.saveEvent(any(Events.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         EventResponseDTO result =
@@ -331,7 +331,7 @@ public class EventServiceTest {
 
         assertEquals(0, result.getUsersCount());
 
-        verify(eventRepository).save(any(Events.class));
+        verify(eventLoader).saveEvent(any(Events.class));
     }
 
     @Test
@@ -355,8 +355,8 @@ public class EventServiceTest {
         when(userAccessRepository.findByUsername("Host"))
                 .thenReturn(Optional.of(access));
 
-        when(eventRepository.findById(10L))
-                .thenReturn(Optional.of(event));
+        when(eventLoader.getEventById(10L))
+                .thenReturn(event);
 
         BadRequestException exception = assertThrows(
                 BadRequestException.class,
@@ -368,8 +368,8 @@ public class EventServiceTest {
                 exception.getMessage()
         );
 
-        verify(eventRepository, never())
-                .save(any(Events.class));
+        verify(eventLoader, never())
+                .saveEvent(any(Events.class));
 
     }
 
@@ -398,8 +398,8 @@ public class EventServiceTest {
         when(userAccessRepository.findByUsername("Requester"))
                 .thenReturn(Optional.of(access));
 
-        when(eventRepository.findById(10L))
-                .thenReturn(Optional.of(event));
+        when(eventLoader.getEventById(10L))
+                .thenReturn(event);
 
         NotFoundException exception = assertThrows(
                 NotFoundException.class,
@@ -411,8 +411,8 @@ public class EventServiceTest {
                 exception.getMessage()
         );
 
-        verify(eventRepository, never())
-                .save(any(Events.class));
+        verify(eventLoader, never())
+                .saveEvent(any(Events.class));
 
     }
 
@@ -441,13 +441,13 @@ public class EventServiceTest {
         when(userAccessRepository.findByUsername("Host"))
                 .thenReturn(Optional.of(hostAccess));
 
-        when(eventRepository.findById(10L))
-                .thenReturn(Optional.of(event));
+        when(eventLoader.getEventById(10L))
+                .thenReturn(event);
 
         when(userRepository.findById(2L))
                 .thenReturn(Optional.of(target));
 
-        when(eventRepository.save(any(Events.class)))
+        when(eventLoader.saveEvent(any(Events.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         EventResponseDTO result =
@@ -457,7 +457,7 @@ public class EventServiceTest {
 
         assertTrue(event.getUsers().contains(target));
 
-        verify(eventRepository).save(any(Events.class));
+        verify(eventLoader).saveEvent(any(Events.class));
     }
 
     @Test
@@ -489,8 +489,8 @@ public class EventServiceTest {
         when(userAccessRepository.findByUsername("Normal"))
                 .thenReturn(Optional.of(access));
 
-        when(eventRepository.findById(10L))
-                .thenReturn(Optional.of(event));
+        when(eventLoader.getEventById(10L))
+                .thenReturn(event);
 
         UnauthorizedException exception = assertThrows(
                 UnauthorizedException.class,
@@ -502,8 +502,8 @@ public class EventServiceTest {
                 exception.getMessage()
         );
 
-        verify(eventRepository, never())
-                .save(any(Events.class));
+        verify(eventLoader, never())
+                .saveEvent(any(Events.class));
     }
 
     @Test
@@ -532,8 +532,8 @@ public class EventServiceTest {
         when(userAccessRepository.findByUsername("Host"))
                 .thenReturn(Optional.of(hostAccess));
 
-        when(eventRepository.findById(10L))
-                .thenReturn(Optional.of(event));
+        when(eventLoader.getEventById(10L))
+                .thenReturn(event);
 
         when(userRepository.findById(2L))
                 .thenReturn(Optional.of(target));
@@ -548,8 +548,8 @@ public class EventServiceTest {
                 exception.getMessage()
         );
 
-        verify(eventRepository, never())
-                .save(any(Events.class));
+        verify(eventLoader, never())
+                .saveEvent(any(Events.class));
 
     }
 
@@ -578,13 +578,13 @@ public class EventServiceTest {
         when(userAccessRepository.findByUsername("Host"))
                 .thenReturn(Optional.of(access));
 
-        when(eventRepository.findById(10L))
-                .thenReturn(Optional.of(event));
+        when(eventLoader.getEventById(10L))
+                .thenReturn(event);
 
         when(userRepository.findById(2L))
                 .thenReturn(Optional.of(target));
 
-        when(eventRepository.save(any(Events.class)))
+        when(eventLoader.saveEvent(any(Events.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         EventResponseDTO result =
@@ -594,7 +594,7 @@ public class EventServiceTest {
 
         assertFalse(event.getUsers().contains(target));
 
-        verify(eventRepository).save(any(Events.class));
+        verify(eventLoader).saveEvent(any(Events.class));
     }
 
     @Test
@@ -625,8 +625,8 @@ public class EventServiceTest {
         when(userAccessRepository.findByUsername("Normal"))
                 .thenReturn(Optional.of(access));
 
-        when(eventRepository.findById(10L))
-                .thenReturn(Optional.of(event));
+        when(eventLoader.getEventById(10L))
+                .thenReturn(event);
 
         UnauthorizedException exception = assertThrows(
                 UnauthorizedException.class,
@@ -638,8 +638,8 @@ public class EventServiceTest {
                 exception.getMessage()
         );
 
-        verify(eventRepository, never())
-                .save(any(Events.class));
+        verify(eventLoader, never())
+                .saveEvent(any(Events.class));
     }
 
     @Test
@@ -662,8 +662,8 @@ public class EventServiceTest {
         when(userAccessRepository.findByUsername("Host"))
                 .thenReturn(Optional.of(access));
 
-        when(eventRepository.findById(10L))
-                .thenReturn(Optional.of(event));
+        when(eventLoader.getEventById(10L))
+                .thenReturn(event);
 
         when(userRepository.findById(1L))
                 .thenReturn(Optional.of(host));
@@ -678,8 +678,8 @@ public class EventServiceTest {
                 exception.getMessage()
         );
 
-        verify(eventRepository, never())
-                .save(any(Events.class));
+        verify(eventLoader, never())
+                .saveEvent(any(Events.class));
     }
 
     @Test
@@ -707,8 +707,8 @@ public class EventServiceTest {
         when(userAccessRepository.findByUsername("host"))
                 .thenReturn(Optional.of(access));
 
-        when(eventRepository.findById(10L))
-                .thenReturn(Optional.of(event));
+        when(eventLoader.getEventById(10L))
+                .thenReturn(event);
 
         when(userRepository.findById(2L))
                 .thenReturn(Optional.of(target));
