@@ -1,0 +1,5 @@
+package com.afterApp.after.enums;
+
+public enum Resources {
+    VIEW_EVENT, CREATE_EVENT, ACCESS_EVENT, INVITE_USER, KICK_USER, DELETE_EVENT, VIEW_USER, UPDATE_USER
+}

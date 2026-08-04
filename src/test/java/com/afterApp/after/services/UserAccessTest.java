@@ -1,7 +1,6 @@
 package com.afterApp.after.services;
 
 import com.afterApp.after.dto.LoginDTO;
-import com.afterApp.after.dto.RegisterDTO;
 import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.exceptions.BadRequestException;
 import com.afterApp.after.loader.UserAccessLoader;
@@ -31,7 +30,7 @@ class UserAccessServicesTest {
     @Test
     void shouldRegisterUserSuccessfully() {
 
-        RegisterDTO dto = new RegisterDTO();
+        LoginDTO dto = new LoginDTO();
         dto.setUsername("Admin");
         dto.setPassword("1234");
 
@@ -42,6 +41,7 @@ class UserAccessServicesTest {
 
         assertEquals("Admin", result.getUsername());
         assertNotNull(result.getPassword());
+        assertTrue(new BCryptPasswordEncoder(16).matches("1234", result.getPassword()));
 
         verify(userAccessLoader).saveUserAccess(any(UserAccess.class));
     }
@@ -49,13 +49,13 @@ class UserAccessServicesTest {
     @Test
     void shouldThrowWhenUsernameAlreadyExists() {
 
-        RegisterDTO dto = new RegisterDTO();
+        LoginDTO dto = new LoginDTO();
         dto.setUsername("Admin");
         dto.setPassword("1234");
 
         doThrow(new BadRequestException("Username already exists"))
                 .when(userAccessLoader)
-                .existByUsername(dto);
+                .existByUsername(any(UserAccess.class));
 
         BadRequestException ex = assertThrows(
                 BadRequestException.class,
@@ -79,7 +79,7 @@ class UserAccessServicesTest {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(16);
         access.setPassword(encoder.encode("1234"));
 
-        when(userAccessLoader.findByUsername(dto))
+        when(userAccessLoader.findByUsername(any(UserAccess.class)))
                 .thenReturn(Optional.of(access));
 
         boolean result = userAccessServices.validateUser(dto);
@@ -100,7 +100,7 @@ class UserAccessServicesTest {
         access.setUsername("Admin");
         access.setPassword(encoder.encode("1234"));
 
-        when(userAccessLoader.findByUsername(dto))
+        when(userAccessLoader.findByUsername(any(UserAccess.class)))
                 .thenReturn(Optional.of(access));
 
         boolean result = userAccessServices.validateUser(dto);
