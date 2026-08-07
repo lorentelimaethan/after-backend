@@ -1,15 +1,16 @@
 package com.afterApp.after.service;
 
 import com.afterApp.after.dto.UpdateDisplayNameDTO;
+import com.afterApp.after.dto.UpdateRoleDTO;
 import com.afterApp.after.dto.UpdateUserDTO;
 import com.afterApp.after.dto.UserResponseDTO;
+import com.afterApp.after.entity.UserRole;
 import com.afterApp.after.entity.Users;
 import com.afterApp.after.entity.UserAccess;
-import com.afterApp.after.exceptions.AlreadyExistsException;
-import com.afterApp.after.exceptions.BadRequestException;
-import com.afterApp.after.exceptions.FormatRequestException;
-import com.afterApp.after.exceptions.NotFoundException;
+import com.afterApp.after.enums.Resources;
+import com.afterApp.after.exceptions.*;
 import com.afterApp.after.loader.UserLoader;
+import com.afterApp.after.loader.UserRoleLoader;
 import com.afterApp.after.repositories.UserAccessRepository;
 import com.afterApp.after.repositories.UserRepository;
 import com.afterApp.after.utils.TokenUtil;
@@ -24,13 +25,15 @@ import static com.afterApp.after.mappers.UserMapper.updateUserData;
 @Service
 public class UserServices {
     @Autowired
-    UserRepository userRepository;
+    private UserRepository userRepository;
     @Autowired
     private TokenUtil tokenUtil;
     @Autowired
     private UserAccessRepository userAccessRepository;
     @Autowired
-    UserLoader userLoader;
+    private UserLoader userLoader;
+    @Autowired
+    private UserRoleLoader userRoleLoader;
 
 
     private Users extractUser(String authorization){
@@ -82,6 +85,23 @@ public class UserServices {
         u.setDisplayName(newDisplayName);
 
         return toDto(userLoader.saveUser(u));
+    }
+
+    public UserResponseDTO updateUserRole(Long userId, UpdateRoleDTO dto, String authorization){
+        Users requester = extractUser(authorization);
+
+        if (requester.getUserRole() == null ||
+                !requester.getUserRole().getResources().contains(Resources.UPDATE_ROLE)) {
+            throw new UnauthorizedException("Only users with UPDATE_ROLE can update roles");
+        }
+
+        Users targetUser = userLoader.findById(userId);
+
+        UserRole newRole = userRoleLoader.findByRoleName(dto.getRoleName());
+
+        targetUser.setUserRole(newRole);
+
+        return toDto(userLoader.saveUser(targetUser));
     }
 
 

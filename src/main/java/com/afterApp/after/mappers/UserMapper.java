@@ -14,6 +14,9 @@ public class UserMapper {
         dto.setEmail(u.getEmail());
         dto.setPhoneNumber(u.getPhoneNumber());
         dto.setDisplayName(u.getDisplayName());
+        if (u.getUserRole() != null) {
+            dto.setRoleName(u.getUserRole().getRoleName());
+        }
 
         return dto;
     }

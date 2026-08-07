@@ -15,6 +15,7 @@ public class UserRole {
     @Getter @Setter
     private Long id;
 
+    @Column(unique = true, nullable = false)
     @Getter @Setter
     private String roleName;
 

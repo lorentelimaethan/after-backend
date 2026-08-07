@@ -2,8 +2,10 @@ package com.afterApp.after.service;
 
 import com.afterApp.after.dto.LoginDTO;
 import com.afterApp.after.entity.UserAccess;
+import com.afterApp.after.entity.UserRole;
 import com.afterApp.after.entity.Users;
 import com.afterApp.after.loader.UserAccessLoader;
+import com.afterApp.after.loader.UserRoleLoader;
 import com.afterApp.after.mappers.UserAccessMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -15,6 +17,8 @@ import java.util.Optional;
 public class UserAccessServices {
     @Autowired
     private UserAccessLoader userAccessLoader;
+    @Autowired
+    private UserRoleLoader userRoleLoader;
 
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(16);
 
@@ -27,6 +31,9 @@ public class UserAccessServices {
 
         Users user = new Users();
         user.setDisplayName(dto.getUsername());
+
+        UserRole freeRole = userRoleLoader.findByRoleName("FREE");
+        user.setUserRole(freeRole);
 
         access.setUser(user);
 

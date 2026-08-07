@@ -2,8 +2,10 @@ package com.afterApp.after.services;
 
 import com.afterApp.after.dto.LoginDTO;
 import com.afterApp.after.entity.UserAccess;
+import com.afterApp.after.entity.UserRole;
 import com.afterApp.after.exceptions.BadRequestException;
 import com.afterApp.after.loader.UserAccessLoader;
+import com.afterApp.after.loader.UserRoleLoader;
 import com.afterApp.after.service.UserAccessServices;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,6 +26,9 @@ class UserAccessServicesTest {
     @Mock
     private UserAccessLoader userAccessLoader;
 
+    @Mock
+    private UserRoleLoader userRoleLoader;
+
     @InjectMocks
     private UserAccessServices userAccessServices;
 
@@ -34,6 +39,12 @@ class UserAccessServicesTest {
         dto.setUsername("Admin");
         dto.setPassword("1234");
 
+        UserRole freeRole = new UserRole();
+        freeRole.setRoleName("FREE");
+
+        when(userRoleLoader.findByRoleName("FREE"))
+                .thenReturn(freeRole);
+
         when(userAccessLoader.saveUserAccess(any(UserAccess.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -42,6 +53,7 @@ class UserAccessServicesTest {
         assertEquals("Admin", result.getUsername());
         assertNotNull(result.getPassword());
         assertTrue(new BCryptPasswordEncoder(16).matches("1234", result.getPassword()));
+        assertEquals("FREE", result.getUser().getUserRole().getRoleName());
 
         verify(userAccessLoader).saveUserAccess(any(UserAccess.class));
     }

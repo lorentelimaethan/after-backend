@@ -1,10 +1,12 @@
 package com.afterApp.after.controller;
 
 import com.afterApp.after.entity.UserAccess;
+import com.afterApp.after.entity.UserRole;
 import com.afterApp.after.entity.Users;
 import com.afterApp.after.repositories.EventRepository;
 import com.afterApp.after.repositories.UserAccessRepository;
 import com.afterApp.after.repositories.UserRepository;
+import com.afterApp.after.repositories.UserRoleRepository;
 import com.afterApp.after.utils.TokenUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,6 +38,9 @@ class UserControllerTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private UserRoleRepository userRoleRepository;
 
     @Autowired
     private TokenUtil tokenUtil;
@@ -187,14 +192,98 @@ class UserControllerTest {
                 .andExpect(content().string("Already Existing username"));
     }
 
+    @Test
+    void shouldUpdateUserRoleSuccessfully() throws Exception {
+        String adminToken = createUserToken("adminuser", "ADMIN");
+        createUser("targetuser", "FREE");
+        Long targetUserId = userId("targetuser");
+
+        mockMvc.perform(patch("/users/{id}/role", targetUserId)
+                        .header("authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "roleName": "PREMIUM"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(targetUserId))
+                .andExpect(jsonPath("$.displayName").value("targetuser"))
+                .andExpect(jsonPath("$.roleName").value("PREMIUM"));
+    }
+
+    @Test
+    void shouldRejectUpdateRoleWhenRequesterDoesNotHavePermission() throws Exception {
+        String freeToken = createUserToken("freeuser", "FREE");
+        createUser("targetuser", "FREE");
+        Long targetUserId = userId("targetuser");
+
+        mockMvc.perform(patch("/users/{id}/role", targetUserId)
+                        .header("authorization", bearer(freeToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "roleName": "PREMIUM"
+                                }
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(content().string("Only users with UPDATE_ROLE can update roles"));
+    }
+
+    @Test
+    void shouldRejectUpdateRoleWithInvalidBody() throws Exception {
+        String adminToken = createUserToken("adminuser", "ADMIN");
+        createUser("targetuser", "FREE");
+        Long targetUserId = userId("targetuser");
+
+        mockMvc.perform(patch("/users/{id}/role", targetUserId)
+                        .header("authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "roleName": ""
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenUpdatingToUnknownRole() throws Exception {
+        String adminToken = createUserToken("adminuser", "ADMIN");
+        createUser("targetuser", "FREE");
+        Long targetUserId = userId("targetuser");
+
+        mockMvc.perform(patch("/users/{id}/role", targetUserId)
+                        .header("authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "roleName": "UNKNOWN"
+                                }
+                                """))
+                .andExpect(status().isNotFound());
+    }
+
     private String createUserToken(String username) {
         createUser(username);
         return tokenUtil.generateToken(username);
     }
 
+    private String createUserToken(String username, String roleName) {
+        createUser(username, roleName);
+        return tokenUtil.generateToken(username);
+    }
+
     private void createUser(String username) {
+        createUser(username, null);
+    }
+
+    private void createUser(String username, String roleName) {
         Users user = new Users();
         user.setDisplayName(username);
+        if (roleName != null) {
+            user.setUserRole(role(roleName));
+        }
 
         UserAccess access = new UserAccess();
         access.setUsername(username);
@@ -202,6 +291,10 @@ class UserControllerTest {
         access.setUser(user);
 
         userAccessRepository.save(access);
+    }
+
+    private UserRole role(String roleName) {
+        return userRoleRepository.findByRoleName(roleName).orElseThrow();
     }
 
     private Long userId(String username) {

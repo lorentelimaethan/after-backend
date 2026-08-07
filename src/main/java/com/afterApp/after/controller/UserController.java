@@ -1,12 +1,10 @@
 package com.afterApp.after.controller;
 
 import com.afterApp.after.dto.UpdateDisplayNameDTO;
+import com.afterApp.after.dto.UpdateRoleDTO;
 import com.afterApp.after.dto.UpdateUserDTO;
 import com.afterApp.after.entity.Users;
-import com.afterApp.after.exceptions.AlreadyExistsException;
-import com.afterApp.after.exceptions.BadRequestException;
-import com.afterApp.after.exceptions.FormatRequestException;
-import com.afterApp.after.exceptions.NotFoundException;
+import com.afterApp.after.exceptions.*;
 import com.afterApp.after.service.UserServices;
 import com.afterApp.after.utils.TokenUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -381,6 +379,140 @@ public class UserController {
         } catch (AlreadyExistsException e){
             return ResponseEntity.status(409).body(e.getMessage());
         } catch (RuntimeException e){
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
+
+    @PatchMapping("/{id}/role")
+    @Operation(summary = "Update user role")
+    @ApiResponses(value = {
+
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "User role updated successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Success Response",
+                                    value = """
+                                        {
+                                            "id": 7,
+                                            "name": "Ethan",
+                                            "lastname": "Lorente",
+                                            "email": "ethanlo@gmail.com",
+                                            "phoneNumber": "+34111111222",
+                                            "displayName": "ethanlo2",
+                                            "roleName": "PREMIUM"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Bad request - invalid role update body",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Validation Error",
+                                    value = """
+                                        {
+                                            "message": "Role name required"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - Invalid or missing token",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Unauthorized",
+                                    value = """
+                                        {
+                                            "message": "Access denied"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - Requester does not have UPDATE_ROLE permission",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Forbidden",
+                                    value = """
+                                        {
+                                            "message": "Only users with UPDATE_ROLE can update roles"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User or role not found",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Not Found",
+                                    value = """
+                                        {
+                                            "timestamp": "2026-05-05T12:00:00",
+                                            "status": 404,
+                                            "error": "Not Found",
+                                            "message": "Role not found",
+                                            "path": "/users/7/role"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Internal Server Error",
+                                    value = """
+                                        {
+                                            "timestamp": "2026-05-05T12:00:00",
+                                            "status": 500,
+                                            "error": "Internal Server Error",
+                                            "message": "Unexpected server error",
+                                            "path": "/users/7/role"
+                                        }
+                                        """
+                            )
+                    )
+            )
+    })
+    public ResponseEntity<?> updateUserRole(@PathVariable Long id, @Valid @RequestBody UpdateRoleDTO dto, @RequestHeader String authorization){
+        Boolean token = tokenUtil.validateToken(authorization);
+
+        if(!token){
+            return ResponseEntity.status(401).body("Access denied");
+        }
+
+        try {
+            return ResponseEntity.ok(userServices.updateUserRole(id, dto, authorization));
+        } catch (UnauthorizedException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        } catch (NotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (BadRequestException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (RuntimeException e) {
             return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }

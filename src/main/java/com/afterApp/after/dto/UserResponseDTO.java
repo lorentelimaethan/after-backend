@@ -1,5 +1,6 @@
 package com.afterApp.after.dto;
 
+import com.afterApp.after.entity.UserRole;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,4 +18,6 @@ public class UserResponseDTO {
     private String email;
 
     private String displayName;
+
+    private String roleName;
 }
