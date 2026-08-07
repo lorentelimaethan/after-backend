@@ -2,6 +2,7 @@ package com.afterApp.after.service;
 
 import com.afterApp.after.dto.CreateEventDTO;
 import com.afterApp.after.dto.EventResponseDTO;
+import com.afterApp.after.dto.UpdateEventDTO;
 import com.afterApp.after.entity.Address;
 import com.afterApp.after.entity.Events;
 import com.afterApp.after.entity.Users;
@@ -21,6 +22,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+
+import static com.afterApp.after.mappers.EventMapper.toDto;
+import static com.afterApp.after.mappers.EventMapper.updateEventData;
 
 @Service
 public class EventServices {
@@ -43,7 +47,7 @@ public class EventServices {
     public EventResponseDTO getEvent(Long id) throws RuntimeException{
         Events e = eventLoader.getEventById(id);
 
-        return EventMapper.toDto(e);
+        return toDto(e);
     }
 
     public List<EventResponseDTO> getEventsByType(EventType type){
@@ -65,8 +69,7 @@ public class EventServices {
     }
 
     private Users extractUser(String authorization){
-        String jwt = authorization.replace("Bearer ", "");
-        String username = tokenUtil.extractUsername(jwt);
+        String username = tokenUtil.extractUsername(authorization);
 
         UserAccess userAccess = userAccessRepository.findByUsername(username)
                 .orElseThrow(() -> new NotFoundException("User not Found"));
@@ -81,7 +84,7 @@ public class EventServices {
 
         e.setHost(host);
 
-       return EventMapper.toDto(eventLoader.saveEvent(e));
+       return toDto(eventLoader.saveEvent(e));
     }
 
     public EventResponseDTO joinEvent(String authorization, Long id){
@@ -105,7 +108,7 @@ public class EventServices {
         }
 
         e.getUsers().add(requester);
-        return EventMapper.toDto(eventLoader.saveEvent(e));
+        return toDto(eventLoader.saveEvent(e));
     }
 
     public EventResponseDTO leaveEvent(String authorization, Long id){
@@ -126,7 +129,7 @@ public class EventServices {
         }
 
         e.getUsers().removeIf(u -> u.getId().equals(requester.getId()));
-        return EventMapper.toDto(eventLoader.saveEvent(e));
+        return toDto(eventLoader.saveEvent(e));
     }
 
     public EventResponseDTO kickUser(String authorization, Long eventId, Long userId) {
@@ -154,7 +157,7 @@ public class EventServices {
 
         e.getUsers().removeIf(u -> u.getId().equals(userToKick.getId()));
 
-        return EventMapper.toDto(eventLoader.saveEvent(e));
+        return toDto(eventLoader.saveEvent(e));
     }
 
     public EventResponseDTO inviteUser(String authorization, Long eventId, Long userId){
@@ -186,7 +189,7 @@ public class EventServices {
 
         e.getUsers().add(userToInvite);
 
-        return EventMapper.toDto(eventLoader.saveEvent(e));
+        return toDto(eventLoader.saveEvent(e));
     }
 
     public void deleteEvent(Long id, String authorization) throws RuntimeException{
@@ -200,5 +203,22 @@ public class EventServices {
 
         eventLoader.deleteEvent(e);
     }
-}
 
+    public EventResponseDTO updateEvent(String authorization, Long eventId, UpdateEventDTO eventDTO){
+        Users requester = extractUser(authorization);
+
+        Events e = eventLoader.getEventById(eventId);
+
+        if(!e.getHost().getId().equals(requester.getId())){
+            throw new UnauthorizedException("Only hosts can update Events");
+        }
+
+        if(eventDTO.getCapacity() != null && eventDTO.getCapacity() < e.getUsers().size()){
+            throw new BadRequestException("Event capacity cannot be lower than current attendees");
+        }
+
+        updateEventData(e, eventDTO);
+
+        return toDto(eventLoader.saveEvent(e));
+    }
+}

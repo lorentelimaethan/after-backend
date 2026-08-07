@@ -7,10 +7,11 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.web.servlet.FlashMapManager;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 @Component
 public class TokenUtil {
@@ -18,6 +19,8 @@ public class TokenUtil {
     private String secret;
 
     private SecretKey key;
+
+    private final Set<String> blockedToken = new HashSet<>();
 
     @PostConstruct
     public void init(){
@@ -35,7 +38,11 @@ public class TokenUtil {
 
     public Boolean validateToken(String authorization){
         try {
-            String token = authorization.replace("Bearer ", "");
+            String token = extractToken(authorization);
+
+            if(blockedToken.contains(token)){
+                return false;
+            }
 
             Jwts.parser()
                     .verifyWith(key)
@@ -47,12 +54,24 @@ public class TokenUtil {
         }
     }
 
-    public String extractUsername(String token){
+    public String extractUsername(String authorization){
+        String token = extractToken(authorization);
+
         return Jwts.parser()
                 .verifyWith(key)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
+    }
+
+    private String extractToken(String authorization){
+        return authorization.replace("Bearer ", "");
+    }
+
+    public void invalidateToken(String authorization){
+        String token = extractToken(authorization);
+
+        blockedToken.add(token);
     }
 }

@@ -28,4 +28,8 @@ public class Users {
 
     @Getter @Setter
     private String displayName;
+
+    @ManyToOne
+    @Getter @Setter
+    private UserRole userRole;
 }

@@ -1,13 +1,12 @@
 package com.afterApp.after.service;
 
 import com.afterApp.after.dto.LoginDTO;
-import com.afterApp.after.dto.RegisterDTO;
 import com.afterApp.after.entity.UserAccess;
+import com.afterApp.after.entity.UserRole;
 import com.afterApp.after.entity.Users;
-import com.afterApp.after.exceptions.BadRequestException;
 import com.afterApp.after.loader.UserAccessLoader;
-import com.afterApp.after.repositories.UserAccessRepository;
-import com.afterApp.after.repositories.UserRepository;
+import com.afterApp.after.loader.UserRoleLoader;
+import com.afterApp.after.mappers.UserAccessMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,33 +17,38 @@ import java.util.Optional;
 public class UserAccessServices {
     @Autowired
     private UserAccessLoader userAccessLoader;
+    @Autowired
+    private UserRoleLoader userRoleLoader;
 
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(16);
 
-    public UserAccess registerUser(RegisterDTO dto){
+    public UserAccess registerUser(LoginDTO dto){
 
-        userAccessLoader.existByUsername(dto);
+        UserAccess access = UserAccessMapper.fromDto(dto);
+        access.setPassword(encoder.encode(dto.getPassword()));
 
-        UserAccess u = new UserAccess();
-
-        u.setUsername(dto.getUsername());
-        u.setPassword(encoder.encode((dto.getPassword())));
+        userAccessLoader.existByUsername(access);
 
         Users user = new Users();
         user.setDisplayName(dto.getUsername());
 
-        u.setUser(user);
+        UserRole freeRole = userRoleLoader.findByRoleName("FREE");
+        user.setUserRole(freeRole);
 
-        return userAccessLoader.saveUserAccess(u);
+        access.setUser(user);
+
+        return userAccessLoader.saveUserAccess(access);
     }
 
     public boolean validateUser(LoginDTO dto){
-        Optional<UserAccess> userAccess = userAccessLoader.findByUsername(dto);
+        UserAccess usrac = UserAccessMapper.fromDto(dto);
+
+        Optional<UserAccess> userAccess = userAccessLoader.findByUsername(usrac);
 
         if(userAccess.isPresent()){
             UserAccess access = userAccess.get();
 
-            return encoder.matches(dto.getPassword(), access.getPassword());
+            return encoder.matches(usrac.getPassword(), access.getPassword());
         }
         return false;
     }

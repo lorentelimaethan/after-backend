@@ -1,7 +1,9 @@
 package com.afterApp.after.mappers;
 
+import com.afterApp.after.dto.AddressDTO;
 import com.afterApp.after.dto.CreateEventDTO;
 import com.afterApp.after.dto.EventResponseDTO;
+import com.afterApp.after.dto.UpdateEventDTO;
 import com.afterApp.after.entity.Address;
 import com.afterApp.after.entity.Events;
 
@@ -43,5 +45,30 @@ public class EventMapper {
         e.setAddress(address);
 
         return e;
+    }
+
+    public static Events updateEventData(Events events, UpdateEventDTO eventDTO){
+        if(eventDTO.getName() != null) {events.setName(eventDTO.getName());}
+        if(eventDTO.getEventType() != null) {events.setEventType(eventDTO.getEventType());}
+        if(eventDTO.getDescription() != null) {events.setDescription(eventDTO.getDescription());}
+        if(eventDTO.getMusicStyle() != null) {events.setMusicStyle(eventDTO.getMusicStyle());}
+        if(eventDTO.getCapacity() != null) {events.setCapacity(eventDTO.getCapacity());}
+        if(eventDTO.getDateTime() != null) {events.setDateTime(eventDTO.getDateTime());}
+        if(eventDTO.getAddress() != null) {events.setAddress(toAddress(eventDTO.getAddress()));}
+
+        return events;
+    }
+
+    private static Address toAddress(AddressDTO dto) {
+        Address address = new Address();
+
+        address.setStreetNum(dto.getStreetNum());
+        address.setStreet(dto.getStreet());
+        address.setCity(dto.getCity());
+        address.setProvince(dto.getProvince());
+        address.setPostalCode(dto.getPostalCode());
+        address.setAditionalInfo(dto.getAdditionalInfo());
+
+        return address;
     }
 }

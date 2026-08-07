@@ -202,6 +202,47 @@ class EventControllerTest {
     }
 
     @Test
+    void shouldUpdateEventSuccessfully() throws Exception {
+        String hostToken = createUserToken("hostuser");
+        Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
+
+        mockMvc.perform(patch("/events/{id}", eventId)
+                        .header("authorization", bearer(hostToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updateEventJson("After Updated", 5)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("After Updated"))
+                .andExpect(jsonPath("$.capacity").value(5))
+                .andExpect(jsonPath("$.hostDisplayName").value("hostuser"));
+    }
+
+    @Test
+    void shouldRejectUpdateEventByNonHost() throws Exception {
+        String hostToken = createUserToken("hostuser");
+        String guestToken = createUserToken("guestuser");
+        Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
+
+        mockMvc.perform(patch("/events/{id}", eventId)
+                        .header("authorization", bearer(guestToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updateEventJson("After Updated", 5)))
+                .andExpect(status().isForbidden())
+                .andExpect(content().string("Only hosts can update Events"));
+    }
+
+    @Test
+    void shouldRejectUpdateEventWithInvalidBody() throws Exception {
+        String hostToken = createUserToken("hostuser");
+        Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
+
+        mockMvc.perform(patch("/events/{id}", eventId)
+                        .header("authorization", bearer(hostToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updateEventJson("After Updated", 0)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void shouldDeleteEventSuccessfully() throws Exception {
         String hostToken = createUserToken("hostuser");
         Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
@@ -284,5 +325,14 @@ class EventControllerTest {
                   }
                 }
                 """.formatted(name, type, style, capacity);
+    }
+
+    private String updateEventJson(String name, int capacity) {
+        return """
+                {
+                  "name": "%s",
+                  "capacity": %d
+                }
+                """.formatted(name, capacity);
     }
 }

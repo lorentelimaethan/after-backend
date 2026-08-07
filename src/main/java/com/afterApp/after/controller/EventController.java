@@ -2,7 +2,7 @@ package com.afterApp.after.controller;
 
 import com.afterApp.after.dto.CreateEventDTO;
 import com.afterApp.after.dto.EventResponseDTO;
-import com.afterApp.after.entity.Events;
+import com.afterApp.after.dto.UpdateEventDTO;
 import com.afterApp.after.enums.EventType;
 import com.afterApp.after.enums.MusicStyle;
 import com.afterApp.after.exceptions.BadRequestException;
@@ -810,6 +810,30 @@ public class EventController {
 
         try{
             return ResponseEntity.ok(eventServices.inviteUser(authorization, eventId, userId));
+        }catch (UnauthorizedException e){
+            return ResponseEntity.status(403).body(e.getMessage());
+        }catch (BadRequestException e){
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (NotFoundException e){
+            return ResponseEntity.notFound().build();
+        }catch (RuntimeException e){
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
+
+    @PatchMapping("/{eventId}")
+    public ResponseEntity<?> updateEvent(
+            @PathVariable Long eventId, @Valid @RequestBody UpdateEventDTO eventDTO, @RequestHeader String authorization
+    )
+    {
+        Boolean token = tokenUtil.validateToken(authorization);
+
+        if(!token){
+            return ResponseEntity.status(401).body("Access denied");
+        }
+
+        try{
+            return ResponseEntity.ok(eventServices.updateEvent(authorization, eventId, eventDTO));
         }catch (UnauthorizedException e){
             return ResponseEntity.status(403).body(e.getMessage());
         }catch (BadRequestException e){

@@ -3,6 +3,7 @@ package com.afterApp.after.services;
 import com.afterApp.after.dto.AddressDTO;
 import com.afterApp.after.dto.CreateEventDTO;
 import com.afterApp.after.dto.EventResponseDTO;
+import com.afterApp.after.dto.UpdateEventDTO;
 import com.afterApp.after.entity.Events;
 import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.entity.Users;
@@ -722,5 +723,131 @@ public class EventServiceTest {
                 "User is not in the Event",
                 exception.getMessage()
         );
+    }
+
+    @Test
+    void shouldUpdateEventSuccessfully(){
+        Users host = new Users();
+        host.setId(1L);
+        host.setDisplayName("Host");
+
+        UserAccess access = new UserAccess();
+        access.setUsername("Host");
+        access.setUser(host);
+
+        Events event = new Events();
+        event.setId(10L);
+        event.setHost(host);
+        event.setName("Old Event");
+        event.setCapacity(5);
+        event.setUsers(new HashSet<>());
+
+        UpdateEventDTO dto = new UpdateEventDTO();
+        dto.setName("Updated Event");
+        dto.setCapacity(8);
+
+        when(tokenUtil.extractUsername("fake-token"))
+                .thenReturn("Host");
+
+        when(userAccessRepository.findByUsername("Host"))
+                .thenReturn(Optional.of(access));
+
+        when(eventLoader.getEventById(10L))
+                .thenReturn(event);
+
+        when(eventLoader.saveEvent(any(Events.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        EventResponseDTO result =
+                eventServices.updateEvent("fake-token", 10L, dto);
+
+        assertEquals("Updated Event", result.getName());
+        assertEquals(8, result.getCapacity());
+        assertEquals("Host", result.getHostDisplayName());
+
+        verify(eventLoader).saveEvent(any(Events.class));
+    }
+
+    @Test
+    void shouldThrowWhenNonHostTriesToUpdateEvent(){
+        Users host = new Users();
+        host.setId(1L);
+
+        Users requester = new Users();
+        requester.setId(2L);
+
+        UserAccess access = new UserAccess();
+        access.setUsername("Requester");
+        access.setUser(requester);
+
+        Events event = new Events();
+        event.setId(10L);
+        event.setHost(host);
+
+        UpdateEventDTO dto = new UpdateEventDTO();
+        dto.setName("Updated Event");
+
+        when(tokenUtil.extractUsername("fake-token"))
+                .thenReturn("Requester");
+
+        when(userAccessRepository.findByUsername("Requester"))
+                .thenReturn(Optional.of(access));
+
+        when(eventLoader.getEventById(10L))
+                .thenReturn(event);
+
+        UnauthorizedException exception = assertThrows(
+                UnauthorizedException.class,
+                () -> eventServices.updateEvent("fake-token", 10L, dto)
+        );
+
+        assertEquals("Only hosts can update Events", exception.getMessage());
+
+        verify(eventLoader, never())
+                .saveEvent(any(Events.class));
+    }
+
+    @Test
+    void shouldThrowWhenUpdatedCapacityIsLowerThanCurrentAttendees(){
+        Users host = new Users();
+        host.setId(1L);
+
+        Users attendeeOne = new Users();
+        attendeeOne.setId(2L);
+
+        Users attendeeTwo = new Users();
+        attendeeTwo.setId(3L);
+
+        UserAccess access = new UserAccess();
+        access.setUsername("Host");
+        access.setUser(host);
+
+        Events event = new Events();
+        event.setId(10L);
+        event.setHost(host);
+        event.getUsers().add(attendeeOne);
+        event.getUsers().add(attendeeTwo);
+
+        UpdateEventDTO dto = new UpdateEventDTO();
+        dto.setCapacity(1);
+
+        when(tokenUtil.extractUsername("fake-token"))
+                .thenReturn("Host");
+
+        when(userAccessRepository.findByUsername("Host"))
+                .thenReturn(Optional.of(access));
+
+        when(eventLoader.getEventById(10L))
+                .thenReturn(event);
+
+        BadRequestException exception = assertThrows(
+                BadRequestException.class,
+                () -> eventServices.updateEvent("fake-token", 10L, dto)
+        );
+
+        assertEquals("Event capacity cannot be lower than current attendees", exception.getMessage());
+
+        verify(eventLoader, never())
+                .saveEvent(any(Events.class));
     }
 }
