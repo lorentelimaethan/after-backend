@@ -21,7 +21,9 @@ public class UserRoleInitializer implements CommandLineRunner {
         createRoleIfNotExists("FREE", List.of(
                 Resources.VIEW_EVENT,
                 Resources.CREATE_EVENT,
-                Resources.ACCESS_EVENT
+                Resources.ACCESS_EVENT,
+                Resources.UPDATE_USER,
+                Resources.VIEW_USER
         ));
 
         createRoleIfNotExists("PREMIUM", List.of(
@@ -55,4 +57,7 @@ public class UserRoleInitializer implements CommandLineRunner {
 
         userRoleRepository.save(role);
     }
+
+    //crear admin;
+    //añadir premium = free + cosas etc..
 }
