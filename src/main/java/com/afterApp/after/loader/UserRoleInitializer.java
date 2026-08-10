@@ -21,11 +21,23 @@ public class UserRoleInitializer implements CommandLineRunner {
     private final UserAccessRepository userAccessRepository;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(16);
 
-    @Value("${after.admin.username:admin}")
+    @Value("${after.admin.username}")
     private String adminUsername;
 
-    @Value("${after.admin.password:admin123}")
+    @Value("${after.admin.password}")
     private String adminPassword;
+
+    @Value("${after.admin.name}")
+    private String adminName;
+
+    @Value("${after.admin.lastname}")
+    private String adminLastname;
+
+    @Value("${after.admin.email}")
+    private String adminEmail;
+
+    @Value("${after.admin.phone-number}")
+    private String adminPhoneNumber;
 
     public UserRoleInitializer(UserRoleRepository userRoleRepository, UserAccessRepository userAccessRepository) {
         this.userRoleRepository = userRoleRepository;
@@ -84,6 +96,10 @@ public class UserRoleInitializer implements CommandLineRunner {
         }
 
         Users adminUser = new Users();
+        adminUser.setName(adminName);
+        adminUser.setLastname(adminLastname);
+        adminUser.setEmail(adminEmail);
+        adminUser.setPhoneNumber(adminPhoneNumber);
         adminUser.setDisplayName(adminUsername);
         adminUser.setUserRole(adminRole);
 
