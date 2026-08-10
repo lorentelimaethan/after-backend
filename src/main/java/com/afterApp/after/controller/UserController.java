@@ -116,11 +116,7 @@ public class UserController {
             return ResponseEntity.status(401).body("Access denied");
         }
 
-        try{
-            return ResponseEntity.ok(userServices.getUserById(id));
-        } catch (NotFoundException e){
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(userServices.getUserById(id));
     }
 
     @PutMapping("/{id}")
@@ -229,8 +225,6 @@ public class UserController {
 
         try {
             return ResponseEntity.ok(userServices.updateUser(id, uDetails, authorization));
-        }catch (NotFoundException e){
-            return ResponseEntity.notFound().build();
         }catch (BadRequestException e){
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -368,8 +362,6 @@ public class UserController {
 
         try{
             return ResponseEntity.ok(userServices.updateDisplayName(id, authorization, uDetails));
-        }catch (NotFoundException e){
-            return ResponseEntity.notFound().build();
         }catch (BadRequestException | FormatRequestException e){
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (AlreadyExistsException e){
@@ -502,8 +494,6 @@ public class UserController {
             return ResponseEntity.ok(userServices.updateUserRole(id, dto, authorization));
         } catch (UnauthorizedException e) {
             return ResponseEntity.status(403).body(e.getMessage());
-        } catch (NotFoundException e) {
-            return ResponseEntity.notFound().build();
         } catch (BadRequestException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

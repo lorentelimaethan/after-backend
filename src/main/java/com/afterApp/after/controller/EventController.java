@@ -6,7 +6,6 @@ import com.afterApp.after.dto.UpdateEventDTO;
 import com.afterApp.after.enums.EventType;
 import com.afterApp.after.enums.MusicStyle;
 import com.afterApp.after.exceptions.BadRequestException;
-import com.afterApp.after.exceptions.NotFoundException;
 import com.afterApp.after.exceptions.UnauthorizedException;
 import com.afterApp.after.service.EventServices;
 import com.afterApp.after.utils.TokenUtil;
@@ -237,11 +236,7 @@ public class EventController {
             return ResponseEntity.status(401).body("Access denied");
         }
 
-        try {
-            return ResponseEntity.ok(eventServices.getEvent(id));
-        }catch (NotFoundException e){
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(eventServices.getEvent(id));
     }
 
 
@@ -367,8 +362,6 @@ public class EventController {
 
         try{
             return ResponseEntity.ok(eventServices.createEvent(dto, authorization));
-        }catch (NotFoundException exception){
-            return ResponseEntity.notFound().build();
         }catch(BadRequestException exception){
             return ResponseEntity.badRequest().body(exception.getMessage());
         }
@@ -503,8 +496,6 @@ public class EventController {
 
         try{
             return ResponseEntity.ok(eventServices.joinEvent(authorization, id));
-        }catch (NotFoundException exception){
-            return ResponseEntity.notFound().build();
         }catch(BadRequestException exception){
             return ResponseEntity.badRequest().body(exception.getMessage());
         }
@@ -638,8 +629,6 @@ public class EventController {
 
         try{
             return ResponseEntity.ok(eventServices.leaveEvent(authorization, id));
-        }catch (NotFoundException exception){
-            return ResponseEntity.notFound().build();
         }catch (BadRequestException exception){
             return ResponseEntity.badRequest().body(exception.getMessage());
         }
@@ -801,8 +790,6 @@ public class EventController {
             return ResponseEntity.status(403).body(e.getMessage());
         }catch (BadRequestException e){
             return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (NotFoundException e){
-            return ResponseEntity.notFound().build();
         }
     }
 
@@ -823,8 +810,6 @@ public class EventController {
             return ResponseEntity.status(403).body(e.getMessage());
         }catch (BadRequestException e){
             return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (NotFoundException e){
-            return ResponseEntity.notFound().build();
         }
     }
 
@@ -968,8 +953,6 @@ public class EventController {
             return ResponseEntity.status(403).body(e.getMessage());
         }catch (BadRequestException e){
             return ResponseEntity.badRequest().body(e.getMessage());
-        }catch (NotFoundException e){
-            return ResponseEntity.notFound().build();
         }
     }
 
@@ -1069,8 +1052,6 @@ public class EventController {
             return ResponseEntity.noContent().build();
         }catch (UnauthorizedException e){
             return ResponseEntity.status(403).body(e.getMessage());
-        }catch (NotFoundException e){
-            return ResponseEntity.notFound().build();
         }
     }
 
