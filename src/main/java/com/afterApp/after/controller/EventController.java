@@ -5,7 +5,6 @@ import com.afterApp.after.dto.EventResponseDTO;
 import com.afterApp.after.dto.UpdateEventDTO;
 import com.afterApp.after.enums.EventType;
 import com.afterApp.after.enums.MusicStyle;
-import com.afterApp.after.exceptions.BadRequestException;
 import com.afterApp.after.exceptions.UnauthorizedException;
 import com.afterApp.after.service.EventServices;
 import com.afterApp.after.utils.TokenUtil;
@@ -360,11 +359,7 @@ public class EventController {
             return ResponseEntity.status(401).body("Access denied");
         }
 
-        try{
-            return ResponseEntity.ok(eventServices.createEvent(dto, authorization));
-        }catch(BadRequestException exception){
-            return ResponseEntity.badRequest().body(exception.getMessage());
-        }
+        return ResponseEntity.ok(eventServices.createEvent(dto, authorization));
     }
 
 
@@ -494,11 +489,7 @@ public class EventController {
             return ResponseEntity.status(401).body("Access denied");
         }
 
-        try{
-            return ResponseEntity.ok(eventServices.joinEvent(authorization, id));
-        }catch(BadRequestException exception){
-            return ResponseEntity.badRequest().body(exception.getMessage());
-        }
+        return ResponseEntity.ok(eventServices.joinEvent(authorization, id));
     }
 
     @PatchMapping("/{id}/leave")
@@ -627,11 +618,7 @@ public class EventController {
             return ResponseEntity.status(401).body("Access denied");
         }
 
-        try{
-            return ResponseEntity.ok(eventServices.leaveEvent(authorization, id));
-        }catch (BadRequestException exception){
-            return ResponseEntity.badRequest().body(exception.getMessage());
-        }
+        return ResponseEntity.ok(eventServices.leaveEvent(authorization, id));
     }
 
     @PatchMapping("/{eventId}/invite/user/{userId}")
@@ -788,8 +775,6 @@ public class EventController {
             return ResponseEntity.ok(eventServices.inviteUser(authorization, eventId, userId));
         }catch (UnauthorizedException e){
             return ResponseEntity.status(403).body(e.getMessage());
-        }catch (BadRequestException e){
-            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -808,8 +793,6 @@ public class EventController {
             return ResponseEntity.ok(eventServices.updateEvent(authorization, eventId, eventDTO));
         }catch (UnauthorizedException e){
             return ResponseEntity.status(403).body(e.getMessage());
-        }catch (BadRequestException e){
-            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -951,8 +934,6 @@ public class EventController {
             return ResponseEntity.ok(eventServices.kickUser(authorization, eventId, userId));
         }catch (UnauthorizedException e){
             return ResponseEntity.status(403).body(e.getMessage());
-        }catch (BadRequestException e){
-            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 

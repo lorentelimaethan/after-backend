@@ -1,7 +1,6 @@
 package com.afterApp.after.controller;
 
 import com.afterApp.after.dto.LoginDTO;
-import com.afterApp.after.exceptions.BadRequestException;
 import com.afterApp.after.service.UserAccessServices;
 import com.afterApp.after.utils.TokenUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -95,7 +94,7 @@ public class UserAccessController {
         try{
             userAccessServices.registerUser(dto);
             return ResponseEntity.ok("Usuario creado correctamente");
-        }catch (BadRequestException | DataIntegrityViolationException e){
+        }catch (DataIntegrityViolationException e){
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }

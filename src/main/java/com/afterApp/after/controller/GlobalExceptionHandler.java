@@ -1,6 +1,8 @@
 package com.afterApp.after.controller;
 
 import com.afterApp.after.dto.ErrorResponseDTO;
+import com.afterApp.after.exceptions.BadRequestException;
+import com.afterApp.after.exceptions.FormatRequestException;
 import com.afterApp.after.exceptions.NotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -64,6 +66,22 @@ public class GlobalExceptionHandler {
                 .build();
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    @ExceptionHandler({
+            BadRequestException.class,
+            FormatRequestException.class
+    })
+    public ResponseEntity<ErrorResponseDTO> handleBadRequest(RuntimeException exception, HttpServletRequest request){
+        ErrorResponseDTO errorResponse = ErrorResponseDTO.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                .message(exception.getMessage())
+                .path(request.getRequestURI())
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return ResponseEntity.badRequest().body(errorResponse);
     }
 
 
