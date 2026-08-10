@@ -120,8 +120,6 @@ public class UserController {
             return ResponseEntity.ok(userServices.getUserById(id));
         } catch (NotFoundException e){
             return ResponseEntity.notFound().build();
-        } catch (RuntimeException e){
-            return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 
@@ -235,8 +233,6 @@ public class UserController {
             return ResponseEntity.notFound().build();
         }catch (BadRequestException e){
             return ResponseEntity.badRequest().body(e.getMessage());
-        }catch (RuntimeException e){
-            return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 
@@ -378,8 +374,6 @@ public class UserController {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (AlreadyExistsException e){
             return ResponseEntity.status(409).body(e.getMessage());
-        } catch (RuntimeException e){
-            return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 
@@ -512,8 +506,6 @@ public class UserController {
             return ResponseEntity.notFound().build();
         } catch (BadRequestException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (RuntimeException e) {
-            return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 }

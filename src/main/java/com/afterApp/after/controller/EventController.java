@@ -117,28 +117,23 @@ public class EventController {
             return ResponseEntity.status(401).body("Access denied");
         }
 
-        try{
-            List<EventResponseDTO> events;
+        List<EventResponseDTO> events;
 
-            if(type != null && style != null){
-                events = eventServices.getEventsByTypeAndStyle(type, style);
+        if(type != null && style != null){
+            events = eventServices.getEventsByTypeAndStyle(type, style);
 
-            } else if (type != null) {
-                events = eventServices.getEventsByType(type);
+        } else if (type != null) {
+            events = eventServices.getEventsByType(type);
 
-            } else if(style != null){
-                events = eventServices.getEventsByStyle(style);
+        } else if(style != null){
+            events = eventServices.getEventsByStyle(style);
 
-            }
-            else {
-                events = eventServices.getAllEvents();
-            }
-
-            return ResponseEntity.ok(events);
-
-        }catch (RuntimeException e){
-            return ResponseEntity.internalServerError().body(e.getMessage());
         }
+        else {
+            events = eventServices.getAllEvents();
+        }
+
+        return ResponseEntity.ok(events);
     }
 
     @GetMapping("/{id}")
@@ -246,8 +241,6 @@ public class EventController {
             return ResponseEntity.ok(eventServices.getEvent(id));
         }catch (NotFoundException e){
             return ResponseEntity.notFound().build();
-        }catch (RuntimeException e){
-            return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 
@@ -378,8 +371,6 @@ public class EventController {
             return ResponseEntity.notFound().build();
         }catch(BadRequestException exception){
             return ResponseEntity.badRequest().body(exception.getMessage());
-        }catch (RuntimeException exception){
-            return ResponseEntity.internalServerError().body(exception.getMessage());
         }
     }
 
@@ -516,8 +507,6 @@ public class EventController {
             return ResponseEntity.notFound().build();
         }catch(BadRequestException exception){
             return ResponseEntity.badRequest().body(exception.getMessage());
-        }catch (RuntimeException exception){
-            return ResponseEntity.internalServerError().body(exception.getMessage());
         }
     }
 
@@ -653,8 +642,6 @@ public class EventController {
             return ResponseEntity.notFound().build();
         }catch (BadRequestException exception){
             return ResponseEntity.badRequest().body(exception.getMessage());
-        }catch (RuntimeException exception){
-            return ResponseEntity.internalServerError().body(exception.getMessage());
         }
     }
 
@@ -816,8 +803,6 @@ public class EventController {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (NotFoundException e){
             return ResponseEntity.notFound().build();
-        }catch (RuntimeException e){
-            return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 
@@ -840,8 +825,6 @@ public class EventController {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (NotFoundException e){
             return ResponseEntity.notFound().build();
-        }catch (RuntimeException e){
-            return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 
@@ -987,8 +970,6 @@ public class EventController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }catch (NotFoundException e){
             return ResponseEntity.notFound().build();
-        }catch (RuntimeException e){
-            return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 
@@ -1090,8 +1071,6 @@ public class EventController {
             return ResponseEntity.status(403).body(e.getMessage());
         }catch (NotFoundException e){
             return ResponseEntity.notFound().build();
-        }catch (RuntimeException e){
-            return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 

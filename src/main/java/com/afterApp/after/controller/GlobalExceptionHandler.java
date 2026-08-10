@@ -23,14 +23,19 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, String>> handleInvalidJson(
-            HttpMessageNotReadableException ex) {
+            HttpMessageNotReadableException exception) {
 
         return ResponseEntity
                 .badRequest()
                 .body(Map.of("error", "Invalid request body"));
     }
 
-    //internal server
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String, String>> handleInternalServerError(RuntimeException exception){
+        return ResponseEntity
+                .internalServerError()
+                .body(Map.of("error", "Unexpected server error"));
+    }
     //token catch
     //not found
 }

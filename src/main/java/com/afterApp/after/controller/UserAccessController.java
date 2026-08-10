@@ -97,8 +97,6 @@ public class UserAccessController {
             return ResponseEntity.ok("Usuario creado correctamente");
         }catch (BadRequestException | DataIntegrityViolationException e){
             return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (RuntimeException e){
-            return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 
