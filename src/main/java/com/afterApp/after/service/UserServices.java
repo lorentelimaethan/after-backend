@@ -104,5 +104,5 @@ public class UserServices {
         return toDto(userLoader.saveUser(targetUser));
     }
 
-    //Hacer un extract role, meter en el .parser(username), crear un external id para el role id=free, id=admine etc.. añadir el id para extraerlo.
+
 }

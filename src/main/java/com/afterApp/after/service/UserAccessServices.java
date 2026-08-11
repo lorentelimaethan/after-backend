@@ -7,7 +7,6 @@ import com.afterApp.after.entity.Users;
 import com.afterApp.after.loader.UserAccessLoader;
 import com.afterApp.after.loader.UserRoleLoader;
 import com.afterApp.after.mappers.UserAccessMapper;
-import com.afterApp.after.mappers.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -30,7 +29,8 @@ public class UserAccessServices {
 
         userAccessLoader.existByUsername(access);
 
-        Users user = UserMapper.fromLoginDto(dto);
+        Users user = new Users();
+        user.setDisplayName(dto.getUsername());
 
         UserRole freeRole = userRoleLoader.findByRoleName("FREE");
         user.setUserRole(freeRole);
