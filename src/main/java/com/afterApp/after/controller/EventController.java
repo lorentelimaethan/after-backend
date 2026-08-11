@@ -5,6 +5,7 @@ import com.afterApp.after.dto.EventResponseDTO;
 import com.afterApp.after.dto.UpdateEventDTO;
 import com.afterApp.after.enums.EventType;
 import com.afterApp.after.enums.MusicStyle;
+import com.afterApp.after.exceptions.InvalidTokenException;
 import com.afterApp.after.service.EventServices;
 import com.afterApp.after.utils.TokenUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -111,7 +112,7 @@ public class EventController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            return ResponseEntity.status(401).body("Access denied");
+            throw new InvalidTokenException("Access denied");
         }
 
         List<EventResponseDTO> events;
@@ -231,7 +232,7 @@ public class EventController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            return ResponseEntity.status(401).body("Access denied");
+            throw new InvalidTokenException("Access denied");
         }
 
         return ResponseEntity.ok(eventServices.getEvent(id));
@@ -355,7 +356,7 @@ public class EventController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            return ResponseEntity.status(401).body("Access denied");
+            throw new InvalidTokenException("Access denied");
         }
 
         return ResponseEntity.ok(eventServices.createEvent(dto, authorization));
@@ -485,7 +486,7 @@ public class EventController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            return ResponseEntity.status(401).body("Access denied");
+            throw new InvalidTokenException("Access denied");
         }
 
         return ResponseEntity.ok(eventServices.joinEvent(authorization, id));
@@ -614,7 +615,7 @@ public class EventController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            return ResponseEntity.status(401).body("Access denied");
+            throw new InvalidTokenException("Access denied");
         }
 
         return ResponseEntity.ok(eventServices.leaveEvent(authorization, id));
@@ -767,7 +768,7 @@ public class EventController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            return ResponseEntity.status(401).body("Access denied");
+            throw new InvalidTokenException("Access denied");
         }
 
         return ResponseEntity.ok(eventServices.inviteUser(authorization, eventId, userId));
@@ -781,7 +782,7 @@ public class EventController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            return ResponseEntity.status(401).body("Access denied");
+            throw new InvalidTokenException("Access denied");
         }
 
         return ResponseEntity.ok(eventServices.updateEvent(authorization, eventId, eventDTO));
@@ -918,7 +919,7 @@ public class EventController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            return ResponseEntity.status(401).body("Access denied");
+            throw new InvalidTokenException("Access denied");
         }
 
         return ResponseEntity.ok(eventServices.kickUser(authorization, eventId, userId));
@@ -1012,7 +1013,7 @@ public class EventController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            return ResponseEntity.status(401).body("Access denied");
+            throw new InvalidTokenException("Access denied");
         }
 
         eventServices.deleteEvent(id, authorization);

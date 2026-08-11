@@ -1,6 +1,7 @@
 package com.afterApp.after.controller;
 
 import com.afterApp.after.dto.LoginDTO;
+import com.afterApp.after.exceptions.InvalidTokenException;
 import com.afterApp.after.service.UserAccessServices;
 import com.afterApp.after.utils.TokenUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -160,7 +161,7 @@ public class UserAccessController {
             String token = tokenUtil.generateToken((dto.getUsername()));
             return ResponseEntity.ok(token);
         }else{
-            return ResponseEntity.status(401).body("Access denied");
+            throw new InvalidTokenException("Access denied");
         }
     }
 

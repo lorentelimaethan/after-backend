@@ -4,6 +4,7 @@ import com.afterApp.after.dto.UpdateDisplayNameDTO;
 import com.afterApp.after.dto.UpdateRoleDTO;
 import com.afterApp.after.dto.UpdateUserDTO;
 import com.afterApp.after.entity.Users;
+import com.afterApp.after.exceptions.InvalidTokenException;
 import com.afterApp.after.service.UserServices;
 import com.afterApp.after.utils.TokenUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -112,7 +113,7 @@ public class UserController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            return ResponseEntity.status(401).body("Access denied");
+            throw new InvalidTokenException("Access denied");
         }
 
         return ResponseEntity.ok(userServices.getUserById(id));
@@ -219,7 +220,7 @@ public class UserController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            return ResponseEntity.status(401).body("Access denied");
+            throw new InvalidTokenException("Access denied");
         }
 
         return ResponseEntity.ok(userServices.updateUser(id, uDetails, authorization));
@@ -352,7 +353,7 @@ public class UserController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            return ResponseEntity.status(401).body("Access denied");
+            throw new InvalidTokenException("Access denied");
         }
 
         return ResponseEntity.ok(userServices.updateDisplayName(id, authorization, uDetails));
@@ -476,7 +477,7 @@ public class UserController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            return ResponseEntity.status(401).body("Access denied");
+            throw new InvalidTokenException("Access denied");
         }
 
         return ResponseEntity.ok(userServices.updateUserRole(id, dto, authorization));
