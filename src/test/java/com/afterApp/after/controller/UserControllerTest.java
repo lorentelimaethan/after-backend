@@ -19,7 +19,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -72,7 +71,7 @@ class UserControllerTest {
         mockMvc.perform(get("/users/{id}", userId)
                         .header("authorization", "Bearer invalid-token"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(content().string("Access denied"));
+                .andExpect(jsonPath("$.message").value("Access denied"));
     }
 
     @Test
@@ -138,7 +137,7 @@ class UserControllerTest {
                                 }
                                 """))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("You can only update your own profile"));
+                .andExpect(jsonPath("$.message").value("You can only update your own profile"));
     }
 
     @Test
@@ -189,7 +188,7 @@ class UserControllerTest {
                                 }
                                 """))
                 .andExpect(status().isConflict())
-                .andExpect(content().string("Already Existing username"));
+                .andExpect(jsonPath("$.message").value("Already Existing username"));
     }
 
     @Test
@@ -227,7 +226,7 @@ class UserControllerTest {
                                 }
                                 """))
                 .andExpect(status().isForbidden())
-                .andExpect(content().string("Only users with UPDATE_ROLE can update roles"));
+                .andExpect(jsonPath("$.message").value("Only users with UPDATE_ROLE can update roles"));
     }
 
     @Test

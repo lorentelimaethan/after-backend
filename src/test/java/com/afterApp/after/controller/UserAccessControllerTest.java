@@ -14,6 +14,7 @@ import static org.hamcrest.Matchers.blankOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -65,7 +66,7 @@ class UserAccessControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(registerJson("ethanlo", "secret123")))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("Username already exists"));
+                .andExpect(jsonPath("$.message").value("Username already exists"));
     }
 
     @Test
@@ -87,7 +88,7 @@ class UserAccessControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(loginJson("ethanlo", "wrong-password")))
                 .andExpect(status().isUnauthorized())
-                .andExpect(content().string("Access denied"));
+                .andExpect(jsonPath("$.message").value("Access denied"));
     }
 
     private void register(String username, String password) throws Exception {
@@ -101,12 +102,21 @@ class UserAccessControllerTest {
         return """
                 {
                   "username": "%s",
-                  "password": "%s"
+                  "password": "%s",
+                  "name": "Ethan",
+                  "lastname": "Lorente",
+                  "email": "%s@example.com",
+                  "phoneNumber": "+34612345678"
                 }
-                """.formatted(username, password);
+                """.formatted(username, password, username);
     }
 
     private String loginJson(String username, String password) {
-        return registerJson(username, password);
+        return """
+                {
+                  "username": "%s",
+                  "password": "%s"
+                }
+                """.formatted(username, password);
     }
 }
