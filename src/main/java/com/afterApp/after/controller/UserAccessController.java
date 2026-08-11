@@ -5,6 +5,7 @@ import com.afterApp.after.exceptions.InvalidTokenException;
 import com.afterApp.after.service.UserAccessServices;
 import com.afterApp.after.utils.TokenUtil;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -13,11 +14,11 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/token")
+@Tag(name = "Authentication", description = "Registration, login, JWT generation and logout")
 public class UserAccessController {
     @Autowired
     UserAccessServices userAccessServices;
@@ -26,21 +27,17 @@ public class UserAccessController {
     private TokenUtil tokenUtil;
 
     @PostMapping("/auth/register")
-    @Operation(summary = "Register a new user")
+    @Operation(summary = "Register a new user", description = "Creates user access credentials and a public user profile. New users receive the FREE role by default.")
     @ApiResponses(value = {
 
             @ApiResponse(
                     responseCode = "200",
                     description = "User registered successfully",
                     content = @Content(
-                            mediaType = "application/json",
+                            mediaType = "text/plain",
                             examples = @ExampleObject(
                                     name = "Success Response",
-                                    value = """
-                                        {
-                                            "message": "Usuario creado correctamente"
-                                        }
-                                        """
+                                    value = "Usuario creado correctamente"
                             )
                     )
             ),
@@ -55,7 +52,11 @@ public class UserAccessController {
                                             name = "Username Exists",
                                             value = """
                                                 {
-                                                    "message": "Username already exists"
+                                                    "status": 400,
+                                                    "error": "Bad Request",
+                                                    "message": "Username already exists",
+                                                    "path": "/token/auth/register",
+                                                    "timestamp": "2026-08-11T13:25:00"
                                                 }
                                                 """
                                     ),
@@ -63,7 +64,12 @@ public class UserAccessController {
                                             name = "Validation Error",
                                             value = """
                                                 {
-                                                    "message": "Username required"
+                                                    "username": "Username required",
+                                                    "password": "Password must contain at least 6 characters",
+                                                    "name": "Name required",
+                                                    "lastname": "LastName required",
+                                                    "email": "Email required",
+                                                    "phoneNumber": "Phone number required"
                                                 }
                                                 """
                                     )
@@ -83,8 +89,8 @@ public class UserAccessController {
                                             "timestamp": "2026-05-05T12:00:00",
                                             "status": 500,
                                             "error": "Internal Server Error",
-                                            "message": "Unexpected server error",
-                                            "path": "token/auth/register"
+                                            "message": "Unexpected Server Error",
+                                            "path": "/token/auth/register"
                                         }
                                         """
                             )
@@ -101,21 +107,17 @@ public class UserAccessController {
     }
 
     @PostMapping("/auth/login")
-    @Operation(summary = "Login user and generate JWT token")
+    @Operation(summary = "Login user and generate JWT token", description = "Validates credentials and returns a JWT as plain text.")
     @ApiResponses(value = {
 
             @ApiResponse(
                     responseCode = "200",
                     description = "Login successful, token generated",
                     content = @Content(
-                            mediaType = "application/json",
+                            mediaType = "text/plain",
                             examples = @ExampleObject(
                                     name = "Success Response",
-                                    value = """
-                                        {
-                                            "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                                        }
-                                        """
+                                    value = "eyJhbGciOiJIUzI1NiJ9..."
                             )
                     )
             ),
@@ -129,7 +131,11 @@ public class UserAccessController {
                                     name = "Unauthorized",
                                     value = """
                                         {
-                                            "message": "Access denied"
+                                            "status": 401,
+                                            "error": "Unauthorized",
+                                            "message": "Access denied",
+                                            "path": "/token/auth/login",
+                                            "timestamp": "2026-08-11T13:25:00"
                                         }
                                         """
                             )
@@ -148,8 +154,8 @@ public class UserAccessController {
                                             "timestamp": "2026-05-05T12:00:00",
                                             "status": 500,
                                             "error": "Internal Server Error",
-                                            "message": "Unexpected server error",
-                                            "path": "token/auth/login"
+                                            "message": "Unexpected Server Error",
+                                            "path": "/token/auth/login"
                                         }
                                         """
                             )
@@ -166,6 +172,39 @@ public class UserAccessController {
     }
 
     @PostMapping("/auth/logout")
+    @Operation(summary = "Logout user", description = "Invalidates the current JWT for the running application instance.")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Logout successful",
+                    content = @Content(
+                            mediaType = "text/plain",
+                            examples = @ExampleObject(
+                                    name = "Success Response",
+                                    value = ""
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Internal Server Error",
+                                    value = """
+                                        {
+                                            "status": 500,
+                                            "error": "Internal Server Error",
+                                            "message": "Unexpected Server Error",
+                                            "path": "/token/auth/logout",
+                                            "timestamp": "2026-08-11T13:25:00"
+                                        }
+                                        """
+                            )
+                    )
+            )
+    })
    public ResponseEntity<?> logOutUser(@RequestHeader String authorization){
         tokenUtil.invalidateToken(authorization);
 

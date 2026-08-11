@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/users")
+@Tag(name = "Users", description = "User profile retrieval, profile updates, display-name updates and role management")
 public class UserController {
     @Autowired
     private UserServices userServices;
@@ -62,7 +64,11 @@ public class UserController {
                                     name = "Unauthorized",
                                     value = """
                                         {
-                                            "message": "Access denied"
+                                            "status": 401,
+                                            "error": "Unauthorized",
+                                            "message": "Access denied",
+                                            "path": "/users/7",
+                                            "timestamp": "2026-08-11T13:25:00"
                                         }
                                         """
                             )
@@ -81,7 +87,7 @@ public class UserController {
                                             "timestamp": "2026-05-05T12:00:00",
                                             "status": 404,
                                             "error": "Not Found",
-                                            "message": "User not found",
+                                            "message": "Content not Found",
                                             "path": "/users/7"
                                         }
                                         """
@@ -101,7 +107,7 @@ public class UserController {
                                             "timestamp": "2026-05-05T12:00:00",
                                             "status": 500,
                                             "error": "Internal Server Error",
-                                            "message": "Unexpected server error",
+                                            "message": "Unexpected Server Error",
                                             "path": "/users/7"
                                         }
                                         """
@@ -153,7 +159,11 @@ public class UserController {
                                     name = "Bad Request",
                                     value = """
                                         {
-                                            "message": "You can only update your own profile"
+                                            "status": 400,
+                                            "error": "Bad Request",
+                                            "message": "You can only update your own profile",
+                                            "path": "/users/7",
+                                            "timestamp": "2026-08-11T13:25:00"
                                         }
                                         """
                             )
@@ -169,7 +179,11 @@ public class UserController {
                                     name = "Unauthorized",
                                     value = """
                                         {
-                                            "message": "Access denied"
+                                            "status": 401,
+                                            "error": "Unauthorized",
+                                            "message": "Access denied",
+                                            "path": "/users/7",
+                                            "timestamp": "2026-08-11T13:25:00"
                                         }
                                         """
                             )
@@ -188,7 +202,7 @@ public class UserController {
                                             "timestamp": "2026-05-05T12:00:00",
                                             "status": 404,
                                             "error": "Not Found",
-                                            "message": "User not found",
+                                            "message": "Content not Found",
                                             "path": "/users/7"
                                         }
                                         """
@@ -208,7 +222,7 @@ public class UserController {
                                             "timestamp": "2026-05-05T12:00:00",
                                             "status": 500,
                                             "error": "Internal Server Error",
-                                            "message": "Unexpected server error",
+                                            "message": "Unexpected Server Error",
                                             "path": "/users/7"
                                         }
                                         """
@@ -261,7 +275,11 @@ public class UserController {
                                             name = "Invalid Format",
                                             value = """
                                                 {
-                                                    "message": "Incorrect username format"
+                                                    "status": 400,
+                                                    "error": "Bad Request",
+                                                    "message": "Incorrect username format",
+                                                    "path": "/users/7/display-name",
+                                                    "timestamp": "2026-08-11T13:25:00"
                                                 }
                                                 """
                                     ),
@@ -269,7 +287,7 @@ public class UserController {
                                             name = "Bad Request",
                                             value = """
                                                 {
-                                                    "message": "Display name cannot be empty"
+                                                    "displayName": "Display name cannot be empty"
                                                 }
                                                 """
                                     )
@@ -286,7 +304,11 @@ public class UserController {
                                     name = "Unauthorized",
                                     value = """
                                         {
-                                            "message": "Access denied"
+                                            "status": 401,
+                                            "error": "Unauthorized",
+                                            "message": "Access denied",
+                                            "path": "/users/7/display-name",
+                                            "timestamp": "2026-08-11T13:25:00"
                                         }
                                         """
                             )
@@ -305,7 +327,7 @@ public class UserController {
                                             "timestamp": "2026-05-05T12:00:00",
                                             "status": 404,
                                             "error": "Not Found",
-                                            "message": "User not found",
+                                            "message": "Content not Found",
                                             "path": "/users/7/display-name"
                                         }
                                         """
@@ -322,7 +344,11 @@ public class UserController {
                                     name = "Conflict",
                                     value = """
                                         {
-                                            "message": "Display name already exists"
+                                            "status": 409,
+                                            "error": "Conflict",
+                                            "message": "Display name already exists",
+                                            "path": "/users/7/display-name",
+                                            "timestamp": "2026-08-11T13:25:00"
                                         }
                                         """
                             )
@@ -341,7 +367,7 @@ public class UserController {
                                             "timestamp": "2026-05-05T12:00:00",
                                             "status": 500,
                                             "error": "Internal Server Error",
-                                            "message": "Unexpected server error",
+                                            "message": "Unexpected Server Error",
                                             "path": "/users/7/display-name"
                                         }
                                         """
@@ -394,7 +420,7 @@ public class UserController {
                                     name = "Validation Error",
                                     value = """
                                         {
-                                            "message": "Role name required"
+                                            "roleName": "Role name required"
                                         }
                                         """
                             )
@@ -410,7 +436,11 @@ public class UserController {
                                     name = "Unauthorized",
                                     value = """
                                         {
-                                            "message": "Access denied"
+                                            "status": 401,
+                                            "error": "Unauthorized",
+                                            "message": "Access denied",
+                                            "path": "/users/7/role",
+                                            "timestamp": "2026-08-11T13:25:00"
                                         }
                                         """
                             )
@@ -426,7 +456,11 @@ public class UserController {
                                     name = "Forbidden",
                                     value = """
                                         {
-                                            "message": "Only users with UPDATE_ROLE can update roles"
+                                            "status": 403,
+                                            "error": "Forbidden",
+                                            "message": "Only users with UPDATE_ROLE can update roles",
+                                            "path": "/users/7/role",
+                                            "timestamp": "2026-08-11T13:25:00"
                                         }
                                         """
                             )
@@ -445,7 +479,7 @@ public class UserController {
                                             "timestamp": "2026-05-05T12:00:00",
                                             "status": 404,
                                             "error": "Not Found",
-                                            "message": "Role not found",
+                                            "message": "Content not Found",
                                             "path": "/users/7/role"
                                         }
                                         """
@@ -465,7 +499,7 @@ public class UserController {
                                             "timestamp": "2026-05-05T12:00:00",
                                             "status": 500,
                                             "error": "Internal Server Error",
-                                            "message": "Unexpected server error",
+                                            "message": "Unexpected Server Error",
                                             "path": "/users/7/role"
                                         }
                                         """

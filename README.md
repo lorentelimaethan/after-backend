@@ -18,6 +18,8 @@ The project currently includes:
 - Users joining and leaving events.
 - User invitation and removal by the host.
 - Event capacity control.
+- Role-based permissions with FREE, PREMIUM, and ADMIN roles.
+- Global API error responses through `GlobalExceptionHandler`.
 - DTO-based validation.
 - Public responses through DTOs.
 - OpenAPI/Swagger documentation.
@@ -44,6 +46,7 @@ The MVP is organized around three main concepts:
 - `UserAccess`: access credentials, username, encrypted password, and relation with the user.
 - `Users`: public user profile.
 - `Events`: event created by a host, with party details, address, capacity, and attendees.
+- `UserRole`: role assigned to a user with a list of allowed resources.
 
 An event has:
 
@@ -79,6 +82,8 @@ An authenticated user can:
 
 The API prevents users from modifying another user's profile.
 
+Admins can update user roles through a protected role-management endpoint.
+
 ### Events
 
 An authenticated user can:
@@ -94,6 +99,7 @@ The host of an event can:
 
 - Invite users.
 - Kick users.
+- Update event details.
 - Delete the event.
 
 Main implemented rules:
@@ -104,6 +110,8 @@ Main implemented rules:
 - Event capacity cannot be exceeded.
 - A user cannot join the same event twice.
 - Only the host can invite, kick, or delete the event.
+- Only users with `UPDATE_ROLE` permission can change another user's role.
+- Invalid or expired tokens return a standardized `401 Unauthorized` response.
 
 ## DTOs
 
@@ -111,16 +119,53 @@ The project avoids exposing entities directly in the main API operations.
 
 Current DTOs:
 
-- `RegisterDTO`
 - `LoginDTO`
 - `UpdateUserDTO`
 - `UpdateDisplayNameDTO`
+- `UpdateRoleDTO`
 - `CreateEventDTO`
+- `UpdateEventDTO`
 - `AddressDTO`
 - `UserResponseDTO`
 - `EventResponseDTO`
+- `ErrorResponseDTO`
 
 This separates the public API contract from the internal persistence model.
+
+## Error Responses
+
+Most application errors are centralized through `GlobalExceptionHandler` and returned as `ErrorResponseDTO`:
+
+```json
+{
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Event capacity is full",
+  "path": "/events/6/join",
+  "timestamp": "2026-08-11T13:25:00"
+}
+```
+
+Current global mappings:
+
+| Exception | HTTP status |
+| --- | --- |
+| `InvalidTokenException` | `401 Unauthorized` |
+| `UnauthorizedException` | `403 Forbidden` |
+| `NotFoundException` | `404 Not Found` |
+| `BadRequestException` | `400 Bad Request` |
+| `FormatRequestException` | `400 Bad Request` |
+| `AlreadyExistsException` | `409 Conflict` |
+| `RuntimeException` | `500 Internal Server Error` |
+
+Validation errors from Jakarta Validation return a field-error map, for example:
+
+```json
+{
+  "username": "Username required",
+  "password": "Password must contain at least 6 characters"
+}
+```
 
 ## Main Endpoints
 
@@ -130,6 +175,7 @@ This separates the public API contract from the internal persistence model.
 | --- | --- | --- |
 | POST | `/token/auth/register` | Register user |
 | POST | `/token/auth/login` | Login and JWT generation |
+| POST | `/token/auth/logout` | Invalidate current token |
 
 ### Users
 
@@ -138,6 +184,7 @@ This separates the public API contract from the internal persistence model.
 | GET | `/users/{id}` | Get user by id |
 | PUT | `/users/{id}` | Update own profile |
 | PATCH | `/users/{id}/display-name` | Update display name |
+| PATCH | `/users/{id}/role` | Update user role, requires `UPDATE_ROLE` |
 
 ### Events
 
@@ -152,8 +199,30 @@ This separates the public API contract from the internal persistence model.
 | PATCH | `/events/{id}/join` | Join event |
 | PATCH | `/events/{id}/leave` | Leave event |
 | PATCH | `/events/{eventId}/invite/user/{userId}` | Invite user |
+| PATCH | `/events/{eventId}` | Update event, host only |
 | DELETE | `/events/{eventId}/kick/user/{userId}` | Kick user |
 | DELETE | `/events/{id}` | Delete event |
+
+## Roles and Permissions
+
+The application initializes three roles on startup:
+
+| Role | Includes |
+| --- | --- |
+| `FREE` | `VIEW_EVENT`, `CREATE_EVENT`, `ACCESS_EVENT`, `UPDATE_USER`, `VIEW_USER` |
+| `PREMIUM` | All FREE permissions plus `INVITE_USER` |
+| `ADMIN` | All PREMIUM permissions plus `KICK_USER`, `DELETE_EVENT`, `UPDATE_ROLE` |
+
+An admin user is also created on startup if it does not already exist. Its values are configured with:
+
+```properties
+after.admin.username=
+after.admin.password=
+after.admin.name=
+after.admin.lastname=
+after.admin.email=
+after.admin.phone-number=
+```
 
 ## Allowed Values
 
@@ -191,7 +260,11 @@ Content-Type: application/json
 ```json
 {
   "username": "ethanlo",
-  "password": "password123"
+  "password": "password123",
+  "name": "Ethan",
+  "lastname": "Lorente",
+  "email": "ethanlo@example.com",
+  "phoneNumber": "+34612345678"
 }
 ```
 
@@ -255,6 +328,36 @@ Response:
   "musicStyle": "TECHNO",
   "hostDisplayName": "ethanlo",
   "usersCount": 0
+}
+```
+
+### Update Event
+
+```http
+PATCH /events/6
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+```json
+{
+  "name": "Techno Underground Updated",
+  "capacity": 80,
+  "description": "Updated private party details"
+}
+```
+
+### Update User Role
+
+```http
+PATCH /users/7/role
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+```
+
+```json
+{
+  "roleName": "PREMIUM"
 }
 ```
 
@@ -348,7 +451,7 @@ Current coverage:
 Latest test execution result:
 
 ```text
-Tests run: 52, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 65, Failures: 0, Errors: 0, Skipped: 0
 ```
 
 Note: tests that go through real BCrypt may take a little longer because the encoder uses a high cost.
@@ -385,6 +488,8 @@ Responsibilities:
 - `dto`: input and output API contracts.
 - `utils`: utilities such as JWT generation and validation.
 - `exceptions`: domain/API exceptions.
+- `loader`: startup data initialization for roles and the admin account.
+- `mappers`: repeated entity-to-DTO conversion logic.
 
 ## Tests
 
@@ -405,6 +510,8 @@ Controller tests do not depend on an external API or a manually started server. 
 - Passwords encrypted with BCrypt.
 - JWT with a one-hour expiration.
 - DTOs to separate the public API from JPA entities.
+- Centralized error responses through `GlobalExceptionHandler`.
+- Role permissions initialized from composable FREE, PREMIUM, and ADMIN definitions.
 - Enums stored as text to avoid issues if their order changes.
 - DTO validations to control input data.
 - The host is stored separately from the attendee list.
@@ -416,16 +523,15 @@ Controller tests do not depend on an external API or a manually started server. 
 This project is an MVP. Some parts are prepared to evolve:
 
 - Security does not yet use full Spring Security with JWT filters.
-- Errors are not yet centralized with a `ControllerAdvice`.
 - There is no connected frontend yet.
-- There are no advanced roles or event states yet.
+- Roles are initialized and enforced for role updates, but broader permission enforcement can still evolve.
+- There are no event states yet.
 - Attendee/address visibility can evolve depending on privacy rules.
 
 ## Near-Term Roadmap
 
 - Refactor security toward Spring Security.
-- Global error handling.
-- Swagger documentation improvements.
+- Expand role-based authorization across more event operations if required.
 - Possible web or mobile frontend to consume the API.
 - Event states: open, full, cancelled, finished.
 - Privacy policies for address and attendees.

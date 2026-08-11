@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +23,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/events")
+@Tag(name = "Events", description = "Event listing, filtering, creation, attendance and host-only moderation")
 public class EventController {
     @Autowired
     private EventServices eventServices;
@@ -51,16 +53,7 @@ public class EventController {
                                                 "eventType": "CHILL",
                                                 "musicStyle": "HOUSE",
                                                 "hostDisplayName": "ethanlo2",
-                                                "usersCount": 1,
-                                                "address": {
-                                                    "id": 4,
-                                                    "street": "Carrer Marina",
-                                                    "streetNum": "25",
-                                                    "city": "Barcelona",
-                                                    "province": "Catalonia",
-                                                    "postalCode": "08005",
-                                                    "aditionalInfo": "Industrial warehouse near the beach"
-                                                }
+                                                "usersCount": 1
                                             }
                                         ]
                                         """
@@ -77,7 +70,11 @@ public class EventController {
                                     name = "Unauthorized",
                                     value = """
                                         {
-                                            "message": "Access denied"
+                                            "status": 401,
+                                            "error": "Unauthorized",
+                                            "message": "Access denied",
+                                            "path": "/events",
+                                            "timestamp": "2026-08-11T13:25:00"
                                         }
                                         """
                             )
@@ -96,7 +93,7 @@ public class EventController {
                                             "timestamp": "2026-05-05T12:00:00",
                                             "status": 500,
                                             "error": "Internal Server Error",
-                                            "message": "Unexpected server error",
+                                            "message": "Unexpected Server Error",
                                             "path": "/events"
                                         }
                                         """
@@ -146,28 +143,17 @@ public class EventController {
                             examples = @ExampleObject(
                                     name = "Success Response",
                                     value = """
-                                        [
-                                            {
-                                                "id": 6,
-                                                "name": "Techno Underground Barcelona",
-                                                "description": "Underground techno party in Barcelona",
-                                                "dateTime": "2026-08-15T23:00:00",
-                                                "capacity": 150,
-                                                "eventType": "CHILL",
-                                                "musicStyle": "HOUSE",
-                                                "hostDisplayName": "ethanlo2",
-                                                "usersCount": 1,
-                                                "address": {
-                                                    "id": 4,
-                                                    "street": "Carrer Marina",
-                                                    "streetNum": "25",
-                                                    "city": "Barcelona",
-                                                    "province": "Catalonia",
-                                                    "postalCode": "08005",
-                                                    "aditionalInfo": "Industrial warehouse near the beach"
-                                                }
-                                            }
-                                        ]
+                                        {
+                                            "id": 6,
+                                            "name": "Techno Underground Barcelona",
+                                            "description": "Underground techno party in Barcelona",
+                                            "dateTime": "2026-08-15T23:00:00",
+                                            "capacity": 150,
+                                            "eventType": "CHILL",
+                                            "musicStyle": "HOUSE",
+                                            "hostDisplayName": "ethanlo2",
+                                            "usersCount": 1
+                                        }
                                         """
                             )
                     )
@@ -182,7 +168,11 @@ public class EventController {
                                     name = "Unauthorized",
                                     value = """
                                         {
-                                            "message": "Access denied"
+                                            "status": 401,
+                                            "error": "Unauthorized",
+                                            "message": "Access denied",
+                                            "path": "/events",
+                                            "timestamp": "2026-08-11T13:25:00"
                                         }
                                         """
                             )
@@ -200,8 +190,8 @@ public class EventController {
                                     {
                                       "timestamp": "2026-05-05T12:00:00",
                                       "status": 404,
-                                      "error": "NotFoundException",
-                                      "message": "Usuario no encontrado",
+                                      "error": "Not Found",
+                                      "message": "Content not Found",
                                       "path": "/events/1"
                                     }
                                     """
@@ -220,7 +210,7 @@ public class EventController {
                                             "timestamp": "2026-05-05T12:00:00",
                                             "status": 500,
                                             "error": "Internal Server Error",
-                                            "message": "Unexpected server error",
+                                            "message": "Unexpected Server Error",
                                             "path": "/events/1"
                                         }
                                         """
@@ -260,16 +250,7 @@ public class EventController {
                                             "eventType": "CHILL",
                                             "musicStyle": "HOUSE",
                                             "hostDisplayName": "ethanlo2",
-                                            "usersCount": 1,
-                                            "address": {
-                                                "id": 4,
-                                                "street": "Carrer Marina",
-                                                "streetNum": "25",
-                                                "city": "Barcelona",
-                                                "province": "Catalonia",
-                                                "postalCode": "08005",
-                                                "aditionalInfo": "Industrial warehouse near the beach"
-                                            }
+                                            "usersCount": 1
                                         }
                                         """
                             )
@@ -305,7 +286,11 @@ public class EventController {
                                     name = "Unauthorized",
                                     value = """
                                         {
-                                            "message": "Access denied"
+                                            "status": 401,
+                                            "error": "Unauthorized",
+                                            "message": "Access denied",
+                                            "path": "/events",
+                                            "timestamp": "2026-08-11T13:25:00"
                                         }
                                         """
                             )
@@ -324,7 +309,7 @@ public class EventController {
                                             "timestamp": "2026-05-05T12:00:00",
                                             "status": 404,
                                             "error": "Not Found",
-                                            "message": "User not found",
+                                            "message": "Content not Found",
                                             "path": "/events"
                                         }
                                         """
@@ -344,7 +329,7 @@ public class EventController {
                                             "timestamp": "2026-05-05T12:00:00",
                                             "status": 500,
                                             "error": "Internal Server Error",
-                                            "message": "Unexpected server error",
+                                            "message": "Unexpected Server Error",
                                             "path": "/events"
                                         }
                                         """
@@ -384,16 +369,7 @@ public class EventController {
                                             "eventType": "CHILL",
                                             "musicStyle": "HOUSE",
                                             "hostDisplayName": "ethanlo2",
-                                            "usersCount": 2,
-                                            "address": {
-                                                "id": 4,
-                                                "street": "Carrer Marina",
-                                                "streetNum": "25",
-                                                "city": "Barcelona",
-                                                "province": "Catalonia",
-                                                "postalCode": "08005",
-                                                "aditionalInfo": "Industrial warehouse near the beach"
-                                            }
+                                            "usersCount": 2
                                         }
                                         """
                             )
@@ -410,7 +386,11 @@ public class EventController {
                                             name = "Already Joined",
                                             value = """
                                                 {
-                                                    "message": "User already joined this event"
+                                                    "status": 400,
+                                                    "error": "Bad Request",
+                                                    "message": "User already joined this event",
+                                                    "path": "/events/6/join",
+                                                    "timestamp": "2026-08-11T13:25:00"
                                                 }
                                                 """
                                     ),
@@ -418,7 +398,11 @@ public class EventController {
                                             name = "Event Full",
                                             value = """
                                                 {
-                                                    "message": "Event is already full"
+                                                    "status": 400,
+                                                    "error": "Bad Request",
+                                                    "message": "Event is already full",
+                                                    "path": "/events/6/join",
+                                                    "timestamp": "2026-08-11T13:25:00"
                                                 }
                                                 """
                                     )
@@ -435,7 +419,11 @@ public class EventController {
                                     name = "Unauthorized",
                                     value = """
                                         {
-                                            "message": "Access denied"
+                                            "status": 401,
+                                            "error": "Unauthorized",
+                                            "message": "Access denied",
+                                            "path": "/events",
+                                            "timestamp": "2026-08-11T13:25:00"
                                         }
                                         """
                             )
@@ -454,7 +442,7 @@ public class EventController {
                                             "timestamp": "2026-05-05T12:00:00",
                                             "status": 404,
                                             "error": "Not Found",
-                                            "message": "Event not found",
+                                            "message": "Content not Found",
                                             "path": "/events/6/join"
                                         }
                                         """
@@ -474,7 +462,7 @@ public class EventController {
                                             "timestamp": "2026-05-05T12:00:00",
                                             "status": 500,
                                             "error": "Internal Server Error",
-                                            "message": "Unexpected server error",
+                                            "message": "Unexpected Server Error",
                                             "path": "/events/6/join"
                                         }
                                         """
@@ -513,16 +501,7 @@ public class EventController {
                                             "eventType": "CHILL",
                                             "musicStyle": "HOUSE",
                                             "hostDisplayName": "ethanlo2",
-                                            "usersCount": 1,
-                                            "address": {
-                                                "id": 4,
-                                                "street": "Carrer Marina",
-                                                "streetNum": "25",
-                                                "city": "Barcelona",
-                                                "province": "Catalonia",
-                                                "postalCode": "08005",
-                                                "aditionalInfo": "Industrial warehouse near the beach"
-                                            }
+                                            "usersCount": 1
                                         }
                                         """
                             )
@@ -539,7 +518,11 @@ public class EventController {
                                             name = "User Not Joined",
                                             value = """
                                                 {
-                                                    "message": "User is not part of this event"
+                                                    "status": 400,
+                                                    "error": "Bad Request",
+                                                    "message": "User is not part of this event",
+                                                    "path": "/events/6/leave",
+                                                    "timestamp": "2026-08-11T13:25:00"
                                                 }
                                                 """
                                     ),
@@ -547,7 +530,11 @@ public class EventController {
                                             name = "Host Cannot Leave",
                                             value = """
                                                 {
-                                                    "message": "Host cannot leave their own event"
+                                                    "status": 400,
+                                                    "error": "Bad Request",
+                                                    "message": "Host cannot leave their own event",
+                                                    "path": "/events/6/leave",
+                                                    "timestamp": "2026-08-11T13:25:00"
                                                 }
                                                 """
                                     )
@@ -564,7 +551,11 @@ public class EventController {
                                     name = "Unauthorized",
                                     value = """
                                         {
-                                            "message": "Access denied"
+                                            "status": 401,
+                                            "error": "Unauthorized",
+                                            "message": "Access denied",
+                                            "path": "/events",
+                                            "timestamp": "2026-08-11T13:25:00"
                                         }
                                         """
                             )
@@ -583,7 +574,7 @@ public class EventController {
                                             "timestamp": "2026-05-05T12:00:00",
                                             "status": 404,
                                             "error": "Not Found",
-                                            "message": "Event not found",
+                                            "message": "Content not Found",
                                             "path": "/events/6/leave"
                                         }
                                         """
@@ -603,7 +594,7 @@ public class EventController {
                                             "timestamp": "2026-05-05T12:00:00",
                                             "status": 500,
                                             "error": "Internal Server Error",
-                                            "message": "Unexpected server error",
+                                            "message": "Unexpected Server Error",
                                             "path": "/events/6/leave"
                                         }
                                         """
@@ -642,16 +633,7 @@ public class EventController {
                                             "eventType": "CHILL",
                                             "musicStyle": "HOUSE",
                                             "hostDisplayName": "ethanlo2",
-                                            "usersCount": 3,
-                                            "address": {
-                                                "id": 4,
-                                                "street": "Carrer Marina",
-                                                "streetNum": "25",
-                                                "city": "Barcelona",
-                                                "province": "Catalonia",
-                                                "postalCode": "08005",
-                                                "aditionalInfo": "Industrial warehouse near the beach"
-                                            }
+                                            "usersCount": 3
                                         }
                                         """
                             )
@@ -668,7 +650,11 @@ public class EventController {
                                             name = "Already in Event",
                                             value = """
                                                 {
-                                                    "message": "User is already in the event"
+                                                    "status": 400,
+                                                    "error": "Bad Request",
+                                                    "message": "User is already in the event",
+                                                    "path": "/events/6/invite/user/3",
+                                                    "timestamp": "2026-08-11T13:25:00"
                                                 }
                                                 """
                                     ),
@@ -676,7 +662,11 @@ public class EventController {
                                             name = "Event Full",
                                             value = """
                                                 {
-                                                    "message": "Event capacity is full"
+                                                    "status": 400,
+                                                    "error": "Bad Request",
+                                                    "message": "Event capacity is full",
+                                                    "path": "/events/6/invite/user/3",
+                                                    "timestamp": "2026-08-11T13:25:00"
                                                 }
                                                 """
                                     ),
@@ -684,7 +674,11 @@ public class EventController {
                                             name = "Host Error",
                                             value = """
                                                 {
-                                                    "message": "Host already in the event"
+                                                    "status": 400,
+                                                    "error": "Bad Request",
+                                                    "message": "Host already in the event",
+                                                    "path": "/events/6/invite/user/3",
+                                                    "timestamp": "2026-08-11T13:25:00"
                                                 }
                                                 """
                                     )
@@ -701,7 +695,11 @@ public class EventController {
                                     name = "Unauthorized",
                                     value = """
                                         {
-                                            "message": "Access denied"
+                                            "status": 401,
+                                            "error": "Unauthorized",
+                                            "message": "Access denied",
+                                            "path": "/events",
+                                            "timestamp": "2026-08-11T13:25:00"
                                         }
                                         """
                             )
@@ -717,7 +715,11 @@ public class EventController {
                                     name = "Forbidden",
                                     value = """
                                         {
-                                            "message": "Only host can invite users"
+                                            "status": 403,
+                                            "error": "Forbidden",
+                                            "message": "Only host can invite users",
+                                            "path": "/events/6/invite/user/3",
+                                            "timestamp": "2026-08-11T13:25:00"
                                         }
                                         """
                             )
@@ -736,7 +738,7 @@ public class EventController {
                                             "timestamp": "2026-05-05T12:00:00",
                                             "status": 404,
                                             "error": "Not Found",
-                                            "message": "User not found",
+                                            "message": "Content not Found",
                                             "path": "/events/6/invite/user/3"
                                         }
                                         """
@@ -756,7 +758,7 @@ public class EventController {
                                             "timestamp": "2026-05-05T12:00:00",
                                             "status": 500,
                                             "error": "Internal Server Error",
-                                            "message": "Unexpected server error",
+                                            "message": "Unexpected Server Error",
                                             "path": "/events/6/invite/user/3"
                                         }
                                         """
@@ -775,6 +777,127 @@ public class EventController {
     }
 
     @PatchMapping("/{eventId}")
+    @Operation(summary = "Update an event", description = "Updates event details. Only the event host can update an event.")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Event updated successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Success Response",
+                                    value = """
+                                        {
+                                            "id": 6,
+                                            "name": "After Updated",
+                                            "description": "Updated private event description",
+                                            "dateTime": "2026-08-15T23:00:00",
+                                            "capacity": 80,
+                                            "eventType": "AFTER",
+                                            "musicStyle": "TECHNO",
+                                            "hostDisplayName": "ethanlo2",
+                                            "usersCount": 1
+                                        }
+                                        """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid event update data",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Bad Request",
+                                    value = """
+                                        {
+                                            "status": 400,
+                                            "error": "Bad Request",
+                                            "message": "Event capacity must be > 0",
+                                            "path": "/events/6",
+                                            "timestamp": "2026-08-11T13:25:00"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - Invalid or missing token",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Unauthorized",
+                                    value = """
+                                        {
+                                            "status": 401,
+                                            "error": "Unauthorized",
+                                            "message": "Access denied",
+                                            "path": "/events/6",
+                                            "timestamp": "2026-08-11T13:25:00"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - Only the host can update the event",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Forbidden",
+                                    value = """
+                                        {
+                                            "status": 403,
+                                            "error": "Forbidden",
+                                            "message": "Only hosts can update Events",
+                                            "path": "/events/6",
+                                            "timestamp": "2026-08-11T13:25:00"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Event not found",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Not Found",
+                                    value = """
+                                        {
+                                            "status": 404,
+                                            "error": "Not Found",
+                                            "message": "Content not Found",
+                                            "path": "/events/6",
+                                            "timestamp": "2026-08-11T13:25:00"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Internal Server Error",
+                                    value = """
+                                        {
+                                            "status": 500,
+                                            "error": "Internal Server Error",
+                                            "message": "Unexpected Server Error",
+                                            "path": "/events/6",
+                                            "timestamp": "2026-08-11T13:25:00"
+                                        }
+                                        """
+                            )
+                    )
+            )
+    })
     public ResponseEntity<?> updateEvent(
             @PathVariable Long eventId, @Valid @RequestBody UpdateEventDTO eventDTO, @RequestHeader String authorization
     )
@@ -809,16 +932,7 @@ public class EventController {
                                             "eventType": "CHILL",
                                             "musicStyle": "HOUSE",
                                             "hostDisplayName": "ethanlo2",
-                                            "usersCount": 2,
-                                            "address": {
-                                                "id": 4,
-                                                "street": "Carrer Marina",
-                                                "streetNum": "25",
-                                                "city": "Barcelona",
-                                                "province": "Catalonia",
-                                                "postalCode": "08005",
-                                                "aditionalInfo": "Industrial warehouse near the beach"
-                                            }
+                                            "usersCount": 2
                                         }
                                         """
                             )
@@ -835,7 +949,11 @@ public class EventController {
                                             name = "Host Cannot Be Kicked",
                                             value = """
                                                 {
-                                                    "message": "Host cannot be kicked from the event"
+                                                    "status": 400,
+                                                    "error": "Bad Request",
+                                                    "message": "Host cannot be kicked from the event",
+                                                    "path": "/events/6/kick/user/3",
+                                                    "timestamp": "2026-08-11T13:25:00"
                                                 }
                                                 """
                                     )
@@ -852,7 +970,11 @@ public class EventController {
                                     name = "Unauthorized",
                                     value = """
                                         {
-                                            "message": "Access denied"
+                                            "status": 401,
+                                            "error": "Unauthorized",
+                                            "message": "Access denied",
+                                            "path": "/events",
+                                            "timestamp": "2026-08-11T13:25:00"
                                         }
                                         """
                             )
@@ -868,7 +990,11 @@ public class EventController {
                                     name = "Forbidden",
                                     value = """
                                         {
-                                            "message": "Only host can kick users"
+                                            "status": 403,
+                                            "error": "Forbidden",
+                                            "message": "Only host can kick users",
+                                            "path": "/events/6/kick/user/3",
+                                            "timestamp": "2026-08-11T13:25:00"
                                         }
                                         """
                             )
@@ -887,7 +1013,7 @@ public class EventController {
                                             "timestamp": "2026-05-05T12:00:00",
                                             "status": 404,
                                             "error": "Not Found",
-                                            "message": "User not found",
+                                            "message": "Content not Found",
                                             "path": "/events/6/kick/user/3"
                                         }
                                         """
@@ -907,7 +1033,7 @@ public class EventController {
                                             "timestamp": "2026-05-05T12:00:00",
                                             "status": 500,
                                             "error": "Internal Server Error",
-                                            "message": "Unexpected server error",
+                                            "message": "Unexpected Server Error",
                                             "path": "/events/6/kick/user/3"
                                         }
                                         """
@@ -946,7 +1072,11 @@ public class EventController {
                                     name = "Unauthorized",
                                     value = """
                                         {
-                                            "message": "Access denied"
+                                            "status": 401,
+                                            "error": "Unauthorized",
+                                            "message": "Access denied",
+                                            "path": "/events",
+                                            "timestamp": "2026-08-11T13:25:00"
                                         }
                                         """
                             )
@@ -962,7 +1092,11 @@ public class EventController {
                                     name = "Forbidden",
                                     value = """
                                         {
-                                            "message": "Only host can delete the event"
+                                            "status": 403,
+                                            "error": "Forbidden",
+                                            "message": "Only host can delete the event",
+                                            "path": "/events/6",
+                                            "timestamp": "2026-08-11T13:25:00"
                                         }
                                         """
                             )
@@ -981,7 +1115,7 @@ public class EventController {
                                             "timestamp": "2026-05-05T12:00:00",
                                             "status": 404,
                                             "error": "Not Found",
-                                            "message": "Event not found",
+                                            "message": "Content not Found",
                                             "path": "/events/6"
                                         }
                                         """
@@ -1001,7 +1135,7 @@ public class EventController {
                                             "timestamp": "2026-05-05T12:00:00",
                                             "status": 500,
                                             "error": "Internal Server Error",
-                                            "message": "Unexpected server error",
+                                            "message": "Unexpected Server Error",
                                             "path": "/events/6"
                                         }
                                         """
