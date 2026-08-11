@@ -1,7 +1,7 @@
 package com.afterApp.after.controller;
 
 import com.afterApp.after.dto.LoginDTO;
-import com.afterApp.after.exceptions.BadRequestException;
+import com.afterApp.after.exceptions.InvalidTokenException;
 import com.afterApp.after.service.UserAccessServices;
 import com.afterApp.after.utils.TokenUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -94,10 +95,8 @@ public class UserAccessController {
         try{
             userAccessServices.registerUser(dto);
             return ResponseEntity.ok("Usuario creado correctamente");
-        }catch (BadRequestException | DataIntegrityViolationException e){
+        }catch (DataIntegrityViolationException e){
             return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (RuntimeException e){
-            return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 
@@ -162,7 +161,7 @@ public class UserAccessController {
             String token = tokenUtil.generateToken((dto.getUsername()));
             return ResponseEntity.ok(token);
         }else{
-            return ResponseEntity.status(401).body("Access denied");
+            throw new InvalidTokenException("Access denied");
         }
     }
 

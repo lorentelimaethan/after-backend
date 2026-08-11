@@ -1,5 +1,6 @@
 package com.afterApp.after.mappers;
 
+import com.afterApp.after.dto.LoginDTO;
 import com.afterApp.after.dto.UpdateUserDTO;
 import com.afterApp.after.dto.UserResponseDTO;
 import com.afterApp.after.entity.Users;
@@ -28,5 +29,16 @@ public class UserMapper {
         if(uDtoDetails.getEmail() != null) {u.setEmail(uDtoDetails.getEmail());}
 
         return u;
+    }
+
+    public static Users fromLoginDto(LoginDTO dto){
+        Users user = new Users();
+        user.setDisplayName(dto.getUsername());
+        user.setLastname(dto.getLastname());
+        user.setEmail(dto.getEmail());
+        user.setPhoneNumber(dto.getPhoneNumber());
+        user.setName(dto.getName());
+
+        return user;
     }
 }
