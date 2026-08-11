@@ -5,7 +5,6 @@ import com.afterApp.after.dto.EventResponseDTO;
 import com.afterApp.after.dto.UpdateEventDTO;
 import com.afterApp.after.enums.EventType;
 import com.afterApp.after.enums.MusicStyle;
-import com.afterApp.after.exceptions.UnauthorizedException;
 import com.afterApp.after.service.EventServices;
 import com.afterApp.after.utils.TokenUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -771,11 +770,7 @@ public class EventController {
             return ResponseEntity.status(401).body("Access denied");
         }
 
-        try{
-            return ResponseEntity.ok(eventServices.inviteUser(authorization, eventId, userId));
-        }catch (UnauthorizedException e){
-            return ResponseEntity.status(403).body(e.getMessage());
-        }
+        return ResponseEntity.ok(eventServices.inviteUser(authorization, eventId, userId));
     }
 
     @PatchMapping("/{eventId}")
@@ -789,11 +784,7 @@ public class EventController {
             return ResponseEntity.status(401).body("Access denied");
         }
 
-        try{
-            return ResponseEntity.ok(eventServices.updateEvent(authorization, eventId, eventDTO));
-        }catch (UnauthorizedException e){
-            return ResponseEntity.status(403).body(e.getMessage());
-        }
+        return ResponseEntity.ok(eventServices.updateEvent(authorization, eventId, eventDTO));
     }
 
     @DeleteMapping("/{eventId}/kick/user/{userId}")
@@ -930,11 +921,7 @@ public class EventController {
             return ResponseEntity.status(401).body("Access denied");
         }
 
-        try{
-            return ResponseEntity.ok(eventServices.kickUser(authorization, eventId, userId));
-        }catch (UnauthorizedException e){
-            return ResponseEntity.status(403).body(e.getMessage());
-        }
+        return ResponseEntity.ok(eventServices.kickUser(authorization, eventId, userId));
     }
 
     @DeleteMapping("/{id}")
@@ -1028,12 +1015,8 @@ public class EventController {
             return ResponseEntity.status(401).body("Access denied");
         }
 
-        try{
-            eventServices.deleteEvent(id, authorization);
-            return ResponseEntity.noContent().build();
-        }catch (UnauthorizedException e){
-            return ResponseEntity.status(403).body(e.getMessage());
-        }
+        eventServices.deleteEvent(id, authorization);
+        return ResponseEntity.noContent().build();
     }
 
 
