@@ -5,7 +5,9 @@ import com.afterApp.after.dto.EventResponseDTO;
 import com.afterApp.after.dto.UpdateEventDTO;
 import com.afterApp.after.enums.EventType;
 import com.afterApp.after.enums.MusicStyle;
-import com.afterApp.after.exceptions.InvalidTokenException;
+import com.afterApp.after.exceptions.BadRequestException;
+import com.afterApp.after.exceptions.NotFoundException;
+import com.afterApp.after.exceptions.UnauthorizedException;
 import com.afterApp.after.service.EventServices;
 import com.afterApp.after.utils.TokenUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -112,26 +114,31 @@ public class EventController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            throw new InvalidTokenException("Access denied");
+            return ResponseEntity.status(401).body("Access denied");
         }
 
-        List<EventResponseDTO> events;
+        try{
+            List<EventResponseDTO> events;
 
-        if(type != null && style != null){
-            events = eventServices.getEventsByTypeAndStyle(type, style);
+            if(type != null && style != null){
+                events = eventServices.getEventsByTypeAndStyle(type, style);
 
-        } else if (type != null) {
-            events = eventServices.getEventsByType(type);
+            } else if (type != null) {
+                events = eventServices.getEventsByType(type);
 
-        } else if(style != null){
-            events = eventServices.getEventsByStyle(style);
+            } else if(style != null){
+                events = eventServices.getEventsByStyle(style);
 
+            }
+            else {
+                events = eventServices.getAllEvents();
+            }
+
+            return ResponseEntity.ok(events);
+
+        }catch (RuntimeException e){
+            return ResponseEntity.internalServerError().body(e.getMessage());
         }
-        else {
-            events = eventServices.getAllEvents();
-        }
-
-        return ResponseEntity.ok(events);
     }
 
     @GetMapping("/{id}")
@@ -232,10 +239,16 @@ public class EventController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            throw new InvalidTokenException("Access denied");
+            return ResponseEntity.status(401).body("Access denied");
         }
 
-        return ResponseEntity.ok(eventServices.getEvent(id));
+        try {
+            return ResponseEntity.ok(eventServices.getEvent(id));
+        }catch (NotFoundException e){
+            return ResponseEntity.notFound().build();
+        }catch (RuntimeException e){
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
     }
 
 
@@ -356,10 +369,18 @@ public class EventController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            throw new InvalidTokenException("Access denied");
+            return ResponseEntity.status(401).body("Access denied");
         }
 
-        return ResponseEntity.ok(eventServices.createEvent(dto, authorization));
+        try{
+            return ResponseEntity.ok(eventServices.createEvent(dto, authorization));
+        }catch (NotFoundException exception){
+            return ResponseEntity.notFound().build();
+        }catch(BadRequestException exception){
+            return ResponseEntity.badRequest().body(exception.getMessage());
+        }catch (RuntimeException exception){
+            return ResponseEntity.internalServerError().body(exception.getMessage());
+        }
     }
 
 
@@ -486,10 +507,18 @@ public class EventController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            throw new InvalidTokenException("Access denied");
+            return ResponseEntity.status(401).body("Access denied");
         }
 
-        return ResponseEntity.ok(eventServices.joinEvent(authorization, id));
+        try{
+            return ResponseEntity.ok(eventServices.joinEvent(authorization, id));
+        }catch (NotFoundException exception){
+            return ResponseEntity.notFound().build();
+        }catch(BadRequestException exception){
+            return ResponseEntity.badRequest().body(exception.getMessage());
+        }catch (RuntimeException exception){
+            return ResponseEntity.internalServerError().body(exception.getMessage());
+        }
     }
 
     @PatchMapping("/{id}/leave")
@@ -615,10 +644,18 @@ public class EventController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            throw new InvalidTokenException("Access denied");
+            return ResponseEntity.status(401).body("Access denied");
         }
 
-        return ResponseEntity.ok(eventServices.leaveEvent(authorization, id));
+        try{
+            return ResponseEntity.ok(eventServices.leaveEvent(authorization, id));
+        }catch (NotFoundException exception){
+            return ResponseEntity.notFound().build();
+        }catch (BadRequestException exception){
+            return ResponseEntity.badRequest().body(exception.getMessage());
+        }catch (RuntimeException exception){
+            return ResponseEntity.internalServerError().body(exception.getMessage());
+        }
     }
 
     @PatchMapping("/{eventId}/invite/user/{userId}")
@@ -768,10 +805,20 @@ public class EventController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            throw new InvalidTokenException("Access denied");
+            return ResponseEntity.status(401).body("Access denied");
         }
 
-        return ResponseEntity.ok(eventServices.inviteUser(authorization, eventId, userId));
+        try{
+            return ResponseEntity.ok(eventServices.inviteUser(authorization, eventId, userId));
+        }catch (UnauthorizedException e){
+            return ResponseEntity.status(403).body(e.getMessage());
+        }catch (BadRequestException e){
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (NotFoundException e){
+            return ResponseEntity.notFound().build();
+        }catch (RuntimeException e){
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
     }
 
     @PatchMapping("/{eventId}")
@@ -782,10 +829,20 @@ public class EventController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            throw new InvalidTokenException("Access denied");
+            return ResponseEntity.status(401).body("Access denied");
         }
 
-        return ResponseEntity.ok(eventServices.updateEvent(authorization, eventId, eventDTO));
+        try{
+            return ResponseEntity.ok(eventServices.updateEvent(authorization, eventId, eventDTO));
+        }catch (UnauthorizedException e){
+            return ResponseEntity.status(403).body(e.getMessage());
+        }catch (BadRequestException e){
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (NotFoundException e){
+            return ResponseEntity.notFound().build();
+        }catch (RuntimeException e){
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
     }
 
     @DeleteMapping("/{eventId}/kick/user/{userId}")
@@ -919,10 +976,20 @@ public class EventController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            throw new InvalidTokenException("Access denied");
+            return ResponseEntity.status(401).body("Access denied");
         }
 
-        return ResponseEntity.ok(eventServices.kickUser(authorization, eventId, userId));
+        try{
+            return ResponseEntity.ok(eventServices.kickUser(authorization, eventId, userId));
+        }catch (UnauthorizedException e){
+            return ResponseEntity.status(403).body(e.getMessage());
+        }catch (BadRequestException e){
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }catch (NotFoundException e){
+            return ResponseEntity.notFound().build();
+        }catch (RuntimeException e){
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")
@@ -1013,11 +1080,19 @@ public class EventController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            throw new InvalidTokenException("Access denied");
+            return ResponseEntity.status(401).body("Access denied");
         }
 
-        eventServices.deleteEvent(id, authorization);
-        return ResponseEntity.noContent().build();
+        try{
+            eventServices.deleteEvent(id, authorization);
+            return ResponseEntity.noContent().build();
+        }catch (UnauthorizedException e){
+            return ResponseEntity.status(403).body(e.getMessage());
+        }catch (NotFoundException e){
+            return ResponseEntity.notFound().build();
+        }catch (RuntimeException e){
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
     }
 
 

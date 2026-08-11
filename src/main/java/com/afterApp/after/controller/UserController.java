@@ -4,7 +4,7 @@ import com.afterApp.after.dto.UpdateDisplayNameDTO;
 import com.afterApp.after.dto.UpdateRoleDTO;
 import com.afterApp.after.dto.UpdateUserDTO;
 import com.afterApp.after.entity.Users;
-import com.afterApp.after.exceptions.InvalidTokenException;
+import com.afterApp.after.exceptions.*;
 import com.afterApp.after.service.UserServices;
 import com.afterApp.after.utils.TokenUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -113,10 +113,16 @@ public class UserController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            throw new InvalidTokenException("Access denied");
+            return ResponseEntity.status(401).body("Access denied");
         }
 
-        return ResponseEntity.ok(userServices.getUserById(id));
+        try{
+            return ResponseEntity.ok(userServices.getUserById(id));
+        } catch (NotFoundException e){
+            return ResponseEntity.notFound().build();
+        } catch (RuntimeException e){
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
     }
 
     @PutMapping("/{id}")
@@ -220,10 +226,18 @@ public class UserController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            throw new InvalidTokenException("Access denied");
+            return ResponseEntity.status(401).body("Access denied");
         }
 
-        return ResponseEntity.ok(userServices.updateUser(id, uDetails, authorization));
+        try {
+            return ResponseEntity.ok(userServices.updateUser(id, uDetails, authorization));
+        }catch (NotFoundException e){
+            return ResponseEntity.notFound().build();
+        }catch (BadRequestException e){
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }catch (RuntimeException e){
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
     }
 
     @PatchMapping("/{id}/display-name")
@@ -353,10 +367,20 @@ public class UserController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            throw new InvalidTokenException("Access denied");
+            return ResponseEntity.status(401).body("Access denied");
         }
 
-        return ResponseEntity.ok(userServices.updateDisplayName(id, authorization, uDetails));
+        try{
+            return ResponseEntity.ok(userServices.updateDisplayName(id, authorization, uDetails));
+        }catch (NotFoundException e){
+            return ResponseEntity.notFound().build();
+        }catch (BadRequestException | FormatRequestException e){
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (AlreadyExistsException e){
+            return ResponseEntity.status(409).body(e.getMessage());
+        } catch (RuntimeException e){
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
     }
 
     @PatchMapping("/{id}/role")
@@ -477,9 +501,19 @@ public class UserController {
         Boolean token = tokenUtil.validateToken(authorization);
 
         if(!token){
-            throw new InvalidTokenException("Access denied");
+            return ResponseEntity.status(401).body("Access denied");
         }
 
-        return ResponseEntity.ok(userServices.updateUserRole(id, dto, authorization));
+        try {
+            return ResponseEntity.ok(userServices.updateUserRole(id, dto, authorization));
+        } catch (UnauthorizedException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        } catch (NotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (BadRequestException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
     }
 }
