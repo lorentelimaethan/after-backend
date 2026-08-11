@@ -19,7 +19,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -95,7 +94,7 @@ class EventControllerTest {
         mockMvc.perform(get("/events")
                         .header("authorization", "Bearer invalid-token"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(content().string("Access denied"));
+                .andExpect(jsonPath("$.message").value("Access denied"));
     }
 
     @Test
@@ -149,7 +148,7 @@ class EventControllerTest {
         mockMvc.perform(patch("/events/{id}/join", eventId)
                         .header("authorization", bearer(secondGuestToken)))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("Event capacity is full"));
+                .andExpect(jsonPath("$.message").value("Event capacity is full"));
     }
 
     @Test
@@ -181,7 +180,7 @@ class EventControllerTest {
         mockMvc.perform(patch("/events/{eventId}/invite/user/{userId}", eventId, targetUserId)
                         .header("authorization", bearer(guestToken)))
                 .andExpect(status().isForbidden())
-                .andExpect(content().string("Only host can invite Users"));
+                .andExpect(jsonPath("$.message").value("Only host can invite Users"));
     }
 
     @Test
@@ -198,7 +197,7 @@ class EventControllerTest {
         mockMvc.perform(delete("/events/{eventId}/kick/user/{userId}", eventId, guestId)
                         .header("authorization", bearer(guestToken)))
                 .andExpect(status().isForbidden())
-                .andExpect(content().string("Only host can delete Users"));
+                .andExpect(jsonPath("$.message").value("Only host can delete Users"));
     }
 
     @Test
@@ -227,7 +226,7 @@ class EventControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateEventJson("After Updated", 5)))
                 .andExpect(status().isForbidden())
-                .andExpect(content().string("Only hosts can update Events"));
+                .andExpect(jsonPath("$.message").value("Only hosts can update Events"));
     }
 
     @Test
@@ -263,7 +262,7 @@ class EventControllerTest {
         mockMvc.perform(delete("/events/{id}", eventId)
                         .header("authorization", bearer(guestToken)))
                 .andExpect(status().isForbidden())
-                .andExpect(content().string("Only host can add Users"));
+                .andExpect(jsonPath("$.message").value("Only host can add Users"));
     }
 
     private Long createEvent(String token, String name, String type, String style, int capacity) throws Exception {
