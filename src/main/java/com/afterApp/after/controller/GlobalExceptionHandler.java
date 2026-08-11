@@ -1,9 +1,7 @@
 package com.afterApp.after.controller;
 
 import com.afterApp.after.dto.ErrorResponseDTO;
-import com.afterApp.after.exceptions.BadRequestException;
-import com.afterApp.after.exceptions.FormatRequestException;
-import com.afterApp.after.exceptions.NotFoundException;
+import com.afterApp.after.exceptions.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -84,5 +82,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(errorResponse);
     }
 
+    @ExceptionHandler(AlreadyExistsException.class)
+    public ResponseEntity<ErrorResponseDTO> handleAlreadyExists(RuntimeException exception, HttpServletRequest request){
+        ErrorResponseDTO errorResponse = ErrorResponseDTO.builder()
+                .status(HttpStatus.CONFLICT.value())
+                .error(HttpStatus.CONFLICT.getReasonPhrase())
+                .message(exception.getMessage())
+                .path(request.getRequestURI())
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
 
 }

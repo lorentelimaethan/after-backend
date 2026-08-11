@@ -4,7 +4,6 @@ import com.afterApp.after.dto.UpdateDisplayNameDTO;
 import com.afterApp.after.dto.UpdateRoleDTO;
 import com.afterApp.after.dto.UpdateUserDTO;
 import com.afterApp.after.entity.Users;
-import com.afterApp.after.exceptions.AlreadyExistsException;
 import com.afterApp.after.exceptions.UnauthorizedException;
 import com.afterApp.after.service.UserServices;
 import com.afterApp.after.utils.TokenUtil;
@@ -357,11 +356,7 @@ public class UserController {
             return ResponseEntity.status(401).body("Access denied");
         }
 
-        try{
-            return ResponseEntity.ok(userServices.updateDisplayName(id, authorization, uDetails));
-        } catch (AlreadyExistsException e){
-            return ResponseEntity.status(409).body(e.getMessage());
-        }
+        return ResponseEntity.ok(userServices.updateDisplayName(id, authorization, uDetails));
     }
 
     @PatchMapping("/{id}/role")
