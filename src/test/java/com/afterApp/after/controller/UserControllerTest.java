@@ -263,6 +263,43 @@ class UserControllerTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    void shouldDeleteOwnUserProfileSuccessfully() throws Exception {
+        String token = createUserToken("ethanlo");
+        Long userId = userId("ethanlo");
+
+        mockMvc.perform(patch("/users/{id}", userId)
+                        .header("authorization", bearer(token)))
+                .andExpect(status().isNoContent());
+
+        org.junit.jupiter.api.Assertions.assertFalse(userRepository.existsById(userId));
+    }
+
+    @Test
+    void shouldRejectDeletingAnotherUserProfile() throws Exception {
+        String token = createUserToken("ethanlo");
+        createUser("otheruser");
+        Long otherUserId = userId("otheruser");
+
+        mockMvc.perform(patch("/users/{id}", otherUserId)
+                        .header("authorization", bearer(token)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("You can only delete your own profile"));
+
+        org.junit.jupiter.api.Assertions.assertTrue(userRepository.existsById(otherUserId));
+    }
+
+    @Test
+    void shouldRejectDeleteUserWhenTokenIsInvalid() throws Exception {
+        createUser("ethanlo");
+        Long userId = userId("ethanlo");
+
+        mockMvc.perform(patch("/users/{id}", userId)
+                        .header("authorization", "Bearer invalid-token"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Access denied"));
+    }
+
     private String createUserToken(String username) {
         createUser(username);
         return tokenUtil.generateToken(username);

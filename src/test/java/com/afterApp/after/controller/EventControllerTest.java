@@ -10,6 +10,7 @@ import com.afterApp.after.utils.TokenUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -41,8 +42,12 @@ class EventControllerTest {
     @Autowired
     private TokenUtil tokenUtil;
 
+    @Autowired
+    private CacheManager cacheManager;
+
     @BeforeEach
     void setUp() {
+        cacheManager.getCacheNames().forEach(cacheName -> cacheManager.getCache(cacheName).clear());
         eventRepository.deleteAll();
         userAccessRepository.deleteAll();
         userRepository.deleteAll();
@@ -260,9 +265,9 @@ class EventControllerTest {
         Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
 
         mockMvc.perform(delete("/events/{id}", eventId)
-                        .header("authorization", bearer(guestToken)))
+                .header("authorization", bearer(guestToken)))
                 .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.message").value("Only host can add Users"));
+                .andExpect(jsonPath("$.message").value("Only host can delete own event"));
     }
 
     private Long createEvent(String token, String name, String type, String style, int capacity) throws Exception {

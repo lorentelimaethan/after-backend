@@ -35,4 +35,10 @@ public class UserLoader {
             throw new AlreadyExistsException("Already Existing username");
         }
     }
+
+    public void deleteUser(Users user){
+        UserAccess userAccess = userAccessRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new NotFoundException("User access not found"));
+        userAccessRepository.delete(userAccess);
+    }
 }
