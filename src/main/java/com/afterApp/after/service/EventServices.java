@@ -19,6 +19,9 @@ import com.afterApp.after.repositories.UserAccessRepository;
 import com.afterApp.after.repositories.UserRepository;
 import com.afterApp.after.utils.TokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -44,24 +47,28 @@ public class EventServices {
         return events.stream().map(EventMapper::toDto).toList();
     }
 
+    @Cacheable(value = "events", key = "#id")
     public EventResponseDTO getEvent(Long id) throws RuntimeException{
         Events e = eventLoader.getEventById(id);
 
         return toDto(e);
     }
 
+    @Cacheable(value = "eventsByType", key = "#type")
     public List<EventResponseDTO> getEventsByType(EventType type){
         List<Events> events = eventLoader.getEventsByType(type);
 
         return events.stream().map(EventMapper::toDto).toList();
     }
 
+    @Cacheable(value = "eventsByStyle", key = "#style")
     public List<EventResponseDTO> getEventsByStyle(MusicStyle style){
         List<Events> events = eventLoader.getEventsByMusicStyle(style);
 
         return  events.stream().map(EventMapper::toDto).toList();
     }
 
+    @Cacheable(value = "eventsByTypeStyle", key = "#type + '-' + #style")
     public List<EventResponseDTO> getEventsByTypeAndStyle(EventType type, MusicStyle style){
         List<Events> events = eventLoader.getEventsByTypeAndStyle(type, style);
 
@@ -192,18 +199,30 @@ public class EventServices {
         return toDto(eventLoader.saveEvent(e));
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "events", key = "#id"),
+            @CacheEvict(value = "eventsByStyle", allEntries = true),
+            @CacheEvict(value = "eventsByType", allEntries = true),
+            @CacheEvict(value = "eventsByTypeStyle", allEntries = true)
+    })
     public void deleteEvent(Long id, String authorization) throws RuntimeException{
         Users user = extractUser(authorization);
 
         Events e = eventLoader.getEventById(id);
 
         if(!e.getHost().getId().equals(user.getId())){
-            throw new UnauthorizedException("Only host can add Users");
+            throw new UnauthorizedException("Only host can delete own event");
         }
 
         eventLoader.deleteEvent(e);
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "events", key = "#eventId"),
+            @CacheEvict(value = "eventsByStyle", allEntries = true),
+            @CacheEvict(value = "eventsByType", allEntries = true),
+            @CacheEvict(value = "eventsByTypeStyle", allEntries = true)
+    })
     public EventResponseDTO updateEvent(String authorization, Long eventId, UpdateEventDTO eventDTO){
         Users requester = extractUser(authorization);
 

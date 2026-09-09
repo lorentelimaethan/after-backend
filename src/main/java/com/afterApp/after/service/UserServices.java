@@ -15,6 +15,8 @@ import com.afterApp.after.repositories.UserAccessRepository;
 import com.afterApp.after.repositories.UserRepository;
 import com.afterApp.after.utils.TokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -45,8 +47,9 @@ public class UserServices {
         return userAccess.getUser();
     }
 
+    @Cacheable(value = "users", key = "#id")
     public UserResponseDTO getUserById(Long id) throws RuntimeException{
-        Users u = userRepository.findById(id).orElseThrow(() -> new NotFoundException("User not Found"));
+        Users u = getUserEntityById(id);
 
         return toDto(u);
     }
@@ -55,6 +58,7 @@ public class UserServices {
         return userLoader.findById(id);
     }
 
+    @CacheEvict(value = "users", key = "#id")
     public UserResponseDTO updateUser(Long id, UpdateUserDTO uDtoDetails, String authorization){
         Users requester = extractUser(authorization);
 
@@ -66,7 +70,7 @@ public class UserServices {
 
         updateUserData(u, uDtoDetails);
 
-        return toDto(userLoader.saveUser(u)); // mapper + unitTest
+        return toDto(userLoader.saveUser(u));
     }
 
     public UserResponseDTO updateDisplayName(Long id, String authorization, UpdateDisplayNameDTO uDetails){
@@ -92,7 +96,7 @@ public class UserServices {
 
         if (requester.getUserRole() == null ||
                 !requester.getUserRole().getResources().contains(Resources.UPDATE_ROLE)) {
-            throw new UnauthorizedException("Only users with UPDATE_ROLE can update roles");
+            throw new UnauthorizedException("Only users with UPDATE_ROLE can update roles"); //PREGUNTAR A ALEX
         }
 
         Users targetUser = userLoader.findById(userId);
@@ -102,6 +106,19 @@ public class UserServices {
         targetUser.setUserRole(newRole);
 
         return toDto(userLoader.saveUser(targetUser));
+    }
+
+    @CacheEvict(value = "users", key = "#id")
+    public void deleteUser(Long id, String authorization){
+        Users requester = extractUser(authorization);
+
+        Users target = userLoader.findById(id);
+
+        if(!requester.getId().equals(id)){
+            throw new BadRequestException("You can only delete your own profile");
+        }
+
+        userLoader.deleteUser(target);
     }
 
     //Hacer un extract role, meter en el .parser(username), crear un external id para el role id=free, id=admine etc.. añadir el id para extraerlo.

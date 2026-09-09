@@ -298,4 +298,47 @@ public class UserServiceTest {
         verify(userRoleLoader, never()).findByRoleName(any());
         verify(userLoader, never()).saveUser(any());
     }
+
+    @Test
+    void shouldDeleteOwnUserProfileSuccessfully(){
+        Users user = new Users();
+        user.setId(1L);
+
+        UserAccess access = new UserAccess();
+        access.setUsername("User");
+        access.setUser(user);
+
+        when(tokenUtil.extractUsername("fake-token")).thenReturn("User");
+        when(userLoader.findByUsername("User")).thenReturn(access);
+        when(userLoader.findById(1L)).thenReturn(user);
+
+        userServices.deleteUser(1L, "fake-token");
+
+        verify(userLoader).deleteUser(user);
+    }
+
+    @Test
+    void shouldRejectDeletingAnotherUserProfile(){
+        Users requester = new Users();
+        requester.setId(1L);
+
+        Users target = new Users();
+        target.setId(2L);
+
+        UserAccess access = new UserAccess();
+        access.setUsername("User");
+        access.setUser(requester);
+
+        when(tokenUtil.extractUsername("fake-token")).thenReturn("User");
+        when(userLoader.findByUsername("User")).thenReturn(access);
+        when(userLoader.findById(2L)).thenReturn(target);
+
+        BadRequestException exception = assertThrows(
+                BadRequestException.class,
+                () -> userServices.deleteUser(2L, "fake-token")
+        );
+
+        assertEquals("You can only delete your own profile", exception.getMessage());
+        verify(userLoader, never()).deleteUser(any());
+    }
 }

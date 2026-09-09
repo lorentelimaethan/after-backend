@@ -516,4 +516,23 @@ public class UserController {
 
         return ResponseEntity.ok(userServices.updateUserRole(id, dto, authorization));
     }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id, @RequestHeader String authorization){
+        Boolean token = tokenUtil.validateToken(authorization);
+
+        if(!token){
+            throw new InvalidTokenException("Access denied");
+        }
+
+        userServices.deleteUser(id, authorization);
+        return ResponseEntity.noContent().build();
+    }
+
+    //delete user con role propio
+    //revisar si falta añadir caché
+    //test para esto.
+    //revisar permisos y como se ejecutan
+    //swagger
+    //errores generales, github y commits.
 }
