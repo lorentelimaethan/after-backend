@@ -5,9 +5,7 @@ import com.afterApp.after.dto.EventResponseDTO;
 import com.afterApp.after.dto.UpdateEventDTO;
 import com.afterApp.after.enums.EventType;
 import com.afterApp.after.enums.MusicStyle;
-import com.afterApp.after.exceptions.InvalidTokenException;
 import com.afterApp.after.service.EventServices;
-import com.afterApp.after.utils.TokenUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -27,9 +25,6 @@ import java.util.List;
 public class EventController {
     @Autowired
     private EventServices eventServices;
-
-    @Autowired
-    private TokenUtil tokenUtil;
 
     @GetMapping
     @Operation(summary = "Get all events")
@@ -102,16 +97,9 @@ public class EventController {
             )
     })
     public ResponseEntity<?> getAllEvents(
-            @RequestHeader String authorization,
             @RequestParam(required = false)EventType type,
             @RequestParam(required = false)MusicStyle style
     ){
-        Boolean token = tokenUtil.validateToken(authorization);
-
-        if(!token){
-            throw new InvalidTokenException("Access denied");
-        }
-
         List<EventResponseDTO> events;
 
         if(type != null && style != null){
@@ -218,13 +206,7 @@ public class EventController {
                     )
             )
     })
-    public ResponseEntity<?> getEventById(@PathVariable Long id, @RequestHeader String authorization){
-        Boolean token = tokenUtil.validateToken(authorization);
-
-        if(!token){
-            throw new InvalidTokenException("Access denied");
-        }
-
+    public ResponseEntity<?> getEventById(@PathVariable Long id){
         return ResponseEntity.ok(eventServices.getEvent(id));
     }
 
@@ -338,12 +320,6 @@ public class EventController {
             )
     })
     public ResponseEntity<?> createEvent(@Valid @RequestBody CreateEventDTO dto, @RequestHeader String authorization){
-        Boolean token = tokenUtil.validateToken(authorization);
-
-        if(!token){
-            throw new InvalidTokenException("Access denied");
-        }
-
         return ResponseEntity.ok(eventServices.createEvent(dto, authorization));
     }
 
@@ -471,12 +447,6 @@ public class EventController {
             )
     })
     public ResponseEntity<?> JoinEvent(@PathVariable Long id, @RequestHeader String authorization){
-        Boolean token = tokenUtil.validateToken(authorization);
-
-        if(!token){
-            throw new InvalidTokenException("Access denied");
-        }
-
         return ResponseEntity.ok(eventServices.joinEvent(authorization, id));
     }
 
@@ -603,12 +573,6 @@ public class EventController {
             )
     })
     public ResponseEntity<?> leaveEvent(@PathVariable Long id, @RequestHeader String authorization){
-        Boolean token = tokenUtil.validateToken(authorization);
-
-        if(!token){
-            throw new InvalidTokenException("Access denied");
-        }
-
         return ResponseEntity.ok(eventServices.leaveEvent(authorization, id));
     }
 
@@ -767,12 +731,6 @@ public class EventController {
             )
     })
     public ResponseEntity<?> inviteUser(@PathVariable Long eventId, @PathVariable Long userId, @RequestHeader String authorization){
-        Boolean token = tokenUtil.validateToken(authorization);
-
-        if(!token){
-            throw new InvalidTokenException("Access denied");
-        }
-
         return ResponseEntity.ok(eventServices.inviteUser(authorization, eventId, userId));
     }
 
@@ -902,12 +860,6 @@ public class EventController {
             @PathVariable Long eventId, @Valid @RequestBody UpdateEventDTO eventDTO, @RequestHeader String authorization
     )
     {
-        Boolean token = tokenUtil.validateToken(authorization);
-
-        if(!token){
-            throw new InvalidTokenException("Access denied");
-        }
-
         return ResponseEntity.ok(eventServices.updateEvent(authorization, eventId, eventDTO));
     }
 
@@ -1042,12 +994,6 @@ public class EventController {
             )
     })
     public ResponseEntity<?> kickUser(@PathVariable Long eventId, @PathVariable Long userId, @RequestHeader String authorization ){
-        Boolean token = tokenUtil.validateToken(authorization);
-
-        if(!token){
-            throw new InvalidTokenException("Access denied");
-        }
-
         return ResponseEntity.ok(eventServices.kickUser(authorization, eventId, userId));
     }
 
@@ -1144,12 +1090,6 @@ public class EventController {
             )
     })
     public ResponseEntity<?> deleteEvent(@PathVariable Long id, @RequestHeader String authorization){
-        Boolean token = tokenUtil.validateToken(authorization);
-
-        if(!token){
-            throw new InvalidTokenException("Access denied");
-        }
-
         eventServices.deleteEvent(id, authorization);
         return ResponseEntity.noContent().build();
     }

@@ -17,7 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/token")
+@RequestMapping("/v1/auth")
 @Tag(name = "Authentication", description = "Registration, login, JWT generation and logout")
 public class UserAccessController {
     @Autowired
@@ -26,7 +26,7 @@ public class UserAccessController {
     @Autowired
     private TokenUtil tokenUtil;
 
-    @PostMapping("/auth/register")
+    @PostMapping("/register")
     @Operation(summary = "Register a new user", description = "Creates user access credentials and a public user profile. New users receive the FREE role by default.")
     @ApiResponses(value = {
 
@@ -55,7 +55,7 @@ public class UserAccessController {
                                                     "status": 400,
                                                     "error": "Bad Request",
                                                     "message": "Username already exists",
-                                                    "path": "/token/auth/register",
+                                                    "path": "/v1/auth/register",
                                                     "timestamp": "2026-08-11T13:25:00"
                                                 }
                                                 """
@@ -90,7 +90,7 @@ public class UserAccessController {
                                             "status": 500,
                                             "error": "Internal Server Error",
                                             "message": "Unexpected Server Error",
-                                            "path": "/token/auth/register"
+                                            "path": "/v1/auth/register"
                                         }
                                         """
                             )
@@ -106,7 +106,7 @@ public class UserAccessController {
         }
     }
 
-    @PostMapping("/auth/login")
+    @PostMapping("/login")
     @Operation(summary = "Login user and generate JWT token", description = "Validates credentials and returns a JWT as plain text.")
     @ApiResponses(value = {
 
@@ -134,7 +134,7 @@ public class UserAccessController {
                                             "status": 401,
                                             "error": "Unauthorized",
                                             "message": "Access denied",
-                                            "path": "/token/auth/login",
+                                            "path": "/v1/auth/login",
                                             "timestamp": "2026-08-11T13:25:00"
                                         }
                                         """
@@ -155,7 +155,7 @@ public class UserAccessController {
                                             "status": 500,
                                             "error": "Internal Server Error",
                                             "message": "Unexpected Server Error",
-                                            "path": "/token/auth/login"
+                                            "path": "/v1/auth/login"
                                         }
                                         """
                             )
@@ -171,7 +171,7 @@ public class UserAccessController {
         }
     }
 
-    @PostMapping("/auth/logout")
+    @PostMapping("/logout")
     @Operation(summary = "Logout user", description = "Invalidates the current JWT for the running application instance.")
     @ApiResponses(value = {
             @ApiResponse(
@@ -197,7 +197,7 @@ public class UserAccessController {
                                             "status": 500,
                                             "error": "Internal Server Error",
                                             "message": "Unexpected Server Error",
-                                            "path": "/token/auth/logout",
+                                            "path": "/v1/auth/logout",
                                             "timestamp": "2026-08-11T13:25:00"
                                         }
                                         """

@@ -38,7 +38,7 @@ class UserAccessControllerTest {
 
     @Test
     void shouldRegisterUserSuccessfully() throws Exception {
-        mockMvc.perform(post("/token/auth/register")
+        mockMvc.perform(post("/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(registerJson("ethanlo", "secret123")))
                 .andExpect(status().isOk())
@@ -50,7 +50,7 @@ class UserAccessControllerTest {
 
     @Test
     void shouldRejectRegisterWithInvalidBody() throws Exception {
-        mockMvc.perform(post("/token/auth/register")
+        mockMvc.perform(post("/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(registerJson("", "123")))
                 .andExpect(status().isBadRequest());
@@ -62,7 +62,7 @@ class UserAccessControllerTest {
     void shouldRejectRegisterWhenUsernameAlreadyExists() throws Exception {
         register("ethanlo", "secret123");
 
-        mockMvc.perform(post("/token/auth/register")
+        mockMvc.perform(post("/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(registerJson("ethanlo", "secret123")))
                 .andExpect(status().isBadRequest())
@@ -73,7 +73,7 @@ class UserAccessControllerTest {
     void shouldLoginSuccessfullyAndReturnToken() throws Exception {
         register("ethanlo", "secret123");
 
-        mockMvc.perform(post("/token/auth/login")
+        mockMvc.perform(post("/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(loginJson("ethanlo", "secret123")))
                 .andExpect(status().isOk())
@@ -84,7 +84,7 @@ class UserAccessControllerTest {
     void shouldRejectLoginWithInvalidCredentials() throws Exception {
         register("ethanlo", "secret123");
 
-        mockMvc.perform(post("/token/auth/login")
+        mockMvc.perform(post("/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(loginJson("ethanlo", "wrong-password")))
                 .andExpect(status().isUnauthorized())
@@ -92,7 +92,7 @@ class UserAccessControllerTest {
     }
 
     private void register(String username, String password) throws Exception {
-        mockMvc.perform(post("/token/auth/register")
+        mockMvc.perform(post("/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(registerJson(username, password)))
                 .andExpect(status().isOk());

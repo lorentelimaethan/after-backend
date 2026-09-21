@@ -96,7 +96,7 @@ public class UserServices {
 
         if (requester.getUserRole() == null ||
                 !requester.getUserRole().getResources().contains(Resources.UPDATE_ROLE)) {
-            throw new UnauthorizedException("Only users with UPDATE_ROLE can update roles"); //PREGUNTAR A ALEX
+            throw new UnauthorizedException("Only users with UPDATE_ROLE can update roles");
         }
 
         Users targetUser = userLoader.findById(userId);

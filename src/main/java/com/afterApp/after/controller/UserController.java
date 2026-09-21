@@ -4,9 +4,7 @@ import com.afterApp.after.dto.UpdateDisplayNameDTO;
 import com.afterApp.after.dto.UpdateRoleDTO;
 import com.afterApp.after.dto.UpdateUserDTO;
 import com.afterApp.after.entity.Users;
-import com.afterApp.after.exceptions.InvalidTokenException;
 import com.afterApp.after.service.UserServices;
-import com.afterApp.after.utils.TokenUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -24,9 +22,6 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     @Autowired
     private UserServices userServices;
-
-    @Autowired
-    TokenUtil tokenUtil;
 
     //Falta get de UserDetails
 
@@ -115,13 +110,7 @@ public class UserController {
                     )
             )
     })
-    public ResponseEntity<?> getUserById(@PathVariable Long id, @RequestHeader String authorization){
-        Boolean token = tokenUtil.validateToken(authorization);
-
-        if(!token){
-            throw new InvalidTokenException("Access denied");
-        }
-
+    public ResponseEntity<?> getUserById(@PathVariable Long id){
         return ResponseEntity.ok(userServices.getUserById(id));
     }
 
@@ -231,12 +220,6 @@ public class UserController {
             )
     })
     public ResponseEntity<?> updateUser(@PathVariable Long id, @Valid @RequestBody UpdateUserDTO uDetails, @RequestHeader String authorization){
-        Boolean token = tokenUtil.validateToken(authorization);
-
-        if(!token){
-            throw new InvalidTokenException("Access denied");
-        }
-
         return ResponseEntity.ok(userServices.updateUser(id, uDetails, authorization));
     }
 
@@ -376,12 +359,6 @@ public class UserController {
             )
     })
     public ResponseEntity<?> updateDisplayName(@PathVariable Long id, @RequestHeader String authorization, @Valid @RequestBody UpdateDisplayNameDTO uDetails){
-        Boolean token = tokenUtil.validateToken(authorization);
-
-        if(!token){
-            throw new InvalidTokenException("Access denied");
-        }
-
         return ResponseEntity.ok(userServices.updateDisplayName(id, authorization, uDetails));
     }
 
@@ -508,30 +485,16 @@ public class UserController {
             )
     })
     public ResponseEntity<?> updateUserRole(@PathVariable Long id, @Valid @RequestBody UpdateRoleDTO dto, @RequestHeader String authorization){
-        Boolean token = tokenUtil.validateToken(authorization);
-
-        if(!token){
-            throw new InvalidTokenException("Access denied");
-        }
-
         return ResponseEntity.ok(userServices.updateUserRole(id, dto, authorization));
     }
 
-    @PatchMapping("/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id, @RequestHeader String authorization){
-        Boolean token = tokenUtil.validateToken(authorization);
-
-        if(!token){
-            throw new InvalidTokenException("Access denied");
-        }
-
         userServices.deleteUser(id, authorization);
         return ResponseEntity.noContent().build();
     }
 
-    //delete user con role propio
-    //revisar si falta añadir caché
-    //test para esto.
+
     //revisar permisos y como se ejecutan
     //swagger
     //errores generales, github y commits.

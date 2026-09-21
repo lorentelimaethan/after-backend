@@ -17,6 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -70,6 +71,16 @@ class UserControllerTest {
 
         mockMvc.perform(get("/users/{id}", userId)
                         .header("authorization", "Bearer invalid-token"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Access denied"));
+    }
+
+    @Test
+    void shouldRejectGetUserWhenTokenIsMissing() throws Exception {
+        createUser("ethanlo");
+        Long userId = userId("ethanlo");
+
+        mockMvc.perform(get("/users/{id}", userId))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Access denied"));
     }
@@ -268,7 +279,7 @@ class UserControllerTest {
         String token = createUserToken("ethanlo");
         Long userId = userId("ethanlo");
 
-        mockMvc.perform(patch("/users/{id}", userId)
+        mockMvc.perform(delete("/users/{id}", userId)
                         .header("authorization", bearer(token)))
                 .andExpect(status().isNoContent());
 
@@ -281,7 +292,7 @@ class UserControllerTest {
         createUser("otheruser");
         Long otherUserId = userId("otheruser");
 
-        mockMvc.perform(patch("/users/{id}", otherUserId)
+        mockMvc.perform(delete("/users/{id}", otherUserId)
                         .header("authorization", bearer(token)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("You can only delete your own profile"));
@@ -294,7 +305,7 @@ class UserControllerTest {
         createUser("ethanlo");
         Long userId = userId("ethanlo");
 
-        mockMvc.perform(patch("/users/{id}", userId)
+        mockMvc.perform(delete("/users/{id}", userId)
                         .header("authorization", "Bearer invalid-token"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Access denied"));

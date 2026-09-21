@@ -6,7 +6,7 @@ The goal of the MVP is to validate the main flow of an "Airbnb for parties" styl
 
 ## Project Status
 
-Backend MVP in development.
+Portfolio backend in active development. The core product flows are implemented, tested, documented, and validated in GitHub Actions.
 
 The project currently includes:
 
@@ -23,6 +23,8 @@ The project currently includes:
 - DTO-based validation.
 - Public responses through DTOs.
 - OpenAPI/Swagger documentation.
+- In-memory caching for user and event read queries.
+- Continuous integration checks for pull requests.
 
 ## Tech Stack
 
@@ -79,6 +81,7 @@ An authenticated user can:
 - Retrieve a profile.
 - Update their own profile.
 - Update their display name.
+- Delete their own profile.
 
 The API prevents users from modifying another user's profile.
 
@@ -173,9 +176,9 @@ Validation errors from Jakarta Validation return a field-error map, for example:
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
-| POST | `/token/auth/register` | Register user |
-| POST | `/token/auth/login` | Login and JWT generation |
-| POST | `/token/auth/logout` | Invalidate current token |
+| POST | `/v1/auth/register` | Register user |
+| POST | `/v1/auth/login` | Login and JWT generation |
+| POST | `/v1/auth/logout` | Invalidate current token |
 
 ### Users
 
@@ -185,6 +188,7 @@ Validation errors from Jakarta Validation return a field-error map, for example:
 | PUT | `/users/{id}` | Update own profile |
 | PATCH | `/users/{id}/display-name` | Update display name |
 | PATCH | `/users/{id}/role` | Update user role, requires `UPDATE_ROLE` |
+| DELETE | `/users/{id}` | Delete own profile |
 
 ### Events
 
@@ -253,7 +257,7 @@ MIXED
 ### Register
 
 ```http
-POST /token/auth/register
+POST /v1/auth/register
 Content-Type: application/json
 ```
 
@@ -271,7 +275,7 @@ Content-Type: application/json
 ### Login
 
 ```http
-POST /token/auth/login
+POST /v1/auth/login
 Content-Type: application/json
 ```
 
@@ -451,10 +455,22 @@ Current coverage:
 Latest test execution result:
 
 ```text
-Tests run: 65, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 71, Failures: 0, Errors: 0, Skipped: 0
 ```
 
 Note: tests that go through real BCrypt may take a little longer because the encoder uses a high cost.
+
+## Continuous Integration
+
+Every pull request targeting `main` runs the GitHub Actions workflow in `.github/workflows/ci.yml`.
+
+The workflow uses Java 21 and executes:
+
+```bash
+./mvnw clean verify
+```
+
+This prevents changes from being merged without compiling and passing the test suite.
 
 ## Swagger
 
@@ -481,7 +497,7 @@ utils/
 
 Responsibilities:
 
-- `controller`: exposes REST endpoints and performs basic token authorization validation.
+- `controller`: exposes REST endpoints and delegates authentication to Spring Security.
 - `service`: contains business logic.
 - `repositories`: database access through Spring Data JPA.
 - `entity`: persisted model.
@@ -490,6 +506,7 @@ Responsibilities:
 - `exceptions`: domain/API exceptions.
 - `loader`: startup data initialization for roles and the admin account.
 - `mappers`: repeated entity-to-DTO conversion logic.
+- `cache`: in-memory cache configuration for frequently read users and events.
 
 ## Tests
 
@@ -517,24 +534,25 @@ Controller tests do not depend on an external API or a manually started server. 
 - The host is stored separately from the attendee list.
 - Isolated test configuration with in-memory HSQLDB.
 - Mockito is loaded as a `javaagent` in Surefire for compatibility with the current JDK.
+- `ConcurrentMapCacheManager` caches event and user reads. Event updates/deletes and user profile updates/deletes evict cached entries to avoid serving stale data.
 
 ## Current Limitations
 
-This project is an MVP. Some parts are prepared to evolve:
+The API is suitable as a portfolio backend, but these areas must evolve before a production launch:
 
-- Security does not yet use full Spring Security with JWT filters.
-- There is no connected frontend yet.
-- Roles are initialized and enforced for role updates, but broader permission enforcement can still evolve.
-- There are no event states yet.
-- Attendee/address visibility can evolve depending on privacy rules.
+- Security does not yet use a full Spring Security filter chain or persistent token revocation.
+- Production configuration still needs environment-specific profiles and externally managed secrets; the development admin credentials must be overridden outside local development.
+- Database schema changes use Hibernate `ddl-auto=update`; versioned migrations are still needed.
+- The in-memory cache is appropriate for local development and a single application instance. A shared cache and complete invalidation strategy are needed before horizontal scaling.
+- There is no Docker-based deployment or connected frontend yet.
 
 ## Near-Term Roadmap
 
-- Refactor security toward Spring Security.
-- Expand role-based authorization across more event operations if required.
-- Possible web or mobile frontend to consume the API.
-- Event states: open, full, cancelled, finished.
-- Privacy policies for address and attendees.
+- Adopt Spring Security with JWT filters, refresh-token handling, and persistent token revocation.
+- Add Docker, database migrations, environment profiles, and a deployable production configuration.
+- Add pagination, sorting, concurrency protection for capacity, and a shared cache before scaling event discovery.
+- Add application health checks, structured logging, metrics, and error monitoring.
+- Build a web or mobile frontend, event states, and privacy policies for addresses and attendees.
 
 ## Author
 
