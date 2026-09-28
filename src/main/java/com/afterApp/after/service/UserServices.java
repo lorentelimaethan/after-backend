@@ -14,6 +14,8 @@ import com.afterApp.after.loader.UserRoleLoader;
 import com.afterApp.after.repositories.UserAccessRepository;
 import com.afterApp.after.repositories.UserRepository;
 import com.afterApp.after.utils.TokenUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -37,6 +39,7 @@ public class UserServices {
     @Autowired
     private UserRoleLoader userRoleLoader;
 
+    private static final Logger log = LoggerFactory.getLogger(UserServices.class);
 
     private Users extractUser(String authorization){
         String jwt = authorization.replace("Bearer ", "");
@@ -49,6 +52,8 @@ public class UserServices {
 
     @Cacheable(value = "users", key = "#id")
     public UserResponseDTO getUserById(Long id) throws RuntimeException{
+        log.info("getting user with Id = {}", id);
+
         Users u = getUserEntityById(id);
 
         return toDto(u);
@@ -120,6 +125,5 @@ public class UserServices {
 
         userLoader.deleteUser(target);
     }
-
     //Hacer un extract role, meter en el .parser(username), crear un external id para el role id=free, id=admine etc.. añadir el id para extraerlo.
 }

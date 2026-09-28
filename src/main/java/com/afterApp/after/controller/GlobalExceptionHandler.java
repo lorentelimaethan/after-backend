@@ -2,7 +2,10 @@ package com.afterApp.after.controller;
 
 import com.afterApp.after.dto.ErrorResponseDTO;
 import com.afterApp.after.exceptions.*;
+import com.afterApp.after.service.UserServices;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -16,6 +19,7 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> handleValidation(MethodArgumentNotValidException exception){
@@ -50,6 +54,8 @@ public class GlobalExceptionHandler {
                .path(request.getRequestURI())
                .build();
 
+       log.error(exception.getMessage());
+
        return ResponseEntity.internalServerError().body(errorResponse);
     }
 
@@ -62,6 +68,8 @@ public class GlobalExceptionHandler {
                 .path(request.getRequestURI())
                 .timestamp(LocalDateTime.now())
                 .build();
+
+        log.warn(exception.getMessage());
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
