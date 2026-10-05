@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/events")
+@RequestMapping("/after/v1/events")
 @Tag(name = "Events", description = "Event listing, filtering, creation, attendance and host-only moderation")
 public class EventController {
     @Autowired

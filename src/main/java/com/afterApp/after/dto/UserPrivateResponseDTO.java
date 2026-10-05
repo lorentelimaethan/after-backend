@@ -1,13 +1,11 @@
 package com.afterApp.after.dto;
 
-import com.afterApp.after.entity.UserRole;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class UserResponseDTO {
-    private Long id;
+public class UserPrivateResponseDTO extends UserPublicResponseDTO {
 
     private String name;
 
@@ -16,8 +14,6 @@ public class UserResponseDTO {
     private String phoneNumber;
 
     private String email;
-
-    private String displayName;
 
     private String roleName;
 }

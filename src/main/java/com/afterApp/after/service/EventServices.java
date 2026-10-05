@@ -94,6 +94,12 @@ public class EventServices {
        return toDto(eventLoader.saveEvent(e));
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "events", key = "#id"),
+            @CacheEvict(value = "eventsByStyle", allEntries = true),
+            @CacheEvict(value = "eventsByType", allEntries = true),
+            @CacheEvict(value = "eventsByTypeStyle", allEntries = true)
+    })
     public EventResponseDTO joinEvent(String authorization, Long id){
         Users requester = extractUser(authorization);
 
@@ -118,6 +124,12 @@ public class EventServices {
         return toDto(eventLoader.saveEvent(e));
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "events", key = "#id"),
+            @CacheEvict(value = "eventsByStyle", allEntries = true),
+            @CacheEvict(value = "eventsByType", allEntries = true),
+            @CacheEvict(value = "eventsByTypeStyle", allEntries = true)
+    })
     public EventResponseDTO leaveEvent(String authorization, Long id){
         Users requester = extractUser(authorization);
 
@@ -139,6 +151,12 @@ public class EventServices {
         return toDto(eventLoader.saveEvent(e));
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "events", key = "#eventId"),
+            @CacheEvict(value = "eventsByStyle", allEntries = true),
+            @CacheEvict(value = "eventsByType", allEntries = true),
+            @CacheEvict(value = "eventsByTypeStyle", allEntries = true)
+    })
     public EventResponseDTO kickUser(String authorization, Long eventId, Long userId) {
         Users requester = extractUser(authorization);
 
@@ -167,6 +185,12 @@ public class EventServices {
         return toDto(eventLoader.saveEvent(e));
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "events", key = "#eventId"),
+            @CacheEvict(value = "eventsByStyle", allEntries = true),
+            @CacheEvict(value = "eventsByType", allEntries = true),
+            @CacheEvict(value = "eventsByTypeStyle", allEntries = true)
+    })
     public EventResponseDTO inviteUser(String authorization, Long eventId, Long userId){
         Users requester = extractUser(authorization);
 

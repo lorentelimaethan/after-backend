@@ -2,12 +2,13 @@ package com.afterApp.after.mappers;
 
 import com.afterApp.after.dto.LoginDTO;
 import com.afterApp.after.dto.UpdateUserDTO;
-import com.afterApp.after.dto.UserResponseDTO;
+import com.afterApp.after.dto.UserPrivateResponseDTO;
+import com.afterApp.after.dto.UserPublicResponseDTO;
 import com.afterApp.after.entity.Users;
 
 public class UserMapper {
-    public static UserResponseDTO toDto(Users u){
-        UserResponseDTO dto = new UserResponseDTO();
+    public static UserPrivateResponseDTO toPrivateDto(Users u){
+        UserPrivateResponseDTO dto = new UserPrivateResponseDTO();
 
         dto.setId(u.getId());
         dto.setName(u.getName());
@@ -18,6 +19,15 @@ public class UserMapper {
         if (u.getUserRole() != null) {
             dto.setRoleName(u.getUserRole().getRoleName());
         }
+
+        return dto;
+    }
+
+    public static UserPublicResponseDTO toPublicDto(Users u){
+        UserPublicResponseDTO dto = new UserPublicResponseDTO();
+
+        dto.setId(u.getId());
+        dto.setDisplayName(u.getDisplayName());
 
         return dto;
     }

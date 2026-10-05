@@ -3,6 +3,7 @@ package com.afterApp.after.controller;
 import com.afterApp.after.dto.UpdateDisplayNameDTO;
 import com.afterApp.after.dto.UpdateRoleDTO;
 import com.afterApp.after.dto.UpdateUserDTO;
+import com.afterApp.after.dto.UserPublicResponseDTO;
 import com.afterApp.after.entity.Users;
 import com.afterApp.after.service.UserServices;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,13 +18,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/after/v1/users")
 @Tag(name = "Users", description = "User profile retrieval, profile updates, display-name updates and role management")
 public class UserController {
     @Autowired
     private UserServices userServices;
-
-    //Falta get de UserDetails
 
     @GetMapping("/{id}")
     @Operation(summary = "Get user by ID")
@@ -110,8 +109,8 @@ public class UserController {
                     )
             )
     })
-    public ResponseEntity<?> getUserById(@PathVariable Long id){
-        return ResponseEntity.ok(userServices.getUserById(id));
+    public ResponseEntity<UserPublicResponseDTO> getUserById(@PathVariable Long id, @RequestHeader String authorization){
+        return ResponseEntity.ok(userServices.getUserById(id, authorization));
     }
 
     @PutMapping("/{id}")

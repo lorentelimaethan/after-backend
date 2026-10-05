@@ -57,7 +57,7 @@ class UserControllerTest {
         String token = createUserToken("ethanlo");
         Long userId = userId("ethanlo");
 
-        mockMvc.perform(get("/users/{id}", userId)
+        mockMvc.perform(get("/after/v1/users/{id}", userId)
                         .header("authorization", bearer(token)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(userId))
@@ -69,7 +69,7 @@ class UserControllerTest {
         createUser("ethanlo");
         Long userId = userId("ethanlo");
 
-        mockMvc.perform(get("/users/{id}", userId)
+        mockMvc.perform(get("/after/v1/users/{id}", userId)
                         .header("authorization", "Bearer invalid-token"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Access denied"));
@@ -80,7 +80,7 @@ class UserControllerTest {
         createUser("ethanlo");
         Long userId = userId("ethanlo");
 
-        mockMvc.perform(get("/users/{id}", userId))
+        mockMvc.perform(get("/after/v1/users/{id}", userId))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Access denied"));
     }
@@ -89,7 +89,7 @@ class UserControllerTest {
     void shouldReturnNotFoundWhenUserDoesNotExist() throws Exception {
         String token = createUserToken("ethanlo");
 
-        mockMvc.perform(get("/users/{id}", 999L)
+        mockMvc.perform(get("/after/v1/users/{id}", 999L)
                         .header("authorization", bearer(token)))
                 .andExpect(status().isNotFound());
     }
@@ -99,7 +99,7 @@ class UserControllerTest {
         String token = createUserToken("ethanlo");
         Long userId = userId("ethanlo");
 
-        mockMvc.perform(put("/users/{id}", userId)
+        mockMvc.perform(put("/after/v1/users/{id}", userId)
                         .header("authorization", bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -122,7 +122,7 @@ class UserControllerTest {
         String token = createUserToken("ethanlo");
         Long userId = userId("ethanlo");
 
-        mockMvc.perform(put("/users/{id}", userId)
+        mockMvc.perform(put("/after/v1/users/{id}", userId)
                         .header("authorization", bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -139,7 +139,7 @@ class UserControllerTest {
         createUser("otheruser");
         Long otherUserId = userId("otheruser");
 
-        mockMvc.perform(put("/users/{id}", otherUserId)
+        mockMvc.perform(put("/after/v1/users/{id}", otherUserId)
                         .header("authorization", bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -156,7 +156,7 @@ class UserControllerTest {
         String token = createUserToken("ethanlo");
         Long userId = userId("ethanlo");
 
-        mockMvc.perform(patch("/users/{id}/display-name", userId)
+        mockMvc.perform(patch("/after/v1/users/{id}/display-name", userId)
                         .header("authorization", bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -173,7 +173,7 @@ class UserControllerTest {
         String token = createUserToken("ethanlo");
         Long userId = userId("ethanlo");
 
-        mockMvc.perform(patch("/users/{id}/display-name", userId)
+        mockMvc.perform(patch("/after/v1/users/{id}/display-name", userId)
                         .header("authorization", bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -190,7 +190,7 @@ class UserControllerTest {
         createUser("takenname");
         Long userId = userId("ethanlo");
 
-        mockMvc.perform(patch("/users/{id}/display-name", userId)
+        mockMvc.perform(patch("/after/v1/users/{id}/display-name", userId)
                         .header("authorization", bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -208,7 +208,7 @@ class UserControllerTest {
         createUser("targetuser", "FREE");
         Long targetUserId = userId("targetuser");
 
-        mockMvc.perform(patch("/users/{id}/role", targetUserId)
+        mockMvc.perform(patch("/after/v1/users/{id}/role", targetUserId)
                         .header("authorization", bearer(adminToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -228,7 +228,7 @@ class UserControllerTest {
         createUser("targetuser", "FREE");
         Long targetUserId = userId("targetuser");
 
-        mockMvc.perform(patch("/users/{id}/role", targetUserId)
+        mockMvc.perform(patch("/after/v1/users/{id}/role", targetUserId)
                         .header("authorization", bearer(freeToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -246,7 +246,7 @@ class UserControllerTest {
         createUser("targetuser", "FREE");
         Long targetUserId = userId("targetuser");
 
-        mockMvc.perform(patch("/users/{id}/role", targetUserId)
+        mockMvc.perform(patch("/after/v1/users/{id}/role", targetUserId)
                         .header("authorization", bearer(adminToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -263,7 +263,7 @@ class UserControllerTest {
         createUser("targetuser", "FREE");
         Long targetUserId = userId("targetuser");
 
-        mockMvc.perform(patch("/users/{id}/role", targetUserId)
+        mockMvc.perform(patch("/after/v1/users/{id}/role", targetUserId)
                         .header("authorization", bearer(adminToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -279,7 +279,7 @@ class UserControllerTest {
         String token = createUserToken("ethanlo");
         Long userId = userId("ethanlo");
 
-        mockMvc.perform(delete("/users/{id}", userId)
+        mockMvc.perform(delete("/after/v1/users/{id}", userId)
                         .header("authorization", bearer(token)))
                 .andExpect(status().isNoContent());
 
@@ -292,7 +292,7 @@ class UserControllerTest {
         createUser("otheruser");
         Long otherUserId = userId("otheruser");
 
-        mockMvc.perform(delete("/users/{id}", otherUserId)
+        mockMvc.perform(delete("/after/v1/users/{id}", otherUserId)
                         .header("authorization", bearer(token)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("You can only delete your own profile"));
@@ -305,7 +305,7 @@ class UserControllerTest {
         createUser("ethanlo");
         Long userId = userId("ethanlo");
 
-        mockMvc.perform(delete("/users/{id}", userId)
+        mockMvc.perform(delete("/after/v1/users/{id}", userId)
                         .header("authorization", "Bearer invalid-token"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Access denied"));

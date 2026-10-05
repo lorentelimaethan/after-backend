@@ -1,9 +1,6 @@
 package com.afterApp.after.service;
 
-import com.afterApp.after.dto.UpdateDisplayNameDTO;
-import com.afterApp.after.dto.UpdateRoleDTO;
-import com.afterApp.after.dto.UpdateUserDTO;
-import com.afterApp.after.dto.UserResponseDTO;
+import com.afterApp.after.dto.*;
 import com.afterApp.after.entity.UserRole;
 import com.afterApp.after.entity.Users;
 import com.afterApp.after.entity.UserAccess;
@@ -21,10 +18,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
-import static com.afterApp.after.mappers.UserMapper.toDto;
-import static com.afterApp.after.mappers.UserMapper.updateUserData;
+import static com.afterApp.after.mappers.UserMapper.*;
 
 @Service
 public class UserServices {
@@ -51,12 +45,19 @@ public class UserServices {
     }
 
     @Cacheable(value = "users", key = "#id")
-    public UserResponseDTO getUserById(Long id) throws RuntimeException{
+    public UserPublicResponseDTO getUserById(Long id, String authorization) throws RuntimeException{
         log.info("getting user with Id = {}", id);
+
+        Users requester = extractUser(authorization);
 
         Users u = getUserEntityById(id);
 
-        return toDto(u);
+        if(requester.getId().equals(id)){
+            return toPrivateDto(u);
+        }
+
+
+        return toPublicDto(u);
     }
 
     public Users getUserEntityById(Long id) throws RuntimeException{
@@ -64,7 +65,7 @@ public class UserServices {
     }
 
     @CacheEvict(value = "users", key = "#id")
-    public UserResponseDTO updateUser(Long id, UpdateUserDTO uDtoDetails, String authorization){
+    public UserPrivateResponseDTO updateUser(Long id, UpdateUserDTO uDtoDetails, String authorization){
         Users requester = extractUser(authorization);
 
         if (!requester.getId().equals(id)){
@@ -75,10 +76,11 @@ public class UserServices {
 
         updateUserData(u, uDtoDetails);
 
-        return toDto(userLoader.saveUser(u));
+        return toPrivateDto(userLoader.saveUser(u));
     }
 
-    public UserResponseDTO updateDisplayName(Long id, String authorization, UpdateDisplayNameDTO uDetails){
+    @CacheEvict(value = "users", key = "#id")
+    public UserPrivateResponseDTO updateDisplayName(Long id, String authorization, UpdateDisplayNameDTO uDetails){
         Users requester = extractUser(authorization);
 
         if (!requester.getId().equals(id)){
@@ -93,10 +95,11 @@ public class UserServices {
 
         u.setDisplayName(newDisplayName);
 
-        return toDto(userLoader.saveUser(u));
+        return toPrivateDto(userLoader.saveUser(u));
     }
 
-    public UserResponseDTO updateUserRole(Long userId, UpdateRoleDTO dto, String authorization){
+    @CacheEvict(value = "users", key = "#userId")
+    public UserPrivateResponseDTO updateUserRole(Long userId, UpdateRoleDTO dto, String authorization){
         Users requester = extractUser(authorization);
 
         if (requester.getUserRole() == null ||
@@ -110,7 +113,7 @@ public class UserServices {
 
         targetUser.setUserRole(newRole);
 
-        return toDto(userLoader.saveUser(targetUser));
+        return toPrivateDto(userLoader.saveUser(targetUser));
     }
 
     @CacheEvict(value = "users", key = "#id")

@@ -58,7 +58,7 @@ class EventControllerTest {
         String hostToken = createUserToken("hostuser");
         Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
 
-        mockMvc.perform(get("/events/{id}", eventId)
+        mockMvc.perform(get("/after/v1/events/{id}", eventId)
                         .header("authorization", bearer(hostToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(eventId))
@@ -73,7 +73,7 @@ class EventControllerTest {
         createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
         createEvent(hostToken, "House Party", "HOUSE_PARTY", "HOUSE", 4);
 
-        mockMvc.perform(get("/events")
+        mockMvc.perform(get("/after/v1/events")
                         .header("authorization", bearer(hostToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2));
@@ -85,7 +85,7 @@ class EventControllerTest {
         createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
         createEvent(hostToken, "Pool Pop", "POOL_PARTY", "POP", 4);
 
-        mockMvc.perform(get("/events")
+        mockMvc.perform(get("/after/v1/events")
                         .param("type", "AFTER")
                         .param("style", "TECHNO")
                         .header("authorization", bearer(hostToken)))
@@ -96,7 +96,7 @@ class EventControllerTest {
 
     @Test
     void shouldRejectGetEventsWhenTokenIsInvalid() throws Exception {
-        mockMvc.perform(get("/events")
+        mockMvc.perform(get("/after/v1/events")
                         .header("authorization", "Bearer invalid-token"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Access denied"));
@@ -106,7 +106,7 @@ class EventControllerTest {
     void shouldReturnNotFoundWhenEventDoesNotExist() throws Exception {
         String hostToken = createUserToken("hostuser");
 
-        mockMvc.perform(get("/events/{id}", 999L)
+        mockMvc.perform(get("/after/v1/events/{id}", 999L)
                         .header("authorization", bearer(hostToken)))
                 .andExpect(status().isNotFound());
     }
@@ -115,7 +115,7 @@ class EventControllerTest {
     void shouldRejectCreateEventWithInvalidBody() throws Exception {
         String hostToken = createUserToken("hostuser");
 
-        mockMvc.perform(post("/events")
+        mockMvc.perform(post("/after/v1/events")
                         .header("authorization", bearer(hostToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(eventJson("Bad Event", "AFTER", "TECHNO", 0)))
@@ -128,12 +128,12 @@ class EventControllerTest {
         String guestToken = createUserToken("guestuser");
         Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
 
-        mockMvc.perform(patch("/events/{id}/join", eventId)
+        mockMvc.perform(patch("/after/v1/events/{id}/join", eventId)
                         .header("authorization", bearer(guestToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.usersCount").value(1));
 
-        mockMvc.perform(patch("/events/{id}/leave", eventId)
+        mockMvc.perform(patch("/after/v1/events/{id}/leave", eventId)
                         .header("authorization", bearer(guestToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.usersCount").value(0));
@@ -146,11 +146,11 @@ class EventControllerTest {
         String secondGuestToken = createUserToken("guesttwo");
         Long eventId = createEvent(hostToken, "Small After", "AFTER", "TECHNO", 1);
 
-        mockMvc.perform(patch("/events/{id}/join", eventId)
+        mockMvc.perform(patch("/after/v1/events/{id}/join", eventId)
                         .header("authorization", bearer(firstGuestToken)))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(patch("/events/{id}/join", eventId)
+        mockMvc.perform(patch("/after/v1/events/{id}/join", eventId)
                         .header("authorization", bearer(secondGuestToken)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Event capacity is full"));
@@ -163,12 +163,12 @@ class EventControllerTest {
         Long guestId = userId("guestuser");
         Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
 
-        mockMvc.perform(patch("/events/{eventId}/invite/user/{userId}", eventId, guestId)
+        mockMvc.perform(patch("/after/v1/events/{eventId}/invite/user/{userId}", eventId, guestId)
                         .header("authorization", bearer(hostToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.usersCount").value(1));
 
-        mockMvc.perform(delete("/events/{eventId}/kick/user/{userId}", eventId, guestId)
+        mockMvc.perform(delete("/after/v1/events/{eventId}/kick/user/{userId}", eventId, guestId)
                         .header("authorization", bearer(hostToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.usersCount").value(0));
@@ -182,7 +182,7 @@ class EventControllerTest {
         Long targetUserId = userId("targetuser");
         Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
 
-        mockMvc.perform(patch("/events/{eventId}/invite/user/{userId}", eventId, targetUserId)
+        mockMvc.perform(patch("/after/v1/events/{eventId}/invite/user/{userId}", eventId, targetUserId)
                         .header("authorization", bearer(guestToken)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("Only host can invite Users"));
@@ -195,11 +195,11 @@ class EventControllerTest {
         Long guestId = userId("guestuser");
         Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
 
-        mockMvc.perform(patch("/events/{eventId}/invite/user/{userId}", eventId, guestId)
+        mockMvc.perform(patch("/after/v1/events/{eventId}/invite/user/{userId}", eventId, guestId)
                         .header("authorization", bearer(hostToken)))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(delete("/events/{eventId}/kick/user/{userId}", eventId, guestId)
+        mockMvc.perform(delete("/after/v1/events/{eventId}/kick/user/{userId}", eventId, guestId)
                         .header("authorization", bearer(guestToken)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("Only host can delete Users"));
@@ -210,7 +210,7 @@ class EventControllerTest {
         String hostToken = createUserToken("hostuser");
         Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
 
-        mockMvc.perform(patch("/events/{id}", eventId)
+        mockMvc.perform(patch("/after/v1/events/{id}", eventId)
                         .header("authorization", bearer(hostToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateEventJson("After Updated", 5)))
@@ -226,7 +226,7 @@ class EventControllerTest {
         String guestToken = createUserToken("guestuser");
         Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
 
-        mockMvc.perform(patch("/events/{id}", eventId)
+        mockMvc.perform(patch("/after/v1/events/{id}", eventId)
                         .header("authorization", bearer(guestToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateEventJson("After Updated", 5)))
@@ -239,7 +239,7 @@ class EventControllerTest {
         String hostToken = createUserToken("hostuser");
         Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
 
-        mockMvc.perform(patch("/events/{id}", eventId)
+        mockMvc.perform(patch("/after/v1/events/{id}", eventId)
                         .header("authorization", bearer(hostToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateEventJson("After Updated", 0)))
@@ -251,7 +251,7 @@ class EventControllerTest {
         String hostToken = createUserToken("hostuser");
         Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
 
-        mockMvc.perform(delete("/events/{id}", eventId)
+        mockMvc.perform(delete("/after/v1/events/{id}", eventId)
                         .header("authorization", bearer(hostToken)))
                 .andExpect(status().isNoContent());
 
@@ -264,14 +264,14 @@ class EventControllerTest {
         String guestToken = createUserToken("guestuser");
         Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
 
-        mockMvc.perform(delete("/events/{id}", eventId)
+        mockMvc.perform(delete("/after/v1/events/{id}", eventId)
                 .header("authorization", bearer(guestToken)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("Only host can delete own event"));
     }
 
     private Long createEvent(String token, String name, String type, String style, int capacity) throws Exception {
-        mockMvc.perform(post("/events")
+        mockMvc.perform(post("/after/v1/events")
                         .header("authorization", bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(eventJson(name, type, style, capacity)))

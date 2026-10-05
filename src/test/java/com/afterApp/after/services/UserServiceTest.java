@@ -3,7 +3,7 @@ package com.afterApp.after.services;
 import com.afterApp.after.dto.UpdateDisplayNameDTO;
 import com.afterApp.after.dto.UpdateRoleDTO;
 import com.afterApp.after.dto.UpdateUserDTO;
-import com.afterApp.after.dto.UserResponseDTO;
+import com.afterApp.after.dto.UserPrivateResponseDTO;
 import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.entity.UserRole;
 import com.afterApp.after.entity.Users;
@@ -69,7 +69,7 @@ public class UserServiceTest {
         when(userLoader.saveUser(any(Users.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        UserResponseDTO result =
+        UserPrivateResponseDTO result =
                 userServices.updateUser(1L, dto, "fake-token");
 
         assertEquals("NewName", result.getName());
@@ -139,7 +139,7 @@ public class UserServiceTest {
         when(userLoader.saveUser(any(Users.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        UserResponseDTO result =
+        UserPrivateResponseDTO result =
                 userServices.updateDisplayName(1L, "fake-token", dto);
 
         assertEquals("NewName", result.getDisplayName());
@@ -225,7 +225,7 @@ public class UserServiceTest {
         when(userLoader.saveUser(any(Users.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        UserResponseDTO result =
+        UserPrivateResponseDTO result =
                 userServices.updateUserRole(2L, dto, "fake-token");
 
         assertEquals("PREMIUM", result.getRoleName());

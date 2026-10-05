@@ -17,7 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/v1/auth")
+@RequestMapping("/after/v1/auth")
 @Tag(name = "Authentication", description = "Registration, login, JWT generation and logout")
 public class UserAccessController {
     @Autowired
