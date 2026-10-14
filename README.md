@@ -1,559 +1,146 @@
 # After
 
-After is a REST API for managing private events in personal spaces: houses, apartments, villas, estates, or other places where a host can organize a party and allow other users to join.
+[![Pull Request Checks](https://github.com/lorentelimaethan/after-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/lorentelimaethan/after-backend/actions/workflows/ci.yml)
+![Java 21](https://img.shields.io/badge/Java-21-orange?logo=openjdk)
+![Spring Boot 4](https://img.shields.io/badge/Spring%20Boot-4-6DB33F?logo=springboot&logoColor=white)
 
-The goal of the MVP is to validate the main flow of an "Airbnb for parties" style platform: a user registers, creates an event as the host, and other users can join, leave, be invited, or be kicked by the host.
+**A REST API for private events hosted in personal spaces.** Create an event, discover events by type or music style, and manage attendance through host-controlled actions. After is currently a backend MVP; this repository does not contain a web or mobile client.
 
-## Project Status
+Built with Java 21, Spring Boot 4, Spring Web MVC, Spring Data JPA, MySQL, Spring Security, JJWT, BCrypt, Jakarta Validation, and Maven. OpenAPI annotations and Swagger UI describe the HTTP API.
 
-Portfolio backend in active development. The core product flows are implemented, tested, documented, and validated in GitHub Actions.
+## What it does
 
-The project currently includes:
+- **Accounts:** register, log in, log out, view profiles, and edit your own profile or display name.
+- **Events:** create, list, filter, view, update, and delete events.
+- **Attendance:** join or leave an event; hosts can invite or remove attendees when their role allows it.
+- **Access control:** signed JWTs, a stateless Spring Security filter chain, method-level permissions, and host checks in the service layer.
+- **API contracts:** validated request DTOs and public response DTOs. Event responses include an attendee count, not the attendee list or address.
 
-- User registration and login.
-- JWT authentication.
-- User profile management.
-- Event creation and retrieval.
-- Filters by event type and music style.
-- Users joining and leaving events.
-- User invitation and removal by the host.
-- Event capacity control.
-- Role-based permissions with FREE, PREMIUM, and ADMIN roles.
-- Global API error responses through `GlobalExceptionHandler`.
-- DTO-based validation.
-- Public responses through DTOs.
-- OpenAPI/Swagger documentation.
-- In-memory caching for user and event read queries.
-- Continuous integration checks for pull requests.
+The host is stored separately from attendees. Capacity counts attendees only. Joining twice, exceeding capacity, or joining/leaving as the host is rejected. Invitations and removals require both the relevant role permission and event ownership; hosts cannot invite or remove themselves.
 
-## Tech Stack
+## How it fits together
 
-- Java 21
-- Spring Boot 4
-- Spring Web MVC
-- Spring Data JPA
-- MySQL
-- JWT with JJWT
-- BCrypt for passwords
-- Jakarta Validation
-- Lombok
-- Springdoc OpenAPI / Swagger UI
-- Maven
-- HSQLDB for in-memory tests
+```mermaid
+flowchart LR
+    Client -->|HTTP + Bearer JWT| Security[Spring Security + JWT filter]
+    Security --> Controllers[REST controllers]
+    Controllers --> Services[Services: rules and ownership]
+    Services --> Repositories[Spring Data JPA repositories]
+    Repositories --> MySQL[(MySQL)]
+    Services --> DTOs[Response DTOs]
+    DTOs --> Client
+```
 
-## Domain Model
+The code is organized under `src/main/java/com/afterApp/after/`: `controller` handles HTTP, `service` enforces business rules, `repositories` access persistence, `entity` defines the JPA model, `dto` defines API payloads, and `mappers` converts between entities and DTOs. The project also has in-memory caches for selected event reads, request timing logs, and a global exception handler.
 
-The MVP is organized around three main concepts:
+## Run locally
 
-- `UserAccess`: access credentials, username, encrypted password, and relation with the user.
-- `Users`: public user profile.
-- `Events`: event created by a host, with party details, address, capacity, and attendees.
-- `UserRole`: role assigned to a user with a list of allowed resources.
+**Requirements:** Java 21 and a local MySQL server. The Maven Wrapper is included.
 
-An event has:
+1. Create the database:
 
-- Name.
-- Description.
-- Date and time.
-- Capacity.
-- Event type.
-- Music style.
-- Host.
-- List of attendee users.
-- Associated address.
+   ```sql
+   CREATE DATABASE after;
+   ```
 
-## Main Features
+2. Check `src/main/resources/application.properties`. Its local defaults use `jdbc:mysql://localhost:3306/after`, user `root`, an empty password, and port `8081`. Set `JWT_SECRET` to a Base64-encoded signing key for any non-local environment. The configured secret fallback and bootstrap admin credentials are development defaults; change them before running outside a trusted local setup.
 
-### Authentication
+3. Start the API:
 
-Users can register and log in.
+   ```bash
+   ./mvnw spring-boot:run
+   ```
 
-After login, the API returns a JWT that must be sent in protected requests:
+The API runs at `http://localhost:8081`. Swagger UI is configured at `http://localhost:8081/swagger-ui/index.html`; the public health endpoint is `/actuator/health`.
+
+### Try the core flow
+
+Register a user:
+
+```bash
+curl -X POST http://localhost:8081/after/v1/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"host01","password":"password123","name":"Alex","lastname":"Rivera","email":"alex@example.com","phoneNumber":"+34612345678"}'
+```
+
+Registration returns the plain-text message `Usuario creado correctamente`. Log in with `POST /after/v1/auth/login` and `{"username":"host01","password":"password123"}`. The response body is the JWT itself as text, rather than a JSON object. Send it on protected requests:
 
 ```http
 Authorization: Bearer <token>
 ```
 
-### Users
+Create an event:
 
-An authenticated user can:
-
-- Retrieve a profile.
-- Update their own profile.
-- Update their display name.
-- Delete their own profile.
-
-The API prevents users from modifying another user's profile.
-
-Admins can update user roles through a protected role-management endpoint.
-
-### Events
-
-An authenticated user can:
-
-- List events.
-- Filter events by type and music style.
-- Retrieve an event by id.
-- Create an event as host.
-- Join an event.
-- Leave an event.
-
-The host of an event can:
-
-- Invite users.
-- Kick users.
-- Update event details.
-- Delete the event.
-
-Main implemented rules:
-
-- The host cannot join their own event as an attendee.
-- The host cannot leave their own event.
-- The host cannot be kicked.
-- Event capacity cannot be exceeded.
-- A user cannot join the same event twice.
-- Only the host can invite, kick, or delete the event.
-- Only users with `UPDATE_ROLE` permission can change another user's role.
-- Invalid or expired tokens return a standardized `401 Unauthorized` response.
-
-## DTOs
-
-The project avoids exposing entities directly in the main API operations.
-
-Current DTOs:
-
-- `LoginDTO`
-- `UpdateUserDTO`
-- `UpdateDisplayNameDTO`
-- `UpdateRoleDTO`
-- `CreateEventDTO`
-- `UpdateEventDTO`
-- `AddressDTO`
-- `UserResponseDTO`
-- `EventResponseDTO`
-- `ErrorResponseDTO`
-
-This separates the public API contract from the internal persistence model.
-
-## Error Responses
-
-Most application errors are centralized through `GlobalExceptionHandler` and returned as `ErrorResponseDTO`:
-
-```json
-{
-  "status": 400,
-  "error": "Bad Request",
-  "message": "Event capacity is full",
-  "path": "/events/6/join",
-  "timestamp": "2026-08-11T13:25:00"
-}
+```bash
+curl -X POST http://localhost:8081/after/v1/events \
+  -H 'Authorization: Bearer <token>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "Friday at home",
+    "eventType": "HOUSE_PARTY",
+    "musicStyle": "HOUSE",
+    "description": "Small private gathering",
+    "dateTime": "2030-06-15T21:00:00",
+    "capacity": 12,
+    "address": {
+      "street": "Carrer de la Marina",
+      "streetNum": "25",
+      "postalCode": "08005",
+      "city": "Barcelona",
+      "province": "Barcelona",
+      "additionalInfo": ""
+    }
+  }'
 ```
 
-Current global mappings:
+The response is an `EventResponseDTO` with `id`, `name`, `description`, `dateTime`, `capacity`, `eventType`, `musicStyle`, `hostDisplayName`, and `usersCount`. It does not return the address or attendees.
 
-| Exception | HTTP status |
-| --- | --- |
-| `InvalidTokenException` | `401 Unauthorized` |
-| `UnauthorizedException` | `403 Forbidden` |
-| `NotFoundException` | `404 Not Found` |
-| `BadRequestException` | `400 Bad Request` |
-| `FormatRequestException` | `400 Bad Request` |
-| `AlreadyExistsException` | `409 Conflict` |
-| `RuntimeException` | `500 Internal Server Error` |
+## API reference
 
-Validation errors from Jakarta Validation return a field-error map, for example:
+All routes below use the `/after/v1` prefix. Registration and login are public; the remaining routes require `Authorization: Bearer <token>`.
 
-```json
-{
-  "username": "Username required",
-  "password": "Password must contain at least 6 characters"
-}
-```
-
-## Main Endpoints
-
-### Auth
-
-| Method | Endpoint | Description |
+| Method | Path | Action |
 | --- | --- | --- |
-| POST | `/v1/auth/register` | Register user |
-| POST | `/v1/auth/login` | Login and JWT generation |
-| POST | `/v1/auth/logout` | Invalidate current token |
+| `POST` | `/auth/register` | Register; assigns the `FREE` role |
+| `POST` | `/auth/login` | Return a JWT as plain text |
+| `POST` | `/auth/logout` | Invalidate the supplied token in this application instance |
+| `GET` | `/users/{id}` | Get a public profile, or private fields for your own profile |
+| `PUT` | `/users/{id}` | Update your own profile |
+| `PATCH` | `/users/{id}/display-name` | Change your own display name |
+| `PATCH` | `/users/{id}/role` | Change a user's role; requires `UPDATE_ROLE` |
+| `DELETE` | `/users/{id}` | Delete your own account; returns `204` |
+| `GET` | `/events` | List events; optional `type` and `style` query parameters |
+| `GET` | `/events/{id}` | Get an event |
+| `POST` | `/events` | Create an event as host |
+| `PATCH` | `/events/{id}` | Update event details; host only |
+| `PATCH` | `/events/{id}/join` | Join as an attendee |
+| `PATCH` | `/events/{id}/leave` | Leave as an attendee |
+| `PATCH` | `/events/{eventId}/invite/user/{userId}` | Invite; host + `INVITE_USER` permission |
+| `DELETE` | `/events/{eventId}/kick/user/{userId}` | Remove attendee; host + `KICK_USER` permission |
+| `DELETE` | `/events/{id}` | Delete; host only, returns `204` |
 
-### Users
+For example, `GET /after/v1/events?type=AFTER&style=TECHNO` filters by both fields. Accepted `type` values are `AFTER`, `PREVIA`, `HOUSE_PARTY`, `CHILL`, `CLUB`, and `POOL_PARTY`; accepted `style` values are `REGGAETON`, `TECHNO`, `TEKNO`, `HOUSE`, `POP`, and `MIXED`.
 
-| Method | Endpoint | Description |
-| --- | --- | --- |
-| GET | `/users/{id}` | Get user by id |
-| PUT | `/users/{id}` | Update own profile |
-| PATCH | `/users/{id}/display-name` | Update display name |
-| PATCH | `/users/{id}/role` | Update user role, requires `UPDATE_ROLE` |
-| DELETE | `/users/{id}` | Delete own profile |
+### Roles and responses
 
-### Events
+Roles are initialized on startup. A bootstrap admin account is also created if its username does not exist; its `after.admin.*` values live in `application.properties`.
 
-| Method | Endpoint | Description |
-| --- | --- | --- |
-| GET | `/events` | List events |
-| GET | `/events?type=AFTER` | Filter by type |
-| GET | `/events?style=TECHNO` | Filter by music style |
-| GET | `/events?type=AFTER&style=TECHNO` | Filter by type and style |
-| GET | `/events/{id}` | Get event by id |
-| POST | `/events` | Create event |
-| PATCH | `/events/{id}/join` | Join event |
-| PATCH | `/events/{id}/leave` | Leave event |
-| PATCH | `/events/{eventId}/invite/user/{userId}` | Invite user |
-| PATCH | `/events/{eventId}` | Update event, host only |
-| DELETE | `/events/{eventId}/kick/user/{userId}` | Kick user |
-| DELETE | `/events/{id}` | Delete event |
-
-## Roles and Permissions
-
-The application initializes three roles on startup:
-
-| Role | Includes |
+| Role | Permissions |
 | --- | --- |
 | `FREE` | `VIEW_EVENT`, `CREATE_EVENT`, `ACCESS_EVENT`, `UPDATE_USER`, `VIEW_USER` |
-| `PREMIUM` | All FREE permissions plus `INVITE_USER` |
-| `ADMIN` | All PREMIUM permissions plus `KICK_USER`, `DELETE_EVENT`, `UPDATE_ROLE` |
+| `PREMIUM` | All `FREE` permissions plus `INVITE_USER` |
+| `ADMIN` | All `PREMIUM` permissions plus `KICK_USER`, `DELETE_EVENT`, `UPDATE_ROLE` |
 
-An admin user is also created on startup if it does not already exist. Its values are configured with:
+`GET /users/{id}` exposes only `id` and `displayName` for another user. For your own profile, it also returns `name`, `lastname`, `phoneNumber`, `email`, and `roleName`. Password hashes and credential entities are never part of these response DTOs.
 
-```properties
-after.admin.username=
-after.admin.password=
-after.admin.name=
-after.admin.lastname=
-after.admin.email=
-after.admin.phone-number=
-```
+Expected API failures are mapped to `400` (invalid input or state), `401` (missing or invalid authentication), `403` (permission denied), `404` (missing resource), or `409` (conflict). Most errors use `{ "status", "error", "message", "path", "timestamp" }`; DTO validation failures return a map of field names to messages. Some ownership checks on user profile updates currently return `400`.
 
-## Allowed Values
-
-### EventType
-
-```text
-AFTER
-PREVIA
-HOUSE_PARTY
-CHILL
-CLUB
-POOL_PARTY
-```
-
-### MusicStyle
-
-```text
-REGGAETON
-TECHNO
-TEKNO
-HOUSE
-POP
-MIXED
-```
-
-## Usage Examples
-
-### Register
-
-```http
-POST /v1/auth/register
-Content-Type: application/json
-```
-
-```json
-{
-  "username": "ethanlo",
-  "password": "password123",
-  "name": "Ethan",
-  "lastname": "Lorente",
-  "email": "ethanlo@example.com",
-  "phoneNumber": "+34612345678"
-}
-```
-
-### Login
-
-```http
-POST /v1/auth/login
-Content-Type: application/json
-```
-
-```json
-{
-  "username": "ethanlo",
-  "password": "password123"
-}
-```
-
-Response:
-
-```text
-eyJhbGciOiJIUzI1NiJ9...
-```
-
-### Create Event
-
-```http
-POST /events
-Authorization: Bearer <token>
-Content-Type: application/json
-```
-
-```json
-{
-  "name": "Techno Underground Barcelona",
-  "eventType": "AFTER",
-  "musicStyle": "TECHNO",
-  "description": "Underground techno party in Barcelona",
-  "dateTime": "2026-08-15T23:00:00",
-  "capacity": 150,
-  "address": {
-    "street": "Carrer Marina",
-    "streetNum": "25",
-    "postalCode": "08005",
-    "additionalInfo": "Industrial warehouse near the beach",
-    "city": "Barcelona",
-    "province": "Catalonia"
-  }
-}
-```
-
-Response:
-
-```json
-{
-  "id": 6,
-  "name": "Techno Underground Barcelona",
-  "description": "Underground techno party in Barcelona",
-  "dateTime": "2026-08-15T23:00:00",
-  "capacity": 150,
-  "eventType": "AFTER",
-  "musicStyle": "TECHNO",
-  "hostDisplayName": "ethanlo",
-  "usersCount": 0
-}
-```
-
-### Update Event
-
-```http
-PATCH /events/6
-Authorization: Bearer <token>
-Content-Type: application/json
-```
-
-```json
-{
-  "name": "Techno Underground Updated",
-  "capacity": 80,
-  "description": "Updated private party details"
-}
-```
-
-### Update User Role
-
-```http
-PATCH /users/7/role
-Authorization: Bearer <admin-token>
-Content-Type: application/json
-```
-
-```json
-{
-  "roleName": "PREMIUM"
-}
-```
-
-## Installation and Execution
-
-### Requirements
-
-- Java 21
-- Maven Wrapper included in the project
-- Local MySQL
-- `after` database
-
-### Create Database
-
-```sql
-CREATE DATABASE after;
-```
-
-### Configuration
-
-The main configuration is located at:
-
-```text
-src/main/resources/application.properties
-```
-
-Current default values:
-
-```properties
-server.port=8081
-spring.datasource.url=jdbc:mysql://localhost:3306/after
-spring.datasource.username=root
-spring.datasource.password=
-spring.jpa.hibernate.ddl-auto=update
-```
-
-The JWT secret is read from the `JWT_SECRET` environment variable.
-
-If it does not exist, a Base64 development value is used:
-
-```properties
-jwt.secret=${JWT_SECRET:ZGV2LXNlY3JldC1kZXYtc2VjcmV0LWRldi1zZWNyZXQ=}
-```
-
-For a real environment, a custom secret should be defined:
-
-```bash
-export JWT_SECRET=<base64-secret>
-```
-
-### Run the Application
-
-```bash
-./mvnw spring-boot:run
-```
-
-The API will be available at:
-
-```text
-http://localhost:8081
-```
-
-### Run Tests
+## Development and tests
 
 ```bash
 ./mvnw test
 ```
 
-The current suite includes service unit tests and HTTP integration tests with `MockMvc`.
+Tests use JUnit 5, Mockito, and MockMvc. HTTP tests start the Spring context against an in-memory HSQLDB configured in `src/test/resources/application.properties`, so local MySQL is not needed for the test suite. The pull request workflow in `.github/workflows/ci.yml` runs `./mvnw clean verify` on Java 21.
 
-The integration tests start the Spring Boot context and use an in-memory HSQL database configured in:
-
-```text
-src/test/resources/application.properties
-```
-
-This makes it possible to test HTTP flows without depending on local MySQL or real data.
-
-Current coverage:
-
-- Spring Boot context startup.
-- Service logic for users, access, and events.
-- Registration and login through HTTP.
-- JWT generation and validation in protected flows.
-- User retrieval and update through HTTP.
-- Event creation, retrieval, listing, and filtering through HTTP.
-- Event join, leave, invite, kick, and delete through HTTP.
-- DTO validations.
-- Main errors: invalid token, not found, bad request, conflict, and forbidden.
-
-Latest test execution result:
-
-```text
-Tests run: 71, Failures: 0, Errors: 0, Skipped: 0
-```
-
-Note: tests that go through real BCrypt may take a little longer because the encoder uses a high cost.
-
-## Continuous Integration
-
-Every pull request targeting `main` runs the GitHub Actions workflow in `.github/workflows/ci.yml`.
-
-The workflow uses Java 21 and executes:
-
-```bash
-./mvnw clean verify
-```
-
-This prevents changes from being merged without compiling and passing the test suite.
-
-## Swagger
-
-With the application running, Swagger UI is available at:
-
-```text
-http://localhost:8081/swagger-ui/index.html
-```
-
-## Current Architecture
-
-The project follows a classic Spring Boot structure:
-
-```text
-controller/
-service/
-repositories/
-entity/
-dto/
-exceptions/
-enums/
-utils/
-```
-
-Responsibilities:
-
-- `controller`: exposes REST endpoints and delegates authentication to Spring Security.
-- `service`: contains business logic.
-- `repositories`: database access through Spring Data JPA.
-- `entity`: persisted model.
-- `dto`: input and output API contracts.
-- `utils`: utilities such as JWT generation and validation.
-- `exceptions`: domain/API exceptions.
-- `loader`: startup data initialization for roles and the admin account.
-- `mappers`: repeated entity-to-DTO conversion logic.
-- `cache`: in-memory cache configuration for frequently read users and events.
-
-## Tests
-
-The test folder is split by responsibility:
-
-```text
-src/test/java/com/afterApp/after/services/
-src/test/java/com/afterApp/after/controller/
-```
-
-- `services`: business logic unit tests with Mockito.
-- `controller`: HTTP flow integration tests with `@SpringBootTest`, `@AutoConfigureMockMvc`, real JWT, and real repositories over HSQLDB.
-
-Controller tests do not depend on an external API or a manually started server. `MockMvc` executes requests against the Spring context inside the test itself.
-
-## Technical Decisions
-
-- Passwords encrypted with BCrypt.
-- JWT with a one-hour expiration.
-- DTOs to separate the public API from JPA entities.
-- Centralized error responses through `GlobalExceptionHandler`.
-- Role permissions initialized from composable FREE, PREMIUM, and ADMIN definitions.
-- Enums stored as text to avoid issues if their order changes.
-- DTO validations to control input data.
-- The host is stored separately from the attendee list.
-- Isolated test configuration with in-memory HSQLDB.
-- Mockito is loaded as a `javaagent` in Surefire for compatibility with the current JDK.
-- `ConcurrentMapCacheManager` caches event and user reads. Event updates/deletes and user profile updates/deletes evict cached entries to avoid serving stale data.
-
-## Current Limitations
-
-The API is suitable as a portfolio backend, but these areas must evolve before a production launch:
-
-- Security does not yet use a full Spring Security filter chain or persistent token revocation.
-- Production configuration still needs environment-specific profiles and externally managed secrets; the development admin credentials must be overridden outside local development.
-- Database schema changes use Hibernate `ddl-auto=update`; versioned migrations are still needed.
-- The in-memory cache is appropriate for local development and a single application instance. A shared cache and complete invalidation strategy are needed before horizontal scaling.
-- There is no Docker-based deployment or connected frontend yet.
-
-## Near-Term Roadmap
-
-- Adopt Spring Security with JWT filters, refresh-token handling, and persistent token revocation.
-- Add Docker, database migrations, environment profiles, and a deployable production configuration.
-- Add pagination, sorting, concurrency protection for capacity, and a shared cache before scaling event discovery.
-- Add application health checks, structured logging, metrics, and error monitoring.
-- Build a web or mobile frontend, event states, and privacy policies for addresses and attendees.
-
-## Author
-
-Project developed as a learning and backend/full stack portfolio MVP.
+The local application uses Hibernate `ddl-auto=update`. JWTs expire after one hour; logout adds tokens to an in-memory blocklist, which is lost on restart and is not shared between instances. Event and user reads use an in-memory cache, so this configuration targets a single application instance. Database migrations, shared token revocation, and multi-instance cache coordination are not implemented here.
