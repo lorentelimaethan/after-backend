@@ -1,9 +1,6 @@
 package com.afterApp.after.mappers;
 
-import com.afterApp.after.dto.LoginDTO;
-import com.afterApp.after.dto.UpdateUserDTO;
-import com.afterApp.after.dto.UserPrivateResponseDTO;
-import com.afterApp.after.dto.UserPublicResponseDTO;
+import com.afterApp.after.dto.*;
 import com.afterApp.after.entity.Users;
 
 public class UserMapper {
@@ -41,7 +38,7 @@ public class UserMapper {
         return u;
     }
 
-    public static Users fromLoginDto(LoginDTO dto){
+    public static Users fromRegisterDto(RegisterDTO dto){
         Users user = new Users();
         user.setDisplayName(dto.getUsername());
         user.setLastname(dto.getLastname());

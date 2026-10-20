@@ -44,7 +44,7 @@ public class UserServices {
         return userAccess.getUser();
     }
 
-    @Cacheable(value = "users", key = "#id")
+
     public UserPublicResponseDTO getUserById(Long id, String authorization) throws RuntimeException{
         log.info("getting user with Id = {}", id);
 

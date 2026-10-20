@@ -1,6 +1,7 @@
 package com.afterApp.after.services;
 
 import com.afterApp.after.dto.LoginDTO;
+import com.afterApp.after.dto.RegisterDTO;
 import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.entity.UserRole;
 import com.afterApp.after.exceptions.BadRequestException;
@@ -35,9 +36,7 @@ class UserAccessServicesTest {
     @Test
     void shouldRegisterUserSuccessfully() {
 
-        LoginDTO dto = new LoginDTO();
-        dto.setUsername("Admin");
-        dto.setPassword("1234");
+        RegisterDTO dto = registerDto();
 
         UserRole freeRole = new UserRole();
         freeRole.setRoleName("FREE");
@@ -61,9 +60,7 @@ class UserAccessServicesTest {
     @Test
     void shouldThrowWhenUsernameAlreadyExists() {
 
-        LoginDTO dto = new LoginDTO();
-        dto.setUsername("Admin");
-        dto.setPassword("1234");
+        RegisterDTO dto = registerDto();
 
         doThrow(new BadRequestException("Username already exists"))
                 .when(userAccessLoader)
@@ -118,5 +115,16 @@ class UserAccessServicesTest {
         boolean result = userAccessServices.validateUser(dto);
 
         assertFalse(result);
+    }
+
+    private RegisterDTO registerDto() {
+        RegisterDTO dto = new RegisterDTO();
+        dto.setUsername("Admin");
+        dto.setPassword("1234");
+        dto.setName("Admin");
+        dto.setLastname("User");
+        dto.setEmail("admin@example.com");
+        dto.setPhoneNumber("+34612345678");
+        return dto;
     }
 }

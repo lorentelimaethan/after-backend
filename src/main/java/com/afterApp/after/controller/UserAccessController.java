@@ -1,6 +1,7 @@
 package com.afterApp.after.controller;
 
 import com.afterApp.after.dto.LoginDTO;
+import com.afterApp.after.dto.RegisterDTO;
 import com.afterApp.after.exceptions.InvalidTokenException;
 import com.afterApp.after.service.UserAccessServices;
 import com.afterApp.after.utils.TokenUtil;
@@ -97,7 +98,7 @@ public class UserAccessController {
                     )
             )
     })
-    public ResponseEntity<?> registerUser(@Valid @RequestBody LoginDTO dto){
+    public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterDTO dto){
         try{
             userAccessServices.registerUser(dto);
             return ResponseEntity.ok("Usuario creado correctamente");
@@ -143,6 +144,22 @@ public class UserAccessController {
             ),
 
             @ApiResponse(
+                    responseCode = "400",
+                    description = "Bad request - missing or invalid credentials",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Validation Error",
+                                    value = """
+                                        {
+                                            "password": "Password required"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
                     responseCode = "500",
                     description = "Internal server error",
                     content = @Content(
@@ -162,7 +179,7 @@ public class UserAccessController {
                     )
             )
     })
-    public ResponseEntity<?> createToken(@RequestBody LoginDTO dto){
+    public ResponseEntity<?> createToken(@Valid @RequestBody LoginDTO dto){
         if (userAccessServices.validateUser(dto)) {
             String token = tokenUtil.generateToken((dto.getUsername()));
             return ResponseEntity.ok(token);

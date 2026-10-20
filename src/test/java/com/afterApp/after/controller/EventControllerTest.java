@@ -2,7 +2,9 @@ package com.afterApp.after.controller;
 
 import com.afterApp.after.entity.Events;
 import com.afterApp.after.entity.UserAccess;
+import com.afterApp.after.entity.UserRole;
 import com.afterApp.after.entity.Users;
+import com.afterApp.after.repositories.UserRoleRepository;
 import com.afterApp.after.repositories.EventRepository;
 import com.afterApp.after.repositories.UserAccessRepository;
 import com.afterApp.after.repositories.UserRepository;
@@ -38,6 +40,9 @@ class EventControllerTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private UserRoleRepository userRoleRepository;
 
     @Autowired
     private TokenUtil tokenUtil;
@@ -158,7 +163,7 @@ class EventControllerTest {
 
     @Test
     void shouldInviteAndKickUserSuccessfully() throws Exception {
-        String hostToken = createUserToken("hostuser");
+        String hostToken = createUserToken("hostuser", "ADMIN");
         createUser("guestuser");
         Long guestId = userId("guestuser");
         Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
@@ -177,7 +182,7 @@ class EventControllerTest {
     @Test
     void shouldRejectInviteByNonHost() throws Exception {
         String hostToken = createUserToken("hostuser");
-        String guestToken = createUserToken("guestuser");
+        String guestToken = createUserToken("guestuser", "PREMIUM");
         createUser("targetuser");
         Long targetUserId = userId("targetuser");
         Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
@@ -190,8 +195,8 @@ class EventControllerTest {
 
     @Test
     void shouldRejectKickByNonHost() throws Exception {
-        String hostToken = createUserToken("hostuser");
-        String guestToken = createUserToken("guestuser");
+        String hostToken = createUserToken("hostuser", "ADMIN");
+        String guestToken = createUserToken("guestuser", "ADMIN");
         Long guestId = userId("guestuser");
         Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
 
@@ -203,6 +208,36 @@ class EventControllerTest {
                         .header("authorization", bearer(guestToken)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("Only host can delete Users"));
+    }
+
+    @Test
+    void shouldRejectInviteWithoutInviteUserPermission() throws Exception {
+        String hostToken = createUserToken("hostuser");
+        String freeToken = createUserToken("freeuser");
+        createUser("targetuser");
+        Long targetUserId = userId("targetuser");
+        Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
+
+        mockMvc.perform(patch("/after/v1/events/{eventId}/invite/user/{userId}", eventId, targetUserId)
+                        .header("authorization", bearer(freeToken)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldRejectKickWithoutKickUserPermission() throws Exception {
+        String hostToken = createUserToken("hostuser", "ADMIN");
+        String premiumToken = createUserToken("premiumuser", "PREMIUM");
+        createUser("guestuser");
+        Long guestId = userId("guestuser");
+        Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
+
+        mockMvc.perform(patch("/after/v1/events/{eventId}/invite/user/{userId}", eventId, guestId)
+                        .header("authorization", bearer(hostToken)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(delete("/after/v1/events/{eventId}/kick/user/{userId}", eventId, guestId)
+                        .header("authorization", bearer(premiumToken)))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -290,9 +325,19 @@ class EventControllerTest {
         return tokenUtil.generateToken(username);
     }
 
+    private String createUserToken(String username, String roleName) {
+        createUser(username, roleName);
+        return tokenUtil.generateToken(username);
+    }
+
     private void createUser(String username) {
+        createUser(username, "FREE");
+    }
+
+    private void createUser(String username, String roleName) {
         Users user = new Users();
         user.setDisplayName(username);
+        user.setUserRole(role(roleName));
 
         UserAccess access = new UserAccess();
         access.setUsername(username);
@@ -300,6 +345,10 @@ class EventControllerTest {
         access.setUser(user);
 
         userAccessRepository.save(access);
+    }
+
+    private UserRole role(String roleName) {
+        return userRoleRepository.findByRoleName(roleName).orElseThrow();
     }
 
     private Long userId(String username) {

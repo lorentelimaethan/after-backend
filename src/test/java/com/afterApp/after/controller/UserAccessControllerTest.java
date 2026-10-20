@@ -46,6 +46,7 @@ class UserAccessControllerTest {
 
         var access = userAccessRepository.findByUsername("ethanlo").orElseThrow();
         org.junit.jupiter.api.Assertions.assertEquals("ethanlo", access.getUser().getDisplayName());
+        org.junit.jupiter.api.Assertions.assertEquals("FREE", access.getUser().getUserRole().getRoleName());
     }
 
     @Test
@@ -89,6 +90,19 @@ class UserAccessControllerTest {
                         .content(loginJson("ethanlo", "wrong-password")))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Access denied"));
+    }
+
+    @Test
+    void shouldRejectLoginWithoutPassword() throws Exception {
+        mockMvc.perform(post("/after/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "ethanlo"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.password").value("Password required"));
     }
 
     private void register(String username, String password) throws Exception {

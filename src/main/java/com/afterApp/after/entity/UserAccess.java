@@ -26,6 +26,3 @@ public class UserAccess {
     @Getter @Setter
     private Users user;
 }
-
-// meter user acces dentro de user solo dejar user acees control y validar user directamente como user o que user accees
-// tenga un one to one que useracees tenga aceso a user pero user a acess no. emepezar segundo join column id.

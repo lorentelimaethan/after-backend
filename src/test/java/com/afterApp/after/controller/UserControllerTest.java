@@ -231,13 +231,12 @@ class UserControllerTest {
         mockMvc.perform(patch("/after/v1/users/{id}/role", targetUserId)
                         .header("authorization", bearer(freeToken))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
+                .content("""
                                 {
                                   "roleName": "PREMIUM"
                                 }
                                 """))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.message").value("Only users with UPDATE_ROLE can update roles"));
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -322,7 +321,7 @@ class UserControllerTest {
     }
 
     private void createUser(String username) {
-        createUser(username, null);
+        createUser(username, "FREE");
     }
 
     private void createUser(String username, String roleName) {

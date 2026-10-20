@@ -6,6 +6,7 @@ import com.afterApp.after.dto.UpdateUserDTO;
 import com.afterApp.after.dto.UserPublicResponseDTO;
 import com.afterApp.after.entity.Users;
 import com.afterApp.after.service.UserServices;
+import com.afterApp.after.utils.UserUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -15,6 +16,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -24,6 +27,10 @@ public class UserController {
     @Autowired
     private UserServices userServices;
 
+    @Autowired
+    private UserUtil userUtil;
+
+    @PreAuthorize("hasAuthority('VIEW_USER')")
     @GetMapping("/{id}")
     @Operation(summary = "Get user by ID")
     @ApiResponses(value = {
@@ -113,6 +120,7 @@ public class UserController {
         return ResponseEntity.ok(userServices.getUserById(id, authorization));
     }
 
+    @PreAuthorize("hasAuthority('UPDATE_USER')")
     @PutMapping("/{id}")
     @Operation(summary = "Update user profile")
     @ApiResponses(value = {
@@ -222,6 +230,7 @@ public class UserController {
         return ResponseEntity.ok(userServices.updateUser(id, uDetails, authorization));
     }
 
+    @PreAuthorize("hasAuthority('UPDATE_USER')")
     @PatchMapping("/{id}/display-name")
     @Operation(summary = "Update user display name")
     @ApiResponses(value = {
@@ -361,6 +370,7 @@ public class UserController {
         return ResponseEntity.ok(userServices.updateDisplayName(id, authorization, uDetails));
     }
 
+    @PreAuthorize("hasAuthority('UPDATE_ROLE')")
     @PatchMapping("/{id}/role")
     @Operation(summary = "Update user role")
     @ApiResponses(value = {
@@ -487,14 +497,10 @@ public class UserController {
         return ResponseEntity.ok(userServices.updateUserRole(id, dto, authorization));
     }
 
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id, @RequestHeader String authorization){
         userServices.deleteUser(id, authorization);
         return ResponseEntity.noContent().build();
     }
-
-
-    //revisar permisos y como se ejecutan
-    //swagger
-    //errores generales, github y commits.
 }

@@ -5,6 +5,7 @@ import com.afterApp.after.entity.UserRole;
 import com.afterApp.after.entity.Users;
 import com.afterApp.after.enums.Resources;
 import com.afterApp.after.repositories.UserAccessRepository;
+import com.afterApp.after.repositories.UserRepository;
 import com.afterApp.after.repositories.UserRoleRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -20,6 +21,7 @@ public class UserRoleInitializer implements CommandLineRunner {
     private final UserRoleRepository userRoleRepository;
     private final UserAccessRepository userAccessRepository;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(16);
+    private final UserRepository userRepository;
 
     @Value("${after.admin.username}")
     private String adminUsername;
@@ -39,9 +41,12 @@ public class UserRoleInitializer implements CommandLineRunner {
     @Value("${after.admin.phone-number}")
     private String adminPhoneNumber;
 
-    public UserRoleInitializer(UserRoleRepository userRoleRepository, UserAccessRepository userAccessRepository) {
+    public UserRoleInitializer(UserRoleRepository userRoleRepository,
+                               UserAccessRepository userAccessRepository,
+                               UserRepository userRepository) {
         this.userRoleRepository = userRoleRepository;
         this.userAccessRepository = userAccessRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -66,10 +71,11 @@ public class UserRoleInitializer implements CommandLineRunner {
                 Resources.UPDATE_ROLE
         );
 
-        createOrUpdateRole("FREE", freeResources);
+        UserRole freeRole = createOrUpdateRole("FREE", freeResources);
         createOrUpdateRole("PREMIUM", premiumResources);
         UserRole adminRole = createOrUpdateRole("ADMIN", adminResources);
 
+        assignFreeRoleToUsersWithoutRole(freeRole);
         createAdminIfNotExists(adminRole);
     }
 
@@ -81,6 +87,14 @@ public class UserRoleInitializer implements CommandLineRunner {
         role.setResources(resources);
 
         return userRoleRepository.save(role);
+    }
+
+    private void assignFreeRoleToUsersWithoutRole(UserRole freeRole){
+        List<Users> withOutRole = userRepository.findByUserRoleIsNull();
+
+        withOutRole.forEach(users -> users.setUserRole(freeRole));
+
+        userRepository.saveAll(withOutRole);
     }
 
     private List<Resources> mergeResources(List<Resources> baseResources, Resources... extraResources) {

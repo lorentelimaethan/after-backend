@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,9 +24,12 @@ import java.util.List;
 @RequestMapping("/after/v1/events")
 @Tag(name = "Events", description = "Event listing, filtering, creation, attendance and host-only moderation")
 public class EventController {
+
     @Autowired
     private EventServices eventServices;
 
+
+    @PreAuthorize("hasAuthority('VIEW_EVENT')")
     @GetMapping
     @Operation(summary = "Get all events")
     @ApiResponses(value = {
@@ -119,6 +123,7 @@ public class EventController {
         return ResponseEntity.ok(events);
     }
 
+    @PreAuthorize("hasAuthority('VIEW_EVENT')")
     @GetMapping("/{id}")
     @Operation(summary = "Get an event by id")
     @ApiResponses(value = {
@@ -210,7 +215,7 @@ public class EventController {
         return ResponseEntity.ok(eventServices.getEvent(id));
     }
 
-
+    @PreAuthorize("hasAuthority('CREATE_EVENT')")
     @PostMapping
     @Operation(summary = "Create a new event")
     @ApiResponses(value = {
@@ -323,7 +328,7 @@ public class EventController {
         return ResponseEntity.ok(eventServices.createEvent(dto, authorization));
     }
 
-
+    @PreAuthorize("hasAuthority('ACCESS_EVENT')")
     @PatchMapping("/{id}/join")
     @Operation(summary = "Join an event")
     @ApiResponses(value = {
@@ -450,6 +455,7 @@ public class EventController {
         return ResponseEntity.ok(eventServices.joinEvent(authorization, id));
     }
 
+    @PreAuthorize("hasAuthority('ACCESS_EVENT')")
     @PatchMapping("/{id}/leave")
     @Operation(summary = "Leave an event")
     @ApiResponses(value = {
@@ -576,6 +582,7 @@ public class EventController {
         return ResponseEntity.ok(eventServices.leaveEvent(authorization, id));
     }
 
+    @PreAuthorize("hasAuthority('INVITE_USER')")
     @PatchMapping("/{eventId}/invite/user/{userId}")
     @Operation(summary = "Invite a user to an event (host only)")
     @ApiResponses(value = {
@@ -863,6 +870,7 @@ public class EventController {
         return ResponseEntity.ok(eventServices.updateEvent(authorization, eventId, eventDTO));
     }
 
+    @PreAuthorize("hasAuthority('KICK_USER')")
     @DeleteMapping("/{eventId}/kick/user/{userId}")
     @Operation(summary = "Kick a user from an event (host only)")
     @ApiResponses(value = {

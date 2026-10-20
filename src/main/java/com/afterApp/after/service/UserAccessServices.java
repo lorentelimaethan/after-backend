@@ -1,6 +1,7 @@
 package com.afterApp.after.service;
 
 import com.afterApp.after.dto.LoginDTO;
+import com.afterApp.after.dto.RegisterDTO;
 import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.entity.UserRole;
 import com.afterApp.after.entity.Users;
@@ -23,14 +24,14 @@ public class UserAccessServices {
 
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(16);
 
-    public UserAccess registerUser(LoginDTO dto){
+    public UserAccess registerUser(RegisterDTO dto){
 
         UserAccess access = UserAccessMapper.fromDto(dto);
         access.setPassword(encoder.encode(dto.getPassword()));
 
         userAccessLoader.existByUsername(access);
 
-        Users user = UserMapper.fromLoginDto(dto);
+        Users user = UserMapper.fromRegisterDto(dto);
 
         UserRole freeRole = userRoleLoader.findByRoleName("FREE");
         user.setUserRole(freeRole);

@@ -1,6 +1,5 @@
 package com.afterApp.after.loader;
 
-import com.afterApp.after.dto.LoginDTO;
 import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.exceptions.BadRequestException;
 import com.afterApp.after.repositories.UserAccessRepository;

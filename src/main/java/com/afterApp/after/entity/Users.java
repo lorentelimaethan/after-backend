@@ -30,6 +30,7 @@ public class Users {
     private String displayName;
 
     @ManyToOne
+    @JoinColumn(name = "role_id")
     @Getter @Setter
     private UserRole userRole;
 }
