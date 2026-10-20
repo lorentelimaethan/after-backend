@@ -65,6 +65,38 @@ class UserControllerTest {
     }
 
     @Test
+    void shouldReturnPrivateProfileOnlyToItsOwnerInEitherOrder() throws Exception {
+        String ownerToken = createUserToken("owner");
+        String otherToken = createUserToken("other");
+        Long ownerId = userId("owner");
+        mockMvc.perform(put("/after/v1/users/{id}", ownerId)
+                        .header("authorization", bearer(ownerToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Owner","lastname":"Example","email":"owner@example.com","phoneNumber":"123456789"}
+                                """))
+                .andExpect(status().isOk());
+
+        for (int i = 0; i < 2; i++) {
+            mockMvc.perform(get("/after/v1/users/{id}", ownerId)
+                            .header("authorization", bearer(otherToken)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.displayName").value("owner"))
+                    .andExpect(jsonPath("$.name").doesNotExist())
+                    .andExpect(jsonPath("$.lastname").doesNotExist())
+                    .andExpect(jsonPath("$.email").doesNotExist())
+                    .andExpect(jsonPath("$.phoneNumber").doesNotExist())
+                    .andExpect(jsonPath("$.roleName").doesNotExist());
+            mockMvc.perform(get("/after/v1/users/{id}", ownerId)
+                            .header("authorization", bearer(ownerToken)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.name").value("Owner"))
+                    .andExpect(jsonPath("$.email").value("owner@example.com"))
+                    .andExpect(jsonPath("$.phoneNumber").value("123456789"));
+        }
+    }
+
+    @Test
     void shouldRejectGetUserWhenTokenIsInvalid() throws Exception {
         createUser("ethanlo");
         Long userId = userId("ethanlo");
@@ -283,6 +315,18 @@ class UserControllerTest {
                 .andExpect(status().isNoContent());
 
         org.junit.jupiter.api.Assertions.assertFalse(userRepository.existsById(userId));
+    }
+
+    @Test
+    void shouldRejectTokenAfterUserIsDeleted() throws Exception {
+        String token = createUserToken("deleteduser");
+        Long userId = userId("deleteduser");
+        mockMvc.perform(delete("/after/v1/users/{id}", userId)
+                        .header("authorization", bearer(token)))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(get("/after/v1/users/{id}", userId)
+                        .header("authorization", bearer(token)))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

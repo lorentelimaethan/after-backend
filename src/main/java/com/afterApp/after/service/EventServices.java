@@ -84,6 +84,11 @@ public class EventServices {
         return userAccess.getUser();
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "eventsByStyle", allEntries = true),
+            @CacheEvict(value = "eventsByType", allEntries = true),
+            @CacheEvict(value = "eventsByTypeStyle", allEntries = true)
+    })
     public EventResponseDTO createEvent(CreateEventDTO dto, String authorization){
         Users host = extractUser(authorization);
 
