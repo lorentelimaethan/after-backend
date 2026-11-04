@@ -43,7 +43,14 @@ The code is organized under `src/main/java/com/afterApp/after/`: `controller` ha
    CREATE DATABASE after;
    ```
 
-2. Check `src/main/resources/application.properties`. Its local defaults use `jdbc:mysql://localhost:3306/after`, user `root`, an empty password, and port `8081`. Set `JWT_SECRET` to a Base64-encoded signing key for any non-local environment. The configured secret fallback and bootstrap admin credentials are development defaults; change them before running outside a trusted local setup.
+2. Set a JWT signing key and a bootstrap admin password in your shell:
+
+   ```bash
+   export JWT_SECRET="$(openssl rand -base64 32)"
+   export AFTER_ADMIN_PASSWORD='<your-local-admin-password>'
+   ```
+
+   The committed `src/main/resources/application.properties` uses local MySQL defaults (`jdbc:mysql://localhost:3306/after`, user `root`, empty password) and port `8081`. Override `DB_URL`, `DB_USER`, and `DB_PASSWORD` when needed. JWT signing and the bootstrap admin password have no committed fallback. The database update setting and local defaults are for development, not a production deployment.
 
 3. Start the API:
 
