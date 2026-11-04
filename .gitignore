@@ -32,4 +32,8 @@ build/
 ### VS Code ###
 .vscode/
 
-src/main/resources
+.DS_Store
+logs/
+.env
+application-local.properties
+application-*.local.properties
