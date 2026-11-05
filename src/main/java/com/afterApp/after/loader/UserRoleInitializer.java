@@ -44,7 +44,8 @@ public class UserRoleInitializer implements CommandLineRunner {
                 premiumResources,
                 Resources.KICK_USER,
                 Resources.DELETE_EVENT,
-                Resources.UPDATE_ROLE
+                Resources.UPDATE_ROLE,
+                Resources.VIEW_METRICS
         );
 
         UserRole freeRole = createOrUpdateRole("FREE", freeResources);

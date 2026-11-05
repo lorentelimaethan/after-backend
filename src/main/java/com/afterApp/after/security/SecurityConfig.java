@@ -32,7 +32,7 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
-                        //hay que añadir un role para que cualquier persona con token no pueda acceder a /metrics por ejemplo.
+                        .requestMatchers("/actuator/**").hasAuthority("VIEW_METRICS")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
