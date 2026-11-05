@@ -33,5 +33,7 @@ build/
 .vscode/
 
 .DS_Store
-.env
 logs/
+.env
+application-local.properties
+application-*.local.properties
