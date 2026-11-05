@@ -43,14 +43,19 @@ The code is organized under `src/main/java/com/afterApp/after/`: `controller` ha
    CREATE DATABASE after;
    ```
 
-2. Set a JWT signing key and a bootstrap admin password in your shell:
+2. Set the JWT signing key and development bootstrap-admin details in your shell:
 
    ```bash
    export JWT_SECRET="$(openssl rand -base64 32)"
+   export AFTER_ADMIN_USERNAME='admin'
    export AFTER_ADMIN_PASSWORD='<your-local-admin-password>'
+   export AFTER_ADMIN_NAME='After'
+   export AFTER_ADMIN_LASTNAME='Admin'
+   export AFTER_ADMIN_EMAIL='admin@after.local'
+   export AFTER_ADMIN_PHONE_NUMBER='+34000000000'
    ```
 
-   The committed `src/main/resources/application.properties` uses local MySQL defaults (`jdbc:mysql://localhost:3306/after`, user `root`, empty password) and port `8081`. Override `DB_URL`, `DB_USER`, and `DB_PASSWORD` when needed. JWT signing and the bootstrap admin password have no committed fallback. The database update setting and local defaults are for development, not a production deployment.
+   `application.properties` selects the `dev` profile by default. Local MySQL configuration and development logging live in `application-dev.properties`; it uses `jdbc:mysql://localhost:3306/after`, user `root`, an empty password, and port `8081`. JWT signing and bootstrap-admin values have no committed fallback.
 
 3. Start the API:
 
@@ -59,6 +64,8 @@ The code is organized under `src/main/java/com/afterApp/after/`: `controller` ha
    ```
 
 The API runs at `http://localhost:8081`. Swagger UI is configured at `http://localhost:8081/swagger-ui/index.html`; the public health endpoint is `/actuator/health`.
+
+For production, activate `prod` with `SPRING_PROFILES_ACTIVE=prod`. `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`, and `JWT_SECRET` are required. Production exposes only Actuator `health` and `info`; only `health` is public. A bootstrap administrator is never created in production.
 
 ### Try the core flow
 
@@ -130,13 +137,13 @@ For example, `GET /after/v1/events?type=AFTER&style=TECHNO` filters by both fiel
 
 ### Roles and responses
 
-Roles are initialized on startup. A bootstrap admin account is also created if its username does not exist; its `after.admin.*` values live in `application.properties`.
+Roles are initialized on startup. A bootstrap admin account is created only with the `dev` and `test` profiles if its username does not exist; its values are supplied through `AFTER_ADMIN_*` environment variables in development.
 
 | Role | Permissions |
 | --- | --- |
 | `FREE` | `VIEW_EVENT`, `CREATE_EVENT`, `ACCESS_EVENT`, `UPDATE_USER`, `VIEW_USER` |
 | `PREMIUM` | All `FREE` permissions plus `INVITE_USER` |
-| `ADMIN` | All `PREMIUM` permissions plus `KICK_USER`, `DELETE_EVENT`, `UPDATE_ROLE` |
+| `ADMIN` | All `PREMIUM` permissions plus `KICK_USER`, `DELETE_EVENT`, `UPDATE_ROLE`, `VIEW_METRICS` |
 
 `GET /users/{id}` exposes only `id` and `displayName` for another user. For your own profile, it also returns `name`, `lastname`, `phoneNumber`, `email`, and `roleName`. Password hashes and credential entities are never part of these response DTOs.
 
@@ -148,6 +155,6 @@ Expected API failures are mapped to `400` (invalid input or state), `401` (missi
 ./mvnw test
 ```
 
-Tests use JUnit 5, Mockito, and MockMvc. HTTP tests start the Spring context against an in-memory HSQLDB configured in `src/test/resources/application.properties`, so local MySQL is not needed for the test suite. The pull request workflow in `.github/workflows/ci.yml` runs `./mvnw clean verify` on Java 21.
+Tests use JUnit 5, Mockito, and MockMvc. Maven activates the `test` profile, so HTTP tests use the in-memory HSQLDB configured in `src/test/resources/application-test.properties`; local MySQL is not needed for the test suite. The pull request workflow in `.github/workflows/ci.yml` runs `./mvnw clean verify` on Java 21.
 
 The local application uses Hibernate `ddl-auto=update`. JWTs expire after one hour; logout adds tokens to an in-memory blocklist, which is lost on restart and is not shared between instances. Event and user reads use an in-memory cache, so this configuration targets a single application instance. Database migrations, shared token revocation, and multi-instance cache coordination are not implemented here.

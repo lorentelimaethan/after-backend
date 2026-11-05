@@ -37,3 +37,4 @@ logs/
 .env
 application-local.properties
 application-*.local.properties
+AFTER_ROADMAP.md
