@@ -1,15 +1,12 @@
 package com.afterApp.after.loader;
 
-import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.entity.UserRole;
 import com.afterApp.after.entity.Users;
 import com.afterApp.after.enums.Resources;
-import com.afterApp.after.repositories.UserAccessRepository;
 import com.afterApp.after.repositories.UserRepository;
 import com.afterApp.after.repositories.UserRoleRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -17,35 +14,14 @@ import java.util.LinkedHashSet;
 import java.util.List;
 
 @Component
+@Order(1)
 public class UserRoleInitializer implements CommandLineRunner {
     private final UserRoleRepository userRoleRepository;
-    private final UserAccessRepository userAccessRepository;
-    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(16);
     private final UserRepository userRepository;
 
-    @Value("${after.admin.username}")
-    private String adminUsername;
-
-    @Value("${after.admin.password}")
-    private String adminPassword;
-
-    @Value("${after.admin.name}")
-    private String adminName;
-
-    @Value("${after.admin.lastname}")
-    private String adminLastname;
-
-    @Value("${after.admin.email}")
-    private String adminEmail;
-
-    @Value("${after.admin.phone-number}")
-    private String adminPhoneNumber;
-
     public UserRoleInitializer(UserRoleRepository userRoleRepository,
-                               UserAccessRepository userAccessRepository,
                                UserRepository userRepository) {
         this.userRoleRepository = userRoleRepository;
-        this.userAccessRepository = userAccessRepository;
         this.userRepository = userRepository;
     }
 
@@ -73,10 +49,9 @@ public class UserRoleInitializer implements CommandLineRunner {
 
         UserRole freeRole = createOrUpdateRole("FREE", freeResources);
         createOrUpdateRole("PREMIUM", premiumResources);
-        UserRole adminRole = createOrUpdateRole("ADMIN", adminResources);
+        createOrUpdateRole("ADMIN", adminResources);
 
         assignFreeRoleToUsersWithoutRole(freeRole);
-        createAdminIfNotExists(adminRole);
     }
 
     private UserRole createOrUpdateRole(String roleName, List<Resources> resources) {
@@ -102,26 +77,5 @@ public class UserRoleInitializer implements CommandLineRunner {
         mergedResources.addAll(List.of(extraResources));
 
         return new ArrayList<>(mergedResources);
-    }
-
-    private void createAdminIfNotExists(UserRole adminRole) {
-        if (userAccessRepository.existsByUsername(adminUsername)) {
-            return;
-        }
-
-        Users adminUser = new Users();
-        adminUser.setName(adminName);
-        adminUser.setLastname(adminLastname);
-        adminUser.setEmail(adminEmail);
-        adminUser.setPhoneNumber(adminPhoneNumber);
-        adminUser.setDisplayName(adminUsername);
-        adminUser.setUserRole(adminRole);
-
-        UserAccess adminAccess = new UserAccess();
-        adminAccess.setUsername(adminUsername);
-        adminAccess.setPassword(encoder.encode(adminPassword));
-        adminAccess.setUser(adminUser);
-
-        userAccessRepository.save(adminAccess);
     }
 }
