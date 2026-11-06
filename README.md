@@ -141,9 +141,11 @@ Roles are initialized on startup. A bootstrap admin account is created only with
 
 | Role | Permissions |
 | --- | --- |
-| `FREE` | `VIEW_EVENT`, `CREATE_EVENT`, `ACCESS_EVENT`, `UPDATE_USER`, `VIEW_USER` |
+| `FREE` | `VIEW_EVENT`, `CREATE_EVENT`, `ACCESS_EVENT`, `VIEW_USER`, `UPDATE_USER`, `UPDATE_EVENT`, `DELETE_EVENT`, `KICK_USER` |
 | `PREMIUM` | All `FREE` permissions plus `INVITE_USER` |
-| `ADMIN` | All `PREMIUM` permissions plus `KICK_USER`, `DELETE_EVENT`, `UPDATE_ROLE`, `VIEW_METRICS` |
+| `ADMIN` | All `PREMIUM` permissions plus `UPDATE_ROLE` and `VIEW_METRICS` |
+
+Permissions determine whether a user can attempt an action. Event ownership remains a separate business rule: only the event host can invite, remove attendees, update, or delete that event. This also applies to `ADMIN`; an administrator is not a moderator of events hosted by other users.
 
 `GET /users/{id}` exposes only `id` and `displayName` for another user. For your own profile, it also returns `name`, `lastname`, `phoneNumber`, `email`, and `roleName`. Password hashes and credential entities are never part of these response DTOs.
 

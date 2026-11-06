@@ -741,6 +741,7 @@ public class EventController {
         return ResponseEntity.ok(eventServices.inviteUser(authorization, eventId, userId));
     }
 
+    @PreAuthorize("hasAuthority('UPDATE_EVENT')")
     @PatchMapping("/{eventId}")
     @Operation(summary = "Update an event", description = "Updates event details. Only the event host can update an event.")
     @ApiResponses(value = {
@@ -1005,6 +1006,7 @@ public class EventController {
         return ResponseEntity.ok(eventServices.kickUser(authorization, eventId, userId));
     }
 
+    @PreAuthorize("hasAuthority('DELETE_EVENT')")
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete an event (host only)")
     @ApiResponses(value = {

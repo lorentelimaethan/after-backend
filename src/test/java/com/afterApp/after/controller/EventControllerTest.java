@@ -280,7 +280,7 @@ class EventControllerTest {
 
     @Test
     void shouldInviteAndKickUserSuccessfully() throws Exception {
-        String hostToken = createUserToken("hostuser", "ADMIN");
+        String hostToken = createUserToken("hostuser", "PREMIUM");
         createUser("guestuser");
         Long guestId = userId("guestuser");
         Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
@@ -312,13 +312,13 @@ class EventControllerTest {
 
     @Test
     void shouldRejectKickByNonHost() throws Exception {
-        String hostToken = createUserToken("hostuser", "ADMIN");
-        String guestToken = createUserToken("guestuser", "ADMIN");
+        String hostToken = createUserToken("hostuser", "FREE");
+        String guestToken = createUserToken("guestuser", "FREE");
         Long guestId = userId("guestuser");
         Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
 
-        mockMvc.perform(patch("/after/v1/events/{eventId}/invite/user/{userId}", eventId, guestId)
-                        .header("authorization", bearer(hostToken)))
+        mockMvc.perform(patch("/after/v1/events/{eventId}/join", eventId)
+                        .header("authorization", bearer(guestToken)))
                 .andExpect(status().isOk());
 
         mockMvc.perform(delete("/after/v1/events/{eventId}/kick/user/{userId}", eventId, guestId)
@@ -341,20 +341,20 @@ class EventControllerTest {
     }
 
     @Test
-    void shouldRejectKickWithoutKickUserPermission() throws Exception {
-        String hostToken = createUserToken("hostuser", "ADMIN");
-        String premiumToken = createUserToken("premiumuser", "PREMIUM");
-        createUser("guestuser");
+    void shouldAllowFreeHostToKickAttendee() throws Exception {
+        String hostToken = createUserToken("hostuser", "FREE");
+        String guestToken = createUserToken("guestuser", "FREE");
         Long guestId = userId("guestuser");
         Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
 
-        mockMvc.perform(patch("/after/v1/events/{eventId}/invite/user/{userId}", eventId, guestId)
-                        .header("authorization", bearer(hostToken)))
+        mockMvc.perform(patch("/after/v1/events/{eventId}/join", eventId)
+                        .header("authorization", bearer(guestToken)))
                 .andExpect(status().isOk());
 
         mockMvc.perform(delete("/after/v1/events/{eventId}/kick/user/{userId}", eventId, guestId)
-                        .header("authorization", bearer(premiumToken)))
-                .andExpect(status().isForbidden());
+                        .header("authorization", bearer(hostToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.usersCount").value(0));
     }
 
     @Test
@@ -443,6 +443,33 @@ class EventControllerTest {
                 .header("authorization", bearer(guestToken)))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("Only host can delete own event"));
+    }
+
+    @Test
+    void shouldRejectAdminManagingAnEventWhenNotHost() throws Exception {
+        String hostToken = createUserToken("hostuser");
+        String adminToken = createUserToken("adminuser", "ADMIN");
+        createUser("guestuser");
+        Long guestId = userId("guestuser");
+        Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
+
+        mockMvc.perform(patch("/after/v1/events/{id}", eventId)
+                        .header("authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updateEventJson("Unauthorized update", 5)))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(patch("/after/v1/events/{eventId}/invite/user/{userId}", eventId, guestId)
+                        .header("authorization", bearer(adminToken)))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(delete("/after/v1/events/{eventId}/kick/user/{userId}", eventId, guestId)
+                        .header("authorization", bearer(adminToken)))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(delete("/after/v1/events/{id}", eventId)
+                        .header("authorization", bearer(adminToken)))
+                .andExpect(status().isForbidden());
     }
 
     private Long createEvent(String token, String name, String type, String style, int capacity) throws Exception {
