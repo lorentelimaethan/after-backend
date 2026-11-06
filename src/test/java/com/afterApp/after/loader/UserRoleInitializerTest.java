@@ -35,6 +35,7 @@ class UserRoleInitializerTest {
         assertSame(free, withoutRole.getUserRole());
         assertTrue(free.getResources().contains(Resources.CREATE_EVENT));
         assertFalse(free.getResources().contains(Resources.INVITE_USER));
+        assertTrue(free.getResources().contains(Resources.KICK_USER));
         assertTrue(premium.getResources().containsAll(free.getResources()));
         assertTrue(premium.getResources().contains(Resources.INVITE_USER));
         assertTrue(admin.getResources().containsAll(premium.getResources()));

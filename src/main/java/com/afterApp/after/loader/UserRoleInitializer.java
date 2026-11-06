@@ -32,6 +32,9 @@ public class UserRoleInitializer implements CommandLineRunner {
                 Resources.CREATE_EVENT,
                 Resources.ACCESS_EVENT,
                 Resources.UPDATE_USER,
+                Resources.DELETE_EVENT,
+                Resources.UPDATE_EVENT,
+                Resources.KICK_USER,
                 Resources.VIEW_USER
         );
 
@@ -42,8 +45,6 @@ public class UserRoleInitializer implements CommandLineRunner {
 
         List<Resources> adminResources = mergeResources(
                 premiumResources,
-                Resources.KICK_USER,
-                Resources.DELETE_EVENT,
                 Resources.UPDATE_ROLE,
                 Resources.VIEW_METRICS
         );
