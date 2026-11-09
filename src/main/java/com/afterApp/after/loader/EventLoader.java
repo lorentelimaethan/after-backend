@@ -42,4 +42,21 @@ public class EventLoader {
     public void deleteEvent(Events e){
         eventRepository.delete(e);
     }
+
+    public List<Events> findHostedByUserId(Long userId){
+        return eventRepository.findDistinctByHost_Id(userId);
+    }
+
+    public List<Events> findAttendedByUserId(Long userId){
+        return eventRepository.findDistinctByUsers_Id(userId);
+    }
+
+    public void saveAllAndFlush(List<Events> events){
+        eventRepository.saveAllAndFlush(events);
+    }
+
+    public void deleteAllAndFlush(List<Events> events) {
+        eventRepository.deleteAll(events);
+        eventRepository.flush();
+    }
 }

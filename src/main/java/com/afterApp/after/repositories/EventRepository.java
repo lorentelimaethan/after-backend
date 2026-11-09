@@ -10,5 +10,7 @@ import java.util.List;
 public interface EventRepository extends JpaRepository<Events, Long> {
     List<Events> findByEventType(EventType Type);
     List<Events> findByMusicStyle(MusicStyle style);
-    List<Events> findByEventTypeAndMusicStyle(EventType eventType, MusicStyle musicStyle);;
+    List<Events> findByEventTypeAndMusicStyle(EventType eventType, MusicStyle musicStyle);
+    List<Events> findDistinctByHost_Id(Long userId);
+    List<Events> findDistinctByUsers_Id(Long userId);
 }
