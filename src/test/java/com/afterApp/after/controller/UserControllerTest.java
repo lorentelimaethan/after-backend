@@ -269,6 +269,8 @@ class UserControllerTest {
                                 }
                                 """))
                 .andExpect(status().isForbidden());
+        org.junit.jupiter.api.Assertions.assertEquals("FREE",
+                userRepository.findById(targetUserId).orElseThrow().getUserRole().getRoleName());
     }
 
     @Test

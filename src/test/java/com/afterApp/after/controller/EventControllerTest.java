@@ -17,6 +17,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -49,6 +50,9 @@ class EventControllerTest {
 
     @Autowired
     private CacheManager cacheManager;
+
+    @Autowired
+    private TransactionTemplate transactions;
 
     @BeforeEach
     void setUp() {
@@ -329,15 +333,16 @@ class EventControllerTest {
 
     @Test
     void shouldRejectInviteWithoutInviteUserPermission() throws Exception {
-        String hostToken = createUserToken("hostuser");
-        String freeToken = createUserToken("freeuser");
+        String freeToken = createUserToken("hostuser", "FREE");
         createUser("targetuser");
         Long targetUserId = userId("targetuser");
-        Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
+        Long eventId = createEvent(freeToken, "After Barcelona", "AFTER", "TECHNO", 3);
 
         mockMvc.perform(patch("/after/v1/events/{eventId}/invite/user/{userId}", eventId, targetUserId)
                         .header("authorization", bearer(freeToken)))
                 .andExpect(status().isForbidden());
+        transactions.executeWithoutResult(status -> org.junit.jupiter.api.Assertions.assertEquals(0,
+                eventRepository.findById(eventId).orElseThrow().getUsers().size()));
     }
 
     @Test
@@ -470,6 +475,12 @@ class EventControllerTest {
         mockMvc.perform(delete("/after/v1/events/{id}", eventId)
                         .header("authorization", bearer(adminToken)))
                 .andExpect(status().isForbidden());
+
+        transactions.executeWithoutResult(status -> {
+            Events unchanged = eventRepository.findById(eventId).orElseThrow();
+            org.junit.jupiter.api.Assertions.assertEquals("After Barcelona", unchanged.getName());
+            org.junit.jupiter.api.Assertions.assertTrue(unchanged.getUsers().isEmpty());
+        });
     }
 
     private Long createEvent(String token, String name, String type, String style, int capacity) throws Exception {

@@ -21,9 +21,24 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+          cache: maven
 
       - name: Grant execute permission
         run: chmod +x mvnw
 
       - name: Build and test
+        env:
+          AFTER_RUN_MYSQL_TESTS: 'true'
         run: ./mvnw clean verify
+
+      - name: Generate coverage report after failures
+        if: failure()
+        run: ./mvnw -q jacoco:report
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
+          if-no-files-found: ignore
