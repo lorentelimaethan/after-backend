@@ -2,6 +2,7 @@ package com.afterApp.after.controller;
 
 import com.afterApp.after.dto.LoginDTO;
 import com.afterApp.after.dto.RegisterDTO;
+import com.afterApp.after.exceptions.AlreadyExistsException;
 import com.afterApp.after.exceptions.InvalidTokenException;
 import com.afterApp.after.service.UserAccessServices;
 import com.afterApp.after.utils.TokenUtil;
@@ -45,36 +46,42 @@ public class UserAccessController {
 
             @ApiResponse(
                     responseCode = "400",
-                    description = "Bad request (username already exists or invalid data)",
+                    description = "Invalid registration data",
                     content = @Content(
                             mediaType = "application/json",
-                            examples = {
-                                    @ExampleObject(
-                                            name = "Username Exists",
-                                            value = """
-                                                {
-                                                    "status": 400,
-                                                    "error": "Bad Request",
-                                                    "message": "Username already exists",
-                                                    "path": "/v1/auth/register",
-                                                    "timestamp": "2026-08-11T13:25:00"
-                                                }
-                                                """
-                                    ),
-                                    @ExampleObject(
-                                            name = "Validation Error",
-                                            value = """
-                                                {
-                                                    "username": "Username required",
-                                                    "password": "Password must contain at least 6 characters",
-                                                    "name": "Name required",
-                                                    "lastname": "LastName required",
-                                                    "email": "Email required",
-                                                    "phoneNumber": "Phone number required"
-                                                }
-                                                """
-                                    )
-                            }
+                            examples = @ExampleObject(
+                                    name = "Validation Error",
+                                    value = """
+                                        {
+                                            "username": "Username required",
+                                            "password": "Password must contain at least 6 characters",
+                                            "name": "Name required",
+                                            "lastname": "LastName required",
+                                            "email": "Email required",
+                                            "phoneNumber": "Phone number required"
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Registration conflicts with existing data",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Registration Conflict",
+                                    value = """
+                                        {
+                                            "timestamp": "2026-08-11T13:25:00",
+                                            "status": 409,
+                                            "error": "Conflict",
+                                            "message": "Registration conflicts with existing data",
+                                            "path": "/after/v1/auth/register"
+                                        }
+                                        """
+                            )
                     )
             ),
 
@@ -91,7 +98,7 @@ public class UserAccessController {
                                             "status": 500,
                                             "error": "Internal Server Error",
                                             "message": "Unexpected Server Error",
-                                            "path": "/v1/auth/register"
+                                            "path": "/after/v1/auth/register"
                                         }
                                         """
                             )
@@ -103,7 +110,7 @@ public class UserAccessController {
             userAccessServices.registerUser(dto);
             return ResponseEntity.ok("Usuario creado correctamente");
         }catch (DataIntegrityViolationException e){
-            return ResponseEntity.badRequest().body(e.getMessage());
+            throw new AlreadyExistsException("Registration conflicts with existing data");
         }
     }
 
