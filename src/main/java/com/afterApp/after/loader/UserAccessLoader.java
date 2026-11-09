@@ -1,7 +1,7 @@
 package com.afterApp.after.loader;
 
 import com.afterApp.after.entity.UserAccess;
-import com.afterApp.after.exceptions.BadRequestException;
+import com.afterApp.after.exceptions.AlreadyExistsException;
 import com.afterApp.after.repositories.UserAccessRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -15,8 +15,12 @@ public class UserAccessLoader {
 
     public void existByUsername(UserAccess access){
         if(userAccessRepository.existsByUsername(access.getUsername())){
-            throw new BadRequestException("Username already exists");
+            throw new AlreadyExistsException("Username already exists");
         }
+    }
+
+    public boolean usernameExists(String username) {
+        return userAccessRepository.existsByUsername(username);
     }
 
     public UserAccess saveUserAccess(UserAccess u){

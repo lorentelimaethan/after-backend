@@ -1,6 +1,7 @@
 package com.afterApp.after.controller;
 
 import com.afterApp.after.dto.RegisterDTO;
+import com.afterApp.after.exceptions.AlreadyExistsException;
 import com.afterApp.after.service.UserAccessServices;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,9 +28,9 @@ class RegistrationErrorContractTest {
     @MockitoBean private UserAccessServices accessService;
 
     @Test
-    void shouldNotExposeDatabaseErrorWhenRegistrationConflicts() throws Exception {
+    void shouldReturnConflictForExistingUsername() throws Exception {
         when(accessService.registerUser(any(RegisterDTO.class)))
-                .thenThrow(new DataIntegrityViolationException("private SQL constraint details"));
+                .thenThrow(new AlreadyExistsException("Username already exists"));
 
         mvc.perform(post("/after/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -39,6 +40,23 @@ class RegistrationErrorContractTest {
                                 """))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.message").value("Username already exists"));
+    }
+
+    @Test
+    void shouldNotMislabelOrExposeUnrelatedDatabaseError() throws Exception {
+        when(accessService.registerUser(any(RegisterDTO.class)))
+                .thenThrow(new DataIntegrityViolationException("private SQL constraint details"));
+
+        mvc.perform(post("/after/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"username":"newuser","password":"secret123","name":"New",
+                                 "lastname":"User","email":"new@example.com","phoneNumber":"123456789"}
+                                """))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.status").value(500))
+                .andExpect(jsonPath("$.message").value("Unexpected Server Error"))
                 .andExpect(content().string(not(containsString("private SQL constraint details"))));
     }
 }

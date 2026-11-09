@@ -2,7 +2,6 @@ package com.afterApp.after.controller;
 
 import com.afterApp.after.dto.LoginDTO;
 import com.afterApp.after.dto.RegisterDTO;
-import com.afterApp.after.exceptions.AlreadyExistsException;
 import com.afterApp.after.exceptions.InvalidTokenException;
 import com.afterApp.after.service.UserAccessServices;
 import com.afterApp.after.utils.TokenUtil;
@@ -14,7 +13,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -67,7 +65,7 @@ public class UserAccessController {
 
             @ApiResponse(
                     responseCode = "409",
-                    description = "Registration conflicts with existing data",
+                    description = "Username already exists",
                     content = @Content(
                             mediaType = "application/json",
                             examples = @ExampleObject(
@@ -77,7 +75,7 @@ public class UserAccessController {
                                             "timestamp": "2026-08-11T13:25:00",
                                             "status": 409,
                                             "error": "Conflict",
-                                            "message": "Registration conflicts with existing data",
+                                            "message": "Username already exists",
                                             "path": "/after/v1/auth/register"
                                         }
                                         """
@@ -106,12 +104,8 @@ public class UserAccessController {
             )
     })
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterDTO dto){
-        try{
-            userAccessServices.registerUser(dto);
-            return ResponseEntity.ok("Usuario creado correctamente");
-        }catch (DataIntegrityViolationException e){
-            throw new AlreadyExistsException("Registration conflicts with existing data");
-        }
+        userAccessServices.registerUser(dto);
+        return ResponseEntity.ok("Usuario creado correctamente");
     }
 
     @PostMapping("/login")

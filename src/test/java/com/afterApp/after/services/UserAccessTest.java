@@ -4,7 +4,7 @@ import com.afterApp.after.dto.LoginDTO;
 import com.afterApp.after.dto.RegisterDTO;
 import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.entity.UserRole;
-import com.afterApp.after.exceptions.BadRequestException;
+import com.afterApp.after.exceptions.AlreadyExistsException;
 import com.afterApp.after.loader.UserAccessLoader;
 import com.afterApp.after.loader.UserRoleLoader;
 import com.afterApp.after.service.UserAccessServices;
@@ -14,6 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.Optional;
 
@@ -62,18 +63,46 @@ class UserAccessServicesTest {
 
         RegisterDTO dto = registerDto();
 
-        doThrow(new BadRequestException("Username already exists"))
+        doThrow(new AlreadyExistsException("Username already exists"))
                 .when(userAccessLoader)
                 .existByUsername(any(UserAccess.class));
 
-        BadRequestException ex = assertThrows(
-                BadRequestException.class,
+        AlreadyExistsException ex = assertThrows(
+                AlreadyExistsException.class,
                 () -> userAccessServices.registerUser(dto)
         );
 
         assertEquals("Username already exists", ex.getMessage());
 
         verify(userAccessLoader, never()).saveUserAccess(any());
+    }
+
+    @Test
+    void shouldReportUsernameConflictWhenConcurrentInsertWins() {
+        RegisterDTO dto = registerDto();
+        when(userRoleLoader.findByRoleName("FREE")).thenReturn(new UserRole());
+        when(userAccessLoader.saveUserAccess(any(UserAccess.class)))
+                .thenThrow(new DataIntegrityViolationException("database detail"));
+        when(userAccessLoader.usernameExists("Admin")).thenReturn(true);
+
+        AlreadyExistsException exception = assertThrows(
+                AlreadyExistsException.class,
+                () -> userAccessServices.registerUser(dto)
+        );
+
+        assertEquals("Username already exists", exception.getMessage());
+    }
+
+    @Test
+    void shouldPreserveUnrelatedIntegrityFailure() {
+        RegisterDTO dto = registerDto();
+        when(userRoleLoader.findByRoleName("FREE")).thenReturn(new UserRole());
+        DataIntegrityViolationException failure = new DataIntegrityViolationException("database detail");
+        when(userAccessLoader.saveUserAccess(any(UserAccess.class))).thenThrow(failure);
+        when(userAccessLoader.usernameExists("Admin")).thenReturn(false);
+
+        assertSame(failure, assertThrows(DataIntegrityViolationException.class,
+                () -> userAccessServices.registerUser(dto)));
     }
 
     @Test
