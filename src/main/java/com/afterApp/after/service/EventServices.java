@@ -139,10 +139,11 @@ public class EventServices {
             @CacheEvict(value = "eventsByType", allEntries = true),
             @CacheEvict(value = "eventsByTypeStyle", allEntries = true)
     })
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public EventResponseDTO leaveEvent(String authorization, Long id){
         Users requester = extractUser(authorization);
 
-        Events e = eventLoader.getEventById(id);
+        Events e = eventLoader.getEventForUpdate(id);
 
 
         if (e.getHost().getId().equals(requester.getId())) {
@@ -166,10 +167,11 @@ public class EventServices {
             @CacheEvict(value = "eventsByType", allEntries = true),
             @CacheEvict(value = "eventsByTypeStyle", allEntries = true)
     })
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public EventResponseDTO kickUser(String authorization, Long eventId, Long userId) {
         Users requester = extractUser(authorization);
 
-        Events e = eventLoader.getEventById(eventId);
+        Events e = eventLoader.getEventForUpdate(eventId);
 
         if(!e.getHost().getId().equals(requester.getId())){
             throw new UnauthorizedException("Only host can delete Users");
@@ -239,10 +241,11 @@ public class EventServices {
             @CacheEvict(value = "eventsByType", allEntries = true),
             @CacheEvict(value = "eventsByTypeStyle", allEntries = true)
     })
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void deleteEvent(Long id, String authorization) throws RuntimeException{
         Users user = extractUser(authorization);
 
-        Events e = eventLoader.getEventById(id);
+        Events e = eventLoader.getEventForUpdate(id);
 
         if(!e.getHost().getId().equals(user.getId())){
             throw new UnauthorizedException("Only host can delete own event");
@@ -257,10 +260,11 @@ public class EventServices {
             @CacheEvict(value = "eventsByType", allEntries = true),
             @CacheEvict(value = "eventsByTypeStyle", allEntries = true)
     })
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public EventResponseDTO updateEvent(String authorization, Long eventId, UpdateEventDTO eventDTO){
         Users requester = extractUser(authorization);
 
-        Events e = eventLoader.getEventById(eventId);
+        Events e = eventLoader.getEventForUpdate(eventId);
 
         if(!e.getHost().getId().equals(requester.getId())){
             throw new UnauthorizedException("Only hosts can update Events");
