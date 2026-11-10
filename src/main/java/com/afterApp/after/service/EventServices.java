@@ -241,10 +241,11 @@ public class EventServices {
             @CacheEvict(value = "eventsByType", allEntries = true),
             @CacheEvict(value = "eventsByTypeStyle", allEntries = true)
     })
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void deleteEvent(Long id, String authorization) throws RuntimeException{
         Users user = extractUser(authorization);
 
-        Events e = eventLoader.getEventById(id);
+        Events e = eventLoader.getEventForUpdate(id);
 
         if(!e.getHost().getId().equals(user.getId())){
             throw new UnauthorizedException("Only host can delete own event");

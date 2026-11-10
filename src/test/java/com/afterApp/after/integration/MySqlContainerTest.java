@@ -237,6 +237,25 @@ class MySqlContainerTest {
         assertDepartureAndPossibleJoin(id, kicked.getId(), joining.getId(), results.get(1));
     }
 
+    @Test
+    void shouldDeleteEventSafelyWhenJoinRacesWithDeletion() throws Exception {
+        Users host = createUser("mysql-host");
+        Users guest = createUser("mysql-joining-guest");
+        Long id = createEvent(host).getId();
+
+        List<Integer> results = runConcurrently(id,
+                () -> deleteEvent(id),
+                () -> join(id, "mysql-joining-guest"));
+        assertEquals(204, results.get(0));
+        assertTrue(results.get(1) == 200 || results.get(1) == 404);
+
+        transactions.executeWithoutResult(status -> {
+            entityManager.clear();
+            assertTrue(events.findById(id).isEmpty());
+            assertTrue(users.findById(guest.getId()).isPresent());
+        });
+    }
+
     private List<Integer> runConcurrently(Long id, Callable<Integer> first, Callable<Integer> second) throws Exception {
         CountDownLatch ready = new CountDownLatch(2);
         doAnswer(invocation -> {
@@ -303,6 +322,12 @@ class MySqlContainerTest {
 
     private int kick(Long id, Long userId) throws Exception {
         return mvc.perform(delete("/after/v1/events/{id}/kick/user/{userId}", id, userId)
+                        .header("Authorization", "Bearer " + tokens.generateToken("mysql-host")))
+                .andReturn().getResponse().getStatus();
+    }
+
+    private int deleteEvent(Long id) throws Exception {
+        return mvc.perform(delete("/after/v1/events/{id}", id)
                         .header("Authorization", "Bearer " + tokens.generateToken("mysql-host")))
                 .andReturn().getResponse().getStatus();
     }
