@@ -59,4 +59,8 @@ public class EventLoader {
         eventRepository.deleteAll(events);
         eventRepository.flush();
     }
+
+    public Events getEventForUpdate(Long id){
+       return eventRepository.findByIdForUpdate(id).orElseThrow(() -> new NotFoundException("Event not Found"));
+    }
 }

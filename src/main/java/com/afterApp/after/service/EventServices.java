@@ -23,6 +23,8 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -99,16 +101,18 @@ public class EventServices {
        return toDto(eventLoader.saveEvent(e));
     }
 
+
     @Caching(evict = {
             @CacheEvict(value = "events", key = "#id"),
             @CacheEvict(value = "eventsByStyle", allEntries = true),
             @CacheEvict(value = "eventsByType", allEntries = true),
             @CacheEvict(value = "eventsByTypeStyle", allEntries = true)
     })
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public EventResponseDTO joinEvent(String authorization, Long id){
         Users requester = extractUser(authorization);
 
-        Events e = eventLoader.getEventById(id);
+        Events e = eventLoader.getEventForUpdate(id);
 
         if (e.getHost().getId().equals(requester.getId())) {
             throw new BadRequestException("Host cannot join own event");
@@ -196,10 +200,11 @@ public class EventServices {
             @CacheEvict(value = "eventsByType", allEntries = true),
             @CacheEvict(value = "eventsByTypeStyle", allEntries = true)
     })
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public EventResponseDTO inviteUser(String authorization, Long eventId, Long userId){
         Users requester = extractUser(authorization);
 
-        Events e = eventLoader.getEventById(eventId);
+        Events e = eventLoader.getEventForUpdate(eventId);
 
         if(!e.getHost().getId().equals(requester.getId())){
             throw new UnauthorizedException("Only host can invite Users");

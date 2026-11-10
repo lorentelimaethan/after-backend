@@ -148,7 +148,7 @@ public class EventServiceTest {
         when(userAccessRepository.findByUsername("Requester"))
                 .thenReturn(Optional.of(access));
 
-        when(eventLoader.getEventById(10L))
+        when(eventLoader.getEventForUpdate(10L))
                 .thenReturn(event);
 
         when(eventLoader.saveEvent(any(Events.class)))
@@ -190,7 +190,7 @@ public class EventServiceTest {
         when(userAccessRepository.findByUsername("Requester"))
                 .thenReturn(Optional.of(access));
 
-        when(eventLoader.getEventById(10L))
+        when(eventLoader.getEventForUpdate(10L))
                 .thenReturn(event);
 
         BadRequestException exception = assertThrows(
@@ -228,7 +228,7 @@ public class EventServiceTest {
         when(userAccessRepository.findByUsername("Host"))
                 .thenReturn(Optional.of(access));
 
-        when(eventLoader.getEventById(10L))
+        when(eventLoader.getEventForUpdate(10L))
                 .thenReturn(event);
 
         BadRequestException exception = assertThrows(
@@ -275,7 +275,7 @@ public class EventServiceTest {
         when(userAccessRepository.findByUsername("Requester"))
                 .thenReturn(Optional.of(access));
 
-        when(eventLoader.getEventById(10L))
+        when(eventLoader.getEventForUpdate(10L))
                 .thenReturn(event);
 
         BadRequestException exception = assertThrows(
@@ -442,7 +442,7 @@ public class EventServiceTest {
         when(userAccessRepository.findByUsername("Host"))
                 .thenReturn(Optional.of(hostAccess));
 
-        when(eventLoader.getEventById(10L))
+        when(eventLoader.getEventForUpdate(10L))
                 .thenReturn(event);
 
         when(userRepository.findById(2L))
@@ -490,7 +490,7 @@ public class EventServiceTest {
         when(userAccessRepository.findByUsername("Normal"))
                 .thenReturn(Optional.of(access));
 
-        when(eventLoader.getEventById(10L))
+        when(eventLoader.getEventForUpdate(10L))
                 .thenReturn(event);
 
         UnauthorizedException exception = assertThrows(
@@ -533,7 +533,7 @@ public class EventServiceTest {
         when(userAccessRepository.findByUsername("Host"))
                 .thenReturn(Optional.of(hostAccess));
 
-        when(eventLoader.getEventById(10L))
+        when(eventLoader.getEventForUpdate(10L))
                 .thenReturn(event);
 
         when(userRepository.findById(2L))

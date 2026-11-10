@@ -110,6 +110,26 @@ class MySqlContainerTest {
     }
 
     @Test
+    void shouldDeleteHostedEventButKeepAttendeeAccountInMySql() throws Exception {
+        Users host = createUser("mysql-host");
+        Users guest = createUser("mysql-guest");
+        Events event = createEvent(host);
+        event.getUsers().add(guest);
+        Long id = events.saveAndFlush(event).getId();
+
+        mvc.perform(delete("/after/v1/users/{id}", host.getId())
+                        .header("Authorization", "Bearer " + tokens.generateToken("mysql-host")))
+                .andExpect(status().isNoContent());
+
+        transactions.executeWithoutResult(status -> {
+            entityManager.clear();
+            assertTrue(users.findById(host.getId()).isEmpty());
+            assertTrue(events.findById(id).isEmpty());
+            assertTrue(users.findById(guest.getId()).isPresent());
+        });
+    }
+
+    @Test
     void shouldNeverAdmitTwoGuestsIntoTheLastPlace() throws Exception {
         Users host = createUser("mysql-host");
         createUser("mysql-guest-one");
@@ -118,13 +138,12 @@ class MySqlContainerTest {
         event.setCapacity(1);
         Long id = events.saveAndFlush(event).getId();
 
-        CountDownLatch loaded = new CountDownLatch(2);
+        CountDownLatch ready = new CountDownLatch(2);
         doAnswer(invocation -> {
-            Events snapshot = (Events) invocation.callRealMethod();
-            loaded.countDown();
-            assertTrue(loaded.await(10, TimeUnit.SECONDS));
-            return snapshot;
-        }).when(eventLoader).getEventById(id);
+            ready.countDown();
+            assertTrue(ready.await(10, TimeUnit.SECONDS));
+            return invocation.callRealMethod();
+        }).when(eventLoader).getEventForUpdate(id);
 
         try (var executor = Executors.newFixedThreadPool(2)) {
             var one = executor.submit(() -> join(id, "mysql-guest-one"));
