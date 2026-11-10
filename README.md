@@ -4,7 +4,7 @@
 ![Java 21](https://img.shields.io/badge/Java-21-orange?logo=openjdk)
 ![Spring Boot 4](https://img.shields.io/badge/Spring%20Boot-4-6DB33F?logo=springboot&logoColor=white)
 
-**A REST API for private events hosted in personal spaces.** Create an event, discover events by type or music style, and manage attendance through host-controlled actions. After is currently a backend MVP; this repository does not contain a web or mobile client.
+**A REST API for private events hosted in personal spaces.** Create an event, discover events by type or music style, and manage attendance through host-controlled actions. This repository contains the After v1 backend API, not a web or mobile client.
 
 Built with Java 21, Spring Boot 4, Spring Web MVC, Spring Data JPA, MySQL, Spring Security, JJWT, BCrypt, Jakarta Validation, and Maven. OpenAPI annotations and Swagger UI describe the HTTP API.
 
@@ -15,6 +15,7 @@ Built with Java 21, Spring Boot 4, Spring Web MVC, Spring Data JPA, MySQL, Sprin
 - **Attendance:** join or leave an event; hosts can invite or remove attendees when their role allows it.
 - **Access control:** signed JWTs, a stateless Spring Security filter chain, method-level permissions, and host checks in the service layer.
 - **API contracts:** validated request DTOs and public response DTOs. Event responses include an attendee count, not the attendee list or address.
+- **Concurrent capacity control:** event writes use transactions and a database row lock so simultaneous joins, invitations, and capacity updates cannot overfill an event.
 
 The host is stored separately from attendees. Capacity counts attendees only. Joining twice, exceeding capacity, or joining/leaving as the host is rejected. Invitations and removals require both the relevant role permission and event ownership; hosts cannot invite or remove themselves.
 
@@ -25,13 +26,14 @@ flowchart LR
     Client -->|HTTP + Bearer JWT| Security[Spring Security + JWT filter]
     Security --> Controllers[REST controllers]
     Controllers --> Services[Services: rules and ownership]
-    Services --> Repositories[Spring Data JPA repositories]
+    Services --> Loaders[Persistence loaders]
+    Loaders --> Repositories[Spring Data JPA repositories]
     Repositories --> MySQL[(MySQL)]
     Services --> DTOs[Response DTOs]
     DTOs --> Client
 ```
 
-The code is organized under `src/main/java/com/afterApp/after/`: `controller` handles HTTP, `service` enforces business rules, `repositories` access persistence, `entity` defines the JPA model, `dto` defines API payloads, and `mappers` converts between entities and DTOs. The project also has in-memory caches for selected event reads, request timing logs, and a global exception handler.
+The code is organized under `src/main/java/com/afterApp/after/`: `controller` handles HTTP, `service` enforces business rules, `loader` wraps persistence operations, `repositories` access Spring Data JPA, `entity` defines the JPA model, `dto` defines API payloads, and `mappers` converts between entities and DTOs. The project also has in-memory caches for selected event reads, request timing logs, and a global exception handler.
 
 ## Run locally
 
@@ -111,7 +113,7 @@ The response is an `EventResponseDTO` with `id`, `name`, `description`, `dateTim
 
 ## API reference
 
-All routes below use the `/after/v1` prefix. Registration and login are public; the remaining routes require `Authorization: Bearer <token>`.
+All routes below use the `/after/v1` prefix. Only registration and login are public; logout and the remaining routes require `Authorization: Bearer <token>`.
 
 | Method | Path | Action |
 | --- | --- | --- |
@@ -122,7 +124,7 @@ All routes below use the `/after/v1` prefix. Registration and login are public; 
 | `PUT` | `/users/{id}` | Update your own profile |
 | `PATCH` | `/users/{id}/display-name` | Change your own display name |
 | `PATCH` | `/users/{id}/role` | Change a user's role; requires `UPDATE_ROLE` |
-| `DELETE` | `/users/{id}` | Delete your own account; returns `204` |
+| `DELETE` | `/users/{id}` | Delete your own account and hosted events; leave events you attended; returns `204` |
 | `GET` | `/events` | List events; optional `type` and `style` query parameters |
 | `GET` | `/events/{id}` | Get an event |
 | `POST` | `/events` | Create an event as host |
@@ -151,12 +153,28 @@ Permissions determine whether a user can attempt an action. Event ownership rema
 
 Expected API failures are mapped to `400` (invalid input or state), `401` (missing or invalid authentication), `403` (permission denied), `404` (missing resource), or `409` (conflict). Most errors use `{ "status", "error", "message", "path", "timestamp" }`; DTO validation failures return a map of field names to messages. Some ownership checks on user profile updates currently return `400`.
 
+Registration returns `409` for an existing username. Unexpected database failures are not returned with raw SQL details in the API response.
+
+### Concurrent events and account deletion
+
+Joining, leaving, inviting, kicking, updating, and deleting an event acquire a pessimistic write lock on that event inside a `READ_COMMITTED` transaction. Capacity checks and attendee changes happen while the lock is held. A host is not counted as an attendee, and a capacity reduction below the current attendee count is rejected.
+
+Deleting an account is transactional: the user is removed from events they attended, their hosted events are deleted, and other attendees keep their accounts. Event caches are cleared after a successful account-deletion commit.
+
 ## Development and tests
 
 ```bash
 ./mvnw test
 ```
 
-Tests use JUnit 5, Mockito, and MockMvc. Maven activates the `test` profile, so HTTP tests use the in-memory HSQLDB configured in `src/test/resources/application-test.properties`; local MySQL is not needed for the test suite. The pull request workflow in `.github/workflows/ci.yml` runs `./mvnw clean verify` on Java 21.
+Tests use JUnit 5, Mockito, and MockMvc. Maven activates the `test` profile, so the regular HTTP tests use in-memory HSQLDB from `src/test/resources/application-test.properties`; local MySQL is not needed for those tests.
+
+MySQL integration tests use Testcontainers and require a running Docker daemon. They cover persistence, account deletion with event relationships, and concurrent attendance or capacity changes: join + join, invite + invite, join + invite, capacity reduction + join, leave + join, kick + join, and event deletion + join. Run them locally with:
+
+```bash
+AFTER_RUN_MYSQL_TESTS=true ./mvnw -Dtest=MySqlContainerTest test
+```
+
+Run the entire suite, including MySQL, with `AFTER_RUN_MYSQL_TESTS=true ./mvnw test`. The GitHub Actions workflow in `.github/workflows/ci.yml` runs `./mvnw clean verify` on Java 21 with the MySQL tests enabled, Maven dependency caching, and a downloadable JaCoCo coverage report. `./mvnw verify` writes the local report to `target/site/jacoco/index.html`.
 
 The local application uses Hibernate `ddl-auto=update`. JWTs expire after one hour; logout adds tokens to an in-memory blocklist, which is lost on restart and is not shared between instances. Event and user reads use an in-memory cache, so this configuration targets a single application instance. Database migrations, shared token revocation, and multi-instance cache coordination are not implemented here.
