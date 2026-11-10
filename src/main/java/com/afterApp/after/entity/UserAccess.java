@@ -7,14 +7,14 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "userAccess")
+@Table(name = "userAccess", uniqueConstraints = @UniqueConstraint(name = "uk_user_access_username", columnNames = "username"))
 public class UserAccess {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Getter @Setter
     private long id;
 
-    @Column(unique = true)
+    @Column
     @Getter @Setter
     private String username;
 

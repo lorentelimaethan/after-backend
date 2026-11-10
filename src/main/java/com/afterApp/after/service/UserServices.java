@@ -1,11 +1,13 @@
 package com.afterApp.after.service;
 
 import com.afterApp.after.dto.*;
+import com.afterApp.after.entity.Events;
 import com.afterApp.after.entity.UserRole;
 import com.afterApp.after.entity.Users;
 import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.enums.Resources;
 import com.afterApp.after.exceptions.*;
+import com.afterApp.after.loader.EventLoader;
 import com.afterApp.after.loader.UserLoader;
 import com.afterApp.after.loader.UserRoleLoader;
 import com.afterApp.after.repositories.UserAccessRepository;
@@ -14,9 +16,16 @@ import com.afterApp.after.utils.TokenUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
+import java.util.List;
 
 import static com.afterApp.after.mappers.UserMapper.*;
 
@@ -32,6 +41,10 @@ public class UserServices {
     private UserLoader userLoader;
     @Autowired
     private UserRoleLoader userRoleLoader;
+    @Autowired
+    private EventLoader eventLoader;
+    @Autowired
+    private CacheManager cacheManager;
 
     private static final Logger log = LoggerFactory.getLogger(UserServices.class);
 
@@ -116,17 +129,47 @@ public class UserServices {
         return toPrivateDto(userLoader.saveUser(targetUser));
     }
 
-    @CacheEvict(value = "users", key = "#id")
+
+    @Transactional
     public void deleteUser(Long id, String authorization){
         Users requester = extractUser(authorization);
 
-        Users target = userLoader.findById(id);
-
         if(!requester.getId().equals(id)){
-            throw new BadRequestException("You can only delete your own profile");
+            throw new UnauthorizedException("You can only delete your own profile");
         }
 
+        Users target = userLoader.findById(id);
+
+        List<Events> attendedEvents = eventLoader.findAttendedByUserId(target.getId());
+        List<Events> hostedEvents = eventLoader.findHostedByUserId(target.getId());
+
+        for(Events event : attendedEvents){
+            event.getUsers().removeIf(attendee ->
+                    target.getId().equals(attendee.getId()));
+        }
+
+        eventLoader.saveAllAndFlush(attendedEvents);
+        eventLoader.deleteAllAndFlush(hostedEvents);
         userLoader.deleteUser(target);
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit(){
+                Cache usersCache = cacheManager.getCache("users");
+
+                if (usersCache != null){
+                    usersCache.evict(id);
+                }
+
+                for (String name : List.of(
+                        "events", "eventsByType", "eventsByStyle", "eventsByTypeStyle")){
+                    Cache cache = cacheManager.getCache(name);
+                    if(cache != null){
+                        cache.clear();
+                    }
+                }
+            }
+        });
     }
-    //Hacer un extract role, meter en el .parser(username), crear un external id para el role id=free, id=admine etc.. añadir el id para extraerlo.
+
 }

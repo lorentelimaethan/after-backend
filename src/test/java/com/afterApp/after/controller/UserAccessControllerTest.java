@@ -74,7 +74,7 @@ class UserAccessControllerTest {
         mockMvc.perform(post("/after/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(registerJson("ethanlo", "secret123")))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("Username already exists"));
     }
 

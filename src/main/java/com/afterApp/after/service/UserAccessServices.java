@@ -5,11 +5,13 @@ import com.afterApp.after.dto.RegisterDTO;
 import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.entity.UserRole;
 import com.afterApp.after.entity.Users;
+import com.afterApp.after.exceptions.AlreadyExistsException;
 import com.afterApp.after.loader.UserAccessLoader;
 import com.afterApp.after.loader.UserRoleLoader;
 import com.afterApp.after.mappers.UserAccessMapper;
 import com.afterApp.after.mappers.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -38,7 +40,14 @@ public class UserAccessServices {
 
         access.setUser(user);
 
-        return userAccessLoader.saveUserAccess(access);
+        try {
+            return userAccessLoader.saveUserAccess(access);
+        } catch (DataIntegrityViolationException exception) {
+            if (userAccessLoader.usernameExists(access.getUsername())) {
+                throw new AlreadyExistsException("Username already exists");
+            }
+            throw exception;
+        }
     }
 
     public boolean validateUser(LoginDTO dto){

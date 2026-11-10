@@ -17,3 +17,12 @@ Set `AFTER_MYSQL_TEST_URL`, `AFTER_MYSQL_TEST_USERNAME`, and
 ```
 
 The database and its credentials are not created or managed by this test.
+
+`MySqlContainerTest` uses an isolated, disposable MySQL instance through
+Testcontainers. It runs in CI and can be run locally with Docker running:
+
+```sh
+AFTER_RUN_MYSQL_TESTS=true ./mvnw -Dtest=MySqlContainerTest test
+```
+
+`./mvnw verify` generates a JaCoCo report in `target/site/jacoco/index.html`.

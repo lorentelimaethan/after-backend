@@ -11,6 +11,7 @@ import com.afterApp.after.enums.Resources;
 import com.afterApp.after.exceptions.AlreadyExistsException;
 import com.afterApp.after.exceptions.BadRequestException;
 import com.afterApp.after.exceptions.UnauthorizedException;
+import com.afterApp.after.loader.EventLoader;
 import com.afterApp.after.loader.UserLoader;
 import com.afterApp.after.loader.UserRoleLoader;
 import com.afterApp.after.service.UserServices;
@@ -18,8 +19,14 @@ import com.afterApp.after.utils.TokenUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 
@@ -38,6 +45,15 @@ public class UserServiceTest {
 
     @Mock
     private UserRoleLoader userRoleLoader;
+
+    @Mock
+    private EventLoader eventLoader;
+
+    @Mock
+    private CacheManager cacheManager;
+
+    @Mock
+    private Cache cache;
 
     @InjectMocks
     private UserServices userServices;
@@ -311,9 +327,27 @@ public class UserServiceTest {
         when(tokenUtil.extractUsername("fake-token")).thenReturn("User");
         when(userLoader.findByUsername("User")).thenReturn(access);
         when(userLoader.findById(1L)).thenReturn(user);
+        when(eventLoader.findAttendedByUserId(1L)).thenReturn(List.of());
+        when(eventLoader.findHostedByUserId(1L)).thenReturn(List.of());
 
-        userServices.deleteUser(1L, "fake-token");
+        try (MockedStatic<TransactionSynchronizationManager> synchronizationManager =
+                     mockStatic(TransactionSynchronizationManager.class)) {
+            userServices.deleteUser(1L, "fake-token");
 
+            ArgumentCaptor<TransactionSynchronization> callback =
+                    ArgumentCaptor.forClass(TransactionSynchronization.class);
+            synchronizationManager.verify(() ->
+                    TransactionSynchronizationManager.registerSynchronization(callback.capture()));
+            verifyNoInteractions(cacheManager);
+
+            when(cacheManager.getCache(any(String.class))).thenReturn(cache);
+            callback.getValue().afterCommit();
+            verify(cache).evict(1L);
+            verify(cache, times(4)).clear();
+        }
+
+        verify(eventLoader).saveAllAndFlush(List.of());
+        verify(eventLoader).deleteAllAndFlush(List.of());
         verify(userLoader).deleteUser(user);
     }
 
@@ -322,23 +356,20 @@ public class UserServiceTest {
         Users requester = new Users();
         requester.setId(1L);
 
-        Users target = new Users();
-        target.setId(2L);
-
         UserAccess access = new UserAccess();
         access.setUsername("User");
         access.setUser(requester);
 
         when(tokenUtil.extractUsername("fake-token")).thenReturn("User");
         when(userLoader.findByUsername("User")).thenReturn(access);
-        when(userLoader.findById(2L)).thenReturn(target);
 
-        BadRequestException exception = assertThrows(
-                BadRequestException.class,
+        UnauthorizedException exception = assertThrows(
+                UnauthorizedException.class,
                 () -> userServices.deleteUser(2L, "fake-token")
         );
 
         assertEquals("You can only delete your own profile", exception.getMessage());
+        verify(userLoader, never()).findById(2L);
         verify(userLoader, never()).deleteUser(any());
     }
 }

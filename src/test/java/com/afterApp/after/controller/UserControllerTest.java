@@ -269,6 +269,8 @@ class UserControllerTest {
                                 }
                                 """))
                 .andExpect(status().isForbidden());
+        org.junit.jupiter.api.Assertions.assertEquals("FREE",
+                userRepository.findById(targetUserId).orElseThrow().getUserRole().getRoleName());
     }
 
     @Test
@@ -337,7 +339,7 @@ class UserControllerTest {
 
         mockMvc.perform(delete("/after/v1/users/{id}", otherUserId)
                         .header("authorization", bearer(token)))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("You can only delete your own profile"));
 
         org.junit.jupiter.api.Assertions.assertTrue(userRepository.existsById(otherUserId));

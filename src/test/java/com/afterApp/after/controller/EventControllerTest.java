@@ -1,5 +1,6 @@
 package com.afterApp.after.controller;
 
+import com.afterApp.after.entity.Address;
 import com.afterApp.after.entity.Events;
 import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.entity.UserRole;
@@ -9,6 +10,7 @@ import com.afterApp.after.repositories.EventRepository;
 import com.afterApp.after.repositories.UserAccessRepository;
 import com.afterApp.after.repositories.UserRepository;
 import com.afterApp.after.utils.TokenUtil;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +19,13 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -49,6 +58,12 @@ class EventControllerTest {
 
     @Autowired
     private CacheManager cacheManager;
+
+    @Autowired
+    private TransactionTemplate transactions;
+
+    @Autowired
+    private EntityManager entityManager;
 
     @BeforeEach
     void setUp() {
@@ -329,15 +344,16 @@ class EventControllerTest {
 
     @Test
     void shouldRejectInviteWithoutInviteUserPermission() throws Exception {
-        String hostToken = createUserToken("hostuser");
-        String freeToken = createUserToken("freeuser");
+        String freeToken = createUserToken("hostuser", "FREE");
         createUser("targetuser");
         Long targetUserId = userId("targetuser");
-        Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
+        Long eventId = createEvent(freeToken, "After Barcelona", "AFTER", "TECHNO", 3);
 
         mockMvc.perform(patch("/after/v1/events/{eventId}/invite/user/{userId}", eventId, targetUserId)
                         .header("authorization", bearer(freeToken)))
                 .andExpect(status().isForbidden());
+        transactions.executeWithoutResult(status -> org.junit.jupiter.api.Assertions.assertEquals(0,
+                eventRepository.findById(eventId).orElseThrow().getUsers().size()));
     }
 
     @Test
@@ -434,6 +450,25 @@ class EventControllerTest {
     }
 
     @Test
+    void shouldDeleteOnlyTheAddressOfTheApiCreatedEvent() throws Exception {
+        String hostToken = createUserToken("hostuser");
+        Long deletedId = createEvent(hostToken, "First event", "AFTER", "TECHNO", 3);
+        Long retainedId = createEvent(hostToken, "Second event", "AFTER", "TECHNO", 3);
+        Long deletedAddressId = eventRepository.findById(deletedId).orElseThrow().getAddress().getId();
+        Long retainedAddressId = eventRepository.findById(retainedId).orElseThrow().getAddress().getId();
+        assertNotEquals(deletedAddressId, retainedAddressId);
+
+        mockMvc.perform(delete("/after/v1/events/{id}", deletedId)
+                        .header("authorization", bearer(hostToken)))
+                .andExpect(status().isNoContent());
+
+        assertFalse(eventRepository.existsById(deletedId));
+        assertTrue(eventRepository.existsById(retainedId));
+        assertNull(transactions.execute(status -> entityManager.find(Address.class, deletedAddressId)));
+        assertNotNull(transactions.execute(status -> entityManager.find(Address.class, retainedAddressId)));
+    }
+
+    @Test
     void shouldRejectDeleteByNonHost() throws Exception {
         String hostToken = createUserToken("hostuser");
         String guestToken = createUserToken("guestuser");
@@ -470,6 +505,12 @@ class EventControllerTest {
         mockMvc.perform(delete("/after/v1/events/{id}", eventId)
                         .header("authorization", bearer(adminToken)))
                 .andExpect(status().isForbidden());
+
+        transactions.executeWithoutResult(status -> {
+            Events unchanged = eventRepository.findById(eventId).orElseThrow();
+            org.junit.jupiter.api.Assertions.assertEquals("After Barcelona", unchanged.getName());
+            org.junit.jupiter.api.Assertions.assertTrue(unchanged.getUsers().isEmpty());
+        });
     }
 
     private Long createEvent(String token, String name, String type, String style, int capacity) throws Exception {
