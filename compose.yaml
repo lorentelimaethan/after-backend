@@ -1,0 +1,42 @@
+services:
+  db:
+    image: mysql:8.4.13
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:?Set MYSQL_DATABASE in .env}
+      MYSQL_USER: ${MYSQL_USER:?Set MYSQL_USER in .env}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: >-
+        mysql -h 127.0.0.1 -u "$$MYSQL_USER"
+        --password="$$MYSQL_PASSWORD" "$$MYSQL_DATABASE"
+        -e "SELECT 1" >/dev/null 2>&1
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  after:
+    build: .
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DATABASE_URL: jdbc:mysql://db:3306/${MYSQL_DATABASE:?Set MYSQL_DATABASE in .env}
+      DATABASE_USERNAME: ${MYSQL_USER:?Set MYSQL_USER in .env}
+      DATABASE_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      AFTER_ADMIN_USERNAME: ${AFTER_ADMIN_USERNAME:?Set AFTER_ADMIN_USERNAME in .env}
+      AFTER_ADMIN_PASSWORD: ${AFTER_ADMIN_PASSWORD:?Set AFTER_ADMIN_PASSWORD in .env}
+      AFTER_ADMIN_NAME: ${AFTER_ADMIN_NAME:?Set AFTER_ADMIN_NAME in .env}
+      AFTER_ADMIN_LASTNAME: ${AFTER_ADMIN_LASTNAME:?Set AFTER_ADMIN_LASTNAME in .env}
+      AFTER_ADMIN_EMAIL: ${AFTER_ADMIN_EMAIL:?Set AFTER_ADMIN_EMAIL in .env}
+      AFTER_ADMIN_PHONE_NUMBER: ${AFTER_ADMIN_PHONE_NUMBER:?Set AFTER_ADMIN_PHONE_NUMBER in .env}
+    ports:
+      - "8081:8081"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mysql_data:

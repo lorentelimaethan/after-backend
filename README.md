@@ -6,7 +6,7 @@
 
 **A REST API for private events hosted in personal spaces.** Create an event, discover events by type or music style, and manage attendance through host-controlled actions. This repository contains the After v1 backend API, not a web or mobile client.
 
-Built with Java 21, Spring Boot 4, Spring Web MVC, Spring Data JPA, MySQL, Spring Security, JJWT, BCrypt, Jakarta Validation, and Maven. OpenAPI annotations and Swagger UI describe the HTTP API.
+Built with Java 21, Spring Boot 4, Spring Web MVC, Spring Data JPA, MySQL, Spring Security, JJWT, BCrypt, Jakarta Validation, and Maven. Springdoc OpenAPI 3 and Swagger UI describe the HTTP API. Docker Compose provides a local After and MySQL stack.
 
 ## What it does
 
@@ -37,6 +37,37 @@ The code is organized under `src/main/java/com/afterApp/after/`: `controller` ha
 
 ## Run locally
 
+### Docker Compose
+
+**Requirements:** Docker Engine with Compose.
+
+1. Copy the environment template and set the required database, JWT, and development-admin credentials. Generate a Base64-encoded JWT key with `openssl rand -base64 32`.
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   `.env` is ignored by Git and excluded from the Docker build context; `.env.example` contains placeholders only.
+
+2. Build and start both services:
+
+   ```bash
+   docker compose up --build
+   ```
+
+   Compose runs After with the `dev` profile and a MySQL service. The API is available at `http://localhost:8081`; Swagger UI is at `http://localhost:8081/swagger-ui/index.html`.
+
+3. Check the running services and health endpoint:
+
+   ```bash
+   docker compose ps
+   curl http://localhost:8081/actuator/health
+   ```
+
+Stop the stack with `docker compose down`. MySQL data persists in the `mysql_data` volume.
+
+### Java and local MySQL
+
 **Requirements:** Java 21 and a local MySQL server. The Maven Wrapper is included.
 
 1. Create the database:
@@ -57,7 +88,7 @@ The code is organized under `src/main/java/com/afterApp/after/`: `controller` ha
    export AFTER_ADMIN_PHONE_NUMBER='+34000000000'
    ```
 
-   `application.properties` selects the `dev` profile by default. Local MySQL configuration and development logging live in `application-dev.properties`; it uses `jdbc:mysql://localhost:3306/after`, user `root`, an empty password, and port `8081`. JWT signing and bootstrap-admin values have no committed fallback.
+   The default `dev` profile connects to `jdbc:mysql://localhost:3306/after` as `root` with an empty password. Override these defaults with `DATABASE_URL`, `DATABASE_USERNAME`, and `DATABASE_PASSWORD` if needed.
 
 3. Start the API:
 
@@ -65,9 +96,9 @@ The code is organized under `src/main/java/com/afterApp/after/`: `controller` ha
    ./mvnw spring-boot:run
    ```
 
-The API runs at `http://localhost:8081`. Swagger UI is configured at `http://localhost:8081/swagger-ui/index.html`; the public health endpoint is `/actuator/health`.
+Both startup methods expose the API at `http://localhost:8081` and the public health endpoint at `/actuator/health`.
 
-For production, activate `prod` with `SPRING_PROFILES_ACTIVE=prod`. `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`, and `JWT_SECRET` are required. Production exposes only Actuator `health` and `info`; only `health` is public. A bootstrap administrator is never created in production.
+The `test` profile uses in-memory HSQLDB for the regular test suite. For production, activate `prod` with `SPRING_PROFILES_ACTIVE=prod`. `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`, and `JWT_SECRET` are required. Production exposes only Actuator `health` and `info`; only `health` is public. A bootstrap administrator is never created in production. The Compose setup above is for local development, not production deployment.
 
 ### Try the core flow
 
