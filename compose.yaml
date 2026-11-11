@@ -22,6 +22,7 @@ services:
     build: .
     environment:
       SPRING_PROFILES_ACTIVE: dev
+      SERVER_PORT: 8080
       DATABASE_URL: jdbc:mysql://db:3306/${MYSQL_DATABASE:?Set MYSQL_DATABASE in .env}
       DATABASE_USERNAME: ${MYSQL_USER:?Set MYSQL_USER in .env}
       DATABASE_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
@@ -33,7 +34,7 @@ services:
       AFTER_ADMIN_EMAIL: ${AFTER_ADMIN_EMAIL:?Set AFTER_ADMIN_EMAIL in .env}
       AFTER_ADMIN_PHONE_NUMBER: ${AFTER_ADMIN_PHONE_NUMBER:?Set AFTER_ADMIN_PHONE_NUMBER in .env}
     ports:
-      - "8081:8081"
+      - "8081:8080"
     depends_on:
       db:
         condition: service_healthy
