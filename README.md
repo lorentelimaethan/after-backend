@@ -57,6 +57,8 @@ The code is organized under `src/main/java/com/afterApp/after/`: `controller` ha
 
    Compose runs After with the `dev` profile and a MySQL service. The API is available at `http://localhost:8081`; Swagger UI is at `http://localhost:8081/swagger-ui/index.html`.
 
+   Inside the container the application listens on port `8080` (set with `SERVER_PORT`, the same default as the `prod` profile), and Compose maps it to `8081` on your machine. The Dockerfile downloads the Maven dependencies in their own layer, so rebuilding after a code change reuses them instead of downloading everything again.
+
 3. Check the running services and health endpoint:
 
    ```bash
@@ -96,7 +98,7 @@ Stop the stack with `docker compose down`. MySQL data persists in the `mysql_dat
    ./mvnw spring-boot:run
    ```
 
-Both startup methods expose the API at `http://localhost:8081` and the public health endpoint at `/actuator/health`.
+Both startup methods expose the API at `http://localhost:8081` and the public health endpoint at `/actuator/health`. The `dev` port can be changed with `SERVER_PORT`.
 
 The `test` profile uses in-memory HSQLDB for the regular test suite. For production, activate `prod` with `SPRING_PROFILES_ACTIVE=prod`. `DATABASE_URL`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`, and `JWT_SECRET` are required. Production exposes only Actuator `health` and `info`; only `health` is public. A bootstrap administrator is never created in production. The Compose setup above is for local development, not production deployment.
 
@@ -218,6 +220,6 @@ HTTP tests extend `support/HttpTestBase`, which cleans the database before each 
 AFTER_RUN_MYSQL_TESTS=true ./mvnw -Dtest=MySqlContainerTest test
 ```
 
-Run the entire suite, including MySQL, with `AFTER_RUN_MYSQL_TESTS=true ./mvnw test`. The GitHub Actions workflow in `.github/workflows/ci.yml` runs `./mvnw clean verify` on Java 21 with the MySQL tests enabled, Maven dependency caching, and a downloadable JaCoCo coverage report. `./mvnw verify` writes the local report to `target/site/jacoco/index.html`. More detail about the test layout is in `src/test/README.md`.
+Run the entire suite, including MySQL, with `AFTER_RUN_MYSQL_TESTS=true ./mvnw test`. The GitHub Actions workflow in `.github/workflows/ci.yml` runs `./mvnw clean verify` on Java 21 with the MySQL tests enabled, Maven dependency caching, and a downloadable JaCoCo coverage report, and then builds the Docker image to check that the Dockerfile still works. `./mvnw verify` writes the local report to `target/site/jacoco/index.html`. More detail about the test layout is in `src/test/README.md`.
 
 The local application uses Hibernate `ddl-auto=update`. JWTs expire after one hour; logout adds tokens to an in-memory blocklist, which is lost on restart and is not shared between instances. Event and user reads use an in-memory cache, so this configuration targets a single application instance. Database migrations, shared token revocation, and multi-instance cache coordination are not implemented here.

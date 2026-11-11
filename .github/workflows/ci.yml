@@ -31,6 +31,9 @@ jobs:
           AFTER_RUN_MYSQL_TESTS: 'true'
         run: ./mvnw clean verify
 
+      - name: Build Docker image
+        run: docker build --progress=plain -t after:ci .
+
       - name: Generate coverage report after failures
         if: failure()
         run: ./mvnw -q jacoco:report
