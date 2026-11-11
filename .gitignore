@@ -38,3 +38,4 @@ logs/
 application-local.properties
 application-*.local.properties
 AFTER_ROADMAP.md
+AGENTS.md
