@@ -3,44 +3,81 @@ package com.afterApp.after.utils;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.context.SpringBootTest;
 
+import javax.crypto.SecretKey;
 import java.util.Date;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@SpringBootTest
 class TokenUtilTest {
-    private static final String SECRET = "MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=";
-    private TokenUtil tokens;
 
-    @BeforeEach
-    void setUp() {
-        tokens = new TokenUtil();
-        ReflectionTestUtils.setField(tokens, "secret", SECRET);
-        tokens.init();
+    private static final String OTHER_SECRET = "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXowMTIzNDU=";
+
+    @Autowired
+    private TokenUtil tokenUtil;
+
+    // The same secret the application uses (environment variable or application-test.properties)
+    @Value("${jwt.secret}")
+    private String secret;
+
+    @Test
+    void shouldValidateGeneratedToken() {
+        String token = tokenUtil.generateToken("ethan");
+
+        assertTrue(tokenUtil.validateToken("Bearer " + token));
     }
 
     @Test
-    void shouldValidateExtractAndInvalidateToken() {
-        String token = tokens.generateToken("ethan");
-        assertTrue(tokens.validateToken("Bearer " + token));
-        assertEquals("ethan", tokens.extractUsername("Bearer " + token));
-        tokens.invalidateToken("Bearer " + token);
-        assertFalse(tokens.validateToken("Bearer " + token));
+    void shouldExtractUsernameFromToken() {
+        String token = tokenUtil.generateToken("ethan");
+
+        assertEquals("ethan", tokenUtil.extractUsername("Bearer " + token));
     }
 
     @Test
-    void shouldRejectExpiredAndIncorrectlySignedTokens() {
-        var key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(SECRET));
-        String expired = Jwts.builder().subject("ethan").expiration(new Date(System.currentTimeMillis() - 10000))
-                .signWith(key).compact();
-        var otherKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode("YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXowMTIzNDU="));
-        String forged = Jwts.builder().subject("ethan").expiration(new Date(System.currentTimeMillis() + 60000))
-                .signWith(otherKey).compact();
-        assertFalse(tokens.validateToken("Bearer " + expired));
-        assertFalse(tokens.validateToken("Bearer " + forged));
-        assertFalse(tokens.validateToken("Bearer malformed"));
+    void shouldRejectTokenAfterLogout() {
+        String token = tokenUtil.generateToken("logout-user");
+
+        tokenUtil.invalidateToken("Bearer " + token);
+
+        assertFalse(tokenUtil.validateToken("Bearer " + token));
+    }
+
+    @Test
+    void shouldRejectExpiredToken() {
+        String expired = Jwts.builder()
+                .subject("ethan")
+                .expiration(new Date(System.currentTimeMillis() - 10_000))
+                .signWith(key(secret))
+                .compact();
+
+        assertFalse(tokenUtil.validateToken("Bearer " + expired));
+    }
+
+    @Test
+    void shouldRejectTokenSignedWithAnotherKey() {
+        String forged = Jwts.builder()
+                .subject("ethan")
+                .expiration(new Date(System.currentTimeMillis() + 60_000))
+                .signWith(key(OTHER_SECRET))
+                .compact();
+
+        assertFalse(tokenUtil.validateToken("Bearer " + forged));
+    }
+
+    @Test
+    void shouldRejectMalformedToken() {
+        assertFalse(tokenUtil.validateToken("Bearer malformed"));
+    }
+
+    private SecretKey key(String base64Secret) {
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(base64Secret));
     }
 }

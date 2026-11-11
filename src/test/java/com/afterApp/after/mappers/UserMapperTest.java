@@ -2,14 +2,66 @@ package com.afterApp.after.mappers;
 
 import com.afterApp.after.dto.RegisterDTO;
 import com.afterApp.after.dto.UpdateUserDTO;
+import com.afterApp.after.dto.UserPrivateResponseDTO;
+import com.afterApp.after.dto.UserPublicResponseDTO;
 import com.afterApp.after.entity.UserRole;
 import com.afterApp.after.entity.Users;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class UserMapperTest {
+
     @Test
-    void shouldMapPublicAndPrivateProfilesSeparately() {
+    void shouldMapPublicProfileWithIdAndDisplayName() {
+        UserPublicResponseDTO result = UserMapper.toPublicDto(fullUser());
+
+        assertEquals(42L, result.getId());
+        assertEquals("host", result.getDisplayName());
+    }
+
+    @Test
+    void shouldMapPrivateProfileWithPersonalData() {
+        UserPrivateResponseDTO result = UserMapper.toPrivateDto(fullUser());
+
+        assertEquals("Ethan", result.getName());
+        assertEquals("Example", result.getLastname());
+        assertEquals("host@example.com", result.getEmail());
+        assertEquals("123456789", result.getPhoneNumber());
+        assertEquals("FREE", result.getRoleName());
+    }
+
+    @Test
+    void shouldUseUsernameAsDisplayNameWhenRegistering() {
+        RegisterDTO dto = new RegisterDTO();
+        dto.setUsername("host");
+        dto.setName("Ethan");
+        dto.setEmail("host@example.com");
+
+        Users result = UserMapper.fromRegisterDto(dto);
+
+        assertEquals("host", result.getDisplayName());
+        assertEquals("Ethan", result.getName());
+        assertEquals("host@example.com", result.getEmail());
+    }
+
+    @Test
+    void shouldUpdateOnlyFieldsSentInUpdateDto() {
+        Users user = fullUser();
+        UpdateUserDTO update = new UpdateUserDTO();
+        update.setName("Changed");
+
+        UserMapper.updateUserData(user, update);
+
+        assertEquals("Changed", user.getName());
+        assertEquals("Example", user.getLastname());
+        assertEquals("host@example.com", user.getEmail());
+    }
+
+    private Users fullUser() {
+        UserRole role = new UserRole();
+        role.setRoleName("FREE");
+
         Users user = new Users();
         user.setId(42L);
         user.setDisplayName("host");
@@ -17,39 +69,7 @@ class UserMapperTest {
         user.setLastname("Example");
         user.setEmail("host@example.com");
         user.setPhoneNumber("123456789");
-        UserRole role = new UserRole();
-        role.setRoleName("FREE");
         user.setUserRole(role);
-        var publicDto = UserMapper.toPublicDto(user);
-        var privateDto = UserMapper.toPrivateDto(user);
-        assertEquals(42L, publicDto.getId());
-        assertEquals("host", publicDto.getDisplayName());
-        assertEquals("Ethan", privateDto.getName());
-        assertEquals("Example", privateDto.getLastname());
-        assertEquals("host@example.com", privateDto.getEmail());
-        assertEquals("123456789", privateDto.getPhoneNumber());
-        assertEquals("FREE", privateDto.getRoleName());
-    }
-
-    @Test
-    void shouldMapRegistrationAndPreserveUnchangedProfileFields() {
-        RegisterDTO dto = new RegisterDTO();
-        dto.setUsername("host");
-        dto.setName("Ethan");
-        dto.setLastname("Example");
-        dto.setEmail("host@example.com");
-        dto.setPhoneNumber("123456789");
-        Users user = UserMapper.fromRegisterDto(dto);
-        assertEquals("host", user.getDisplayName());
-        assertEquals("Ethan", user.getName());
-        assertEquals("Example", user.getLastname());
-        assertEquals("host@example.com", user.getEmail());
-        assertEquals("123456789", user.getPhoneNumber());
-        UpdateUserDTO update = new UpdateUserDTO();
-        update.setName("Changed");
-        UserMapper.updateUserData(user, update);
-        assertEquals("Changed", user.getName());
-        assertEquals("host@example.com", user.getEmail());
-        assertEquals("Example", user.getLastname());
+        return user;
     }
 }
