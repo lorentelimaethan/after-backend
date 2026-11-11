@@ -198,14 +198,26 @@ Deleting an account is transactional: the user is removed from events they atten
 ./mvnw test
 ```
 
-Tests use JUnit 5, Mockito, and MockMvc. Maven activates the `test` profile, so the regular HTTP tests use in-memory HSQLDB from `src/test/resources/application-test.properties`; local MySQL is not needed for those tests.
+Tests use JUnit 5, Mockito, and MockMvc. Maven activates the `test` profile, so the regular suite uses in-memory HSQLDB from `src/test/resources/application-test.properties`; local MySQL is not needed. Each test checks a single behaviour.
 
-MySQL integration tests use Testcontainers and require a running Docker daemon. They cover persistence, account deletion with event relationships, and concurrent attendance or capacity changes: join + join, invite + invite, join + invite, capacity reduction + join, leave + join, kick + join, and event deletion + join. Run them locally with:
+| Package | What it covers |
+|---|---|
+| `service` | Business rules of the services (join, leave, invite, kick, update, delete, profiles, roles, registration, login) with Mockito mocks |
+| `mappers` | Entity ↔ DTO mapping and partial updates |
+| `loader` | Role initialization and the development admin |
+| `utils` | JWT generation, validation, expiry, wrong signature and logout |
+| `controller` | HTTP endpoints, status codes, validation, privacy of user profiles and event cache refresh |
+| `security` | Missing, malformed, expired and forged tokens, and Actuator access |
+| `integration` | Account deletion with events, the `prod` profile and real MySQL |
+
+HTTP tests extend `support/HttpTestBase`, which cleans the database before each test and creates users, tokens and events. Environment variables override `application-test.properties`, so tests that need the JWT secret or the development admin read them with `@Value` and pass whether or not `JWT_SECRET` and `AFTER_ADMIN_*` are exported.
+
+`MySqlContainerTest` uses Testcontainers and requires a running Docker daemon. It covers persistence, account deletion with event relationships, and requests sent at the same time to the same event: ten guests joining the last place, two invitations, join + invitation, capacity reduction + join, leave + join, kick + join, and event deletion + join. Run it locally with:
 
 ```bash
 AFTER_RUN_MYSQL_TESTS=true ./mvnw -Dtest=MySqlContainerTest test
 ```
 
-Run the entire suite, including MySQL, with `AFTER_RUN_MYSQL_TESTS=true ./mvnw test`. The GitHub Actions workflow in `.github/workflows/ci.yml` runs `./mvnw clean verify` on Java 21 with the MySQL tests enabled, Maven dependency caching, and a downloadable JaCoCo coverage report. `./mvnw verify` writes the local report to `target/site/jacoco/index.html`.
+Run the entire suite, including MySQL, with `AFTER_RUN_MYSQL_TESTS=true ./mvnw test`. The GitHub Actions workflow in `.github/workflows/ci.yml` runs `./mvnw clean verify` on Java 21 with the MySQL tests enabled, Maven dependency caching, and a downloadable JaCoCo coverage report. `./mvnw verify` writes the local report to `target/site/jacoco/index.html`. More detail about the test layout is in `src/test/README.md`.
 
 The local application uses Hibernate `ddl-auto=update`. JWTs expire after one hour; logout adds tokens to an in-memory blocklist, which is lost on restart and is not shared between instances. Event and user reads use an in-memory cache, so this configuration targets a single application instance. Database migrations, shared token revocation, and multi-instance cache coordination are not implemented here.
