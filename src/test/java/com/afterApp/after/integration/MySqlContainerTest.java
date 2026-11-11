@@ -1,54 +1,41 @@
 package com.afterApp.after.integration;
 
-import com.afterApp.after.entity.Address;
-import com.afterApp.after.entity.Events;
-import com.afterApp.after.entity.UserAccess;
-import com.afterApp.after.entity.Users;
-import com.afterApp.after.enums.EventType;
-import com.afterApp.after.enums.MusicStyle;
-import com.afterApp.after.enums.Resources;
-import com.afterApp.after.loader.EventLoader;
-import com.afterApp.after.repositories.EventRepository;
-import com.afterApp.after.repositories.UserAccessRepository;
-import com.afterApp.after.repositories.UserRepository;
-import com.afterApp.after.repositories.UserRoleRepository;
-import com.afterApp.after.utils.TokenUtil;
-import jakarta.persistence.EntityManager;
-import org.junit.jupiter.api.BeforeEach;
+import com.afterApp.after.support.HttpTestBase;
+import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.http.MediaType;
-import org.springframework.transaction.support.TransactionTemplate;
 
-import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Future;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.doAnswer;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * Same API, but with a real MySQL database started by Testcontainers (needs Docker).
+ * Runs only with AFTER_RUN_MYSQL_TESTS=true (CI sets it).
+ *
+ * The last tests send several requests at the same time to check that the
+ * capacity of an event is never exceeded.
+ */
 @EnabledIfEnvironmentVariable(named = "AFTER_RUN_MYSQL_TESTS", matches = "true")
-@SpringBootTest
-@AutoConfigureMockMvc
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-class MySqlContainerTest {
+class MySqlContainerTest extends HttpTestBase {
+
+    // "jdbc:tc:mysql:..." tells Testcontainers to start a MySQL container for these tests
     @DynamicPropertySource
-    static void database(DynamicPropertyRegistry registry) {
+    static void useMySqlContainer(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", () -> "jdbc:tc:mysql:8.0.36:///after_test");
         registry.add("spring.datasource.driver-class-name", () -> "org.testcontainers.jdbc.ContainerDatabaseDriver");
         registry.add("spring.datasource.username", () -> "test");
@@ -57,308 +44,224 @@ class MySqlContainerTest {
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
     }
 
-    @Autowired private MockMvc mvc;
-    @Autowired private EventRepository events;
-    @Autowired private UserAccessRepository accesses;
-    @Autowired private UserRepository users;
-    @Autowired private UserRoleRepository roles;
-    @Autowired private TokenUtil tokens;
-    @Autowired private EntityManager entityManager;
-    @Autowired private TransactionTemplate transactions;
-    @MockitoSpyBean private EventLoader eventLoader;
+    // ---------- persistence ----------
 
-    @BeforeEach
-    void setUp() {
-        events.deleteAll();
-        accesses.deleteAll();
-        users.deleteAll();
+    @Test
+    void shouldSaveEventWithHostAndAddress() throws Exception {
+        Long hostId = createUser("host").getId();
+
+        Long eventId = createEvent(tokenFor("host"), "MySQL event", 3);
+
+        assertEquals(hostId, eventRepository.findById(eventId).orElseThrow().getHost().getId());
+        assertEquals("Barcelona", eventRepository.findById(eventId).orElseThrow().getAddress().getCity());
     }
 
     @Test
-    void shouldPersistRoleEventAddressAndAttendeeInMySql() throws Exception {
-        Users host = createUser("mysql-host");
-        Users guest = createUser("mysql-guest");
-        Long id = createEvent(host).getId();
+    void shouldRemoveAttendeeWhenTheyDeleteTheirAccount() throws Exception {
+        createUser("host");
+        Long guestId = createUser("guest").getId();
+        Long eventId = createEvent(tokenFor("host"), "MySQL event", 3);
+        assertEquals(200, join(eventId, "guest"));
 
-        mvc.perform(patch("/after/v1/events/{id}/join", id)
-                        .header("Authorization", "Bearer " + tokens.generateToken("mysql-guest")))
-                .andExpect(status().isOk());
-
-        transactions.executeWithoutResult(status -> {
-            entityManager.clear();
-            Events loaded = events.findById(id).orElseThrow();
-            assertEquals(host.getId(), loaded.getHost().getId());
-            assertEquals(guest.getId(), loaded.getUsers().iterator().next().getId());
-            assertEquals("Barcelona", loaded.getAddress().getCity());
-            assertTrue(loaded.getHost().getUserRole().getResources().contains(Resources.VIEW_EVENT));
-        });
-    }
-
-    @Test
-    void shouldRemoveAnAttendeeFromAnEventWhenDeletingTheirAccountInMySql() throws Exception {
-        Users host = createUser("mysql-host");
-        Users guest = createUser("mysql-guest");
-        Events event = createEvent(host);
-        event.getUsers().add(guest);
-        Long id = events.saveAndFlush(event).getId();
-
-        mvc.perform(delete("/after/v1/users/{id}", guest.getId())
-                        .header("Authorization", "Bearer " + tokens.generateToken("mysql-guest")))
+        mockMvc.perform(delete("/after/v1/users/{id}", guestId).header("Authorization", tokenFor("guest")))
                 .andExpect(status().isNoContent());
 
-        transactions.executeWithoutResult(status -> {
-            entityManager.clear();
-            assertEquals(0, events.findById(id).orElseThrow().getUsers().size());
-        });
+        assertEquals(0, usersCount(eventId, tokenFor("host")));
     }
 
     @Test
-    void shouldDeleteHostedEventButKeepAttendeeAccountInMySql() throws Exception {
-        Users host = createUser("mysql-host");
-        Users guest = createUser("mysql-guest");
-        Events event = createEvent(host);
-        event.getUsers().add(guest);
-        Long id = events.saveAndFlush(event).getId();
+    void shouldDeleteHostedEventWhenHostDeletesAccount() throws Exception {
+        Long hostId = createUser("host").getId();
+        Long guestId = createUser("guest").getId();
+        Long eventId = createEvent(tokenFor("host"), "MySQL event", 3);
+        assertEquals(200, join(eventId, "guest"));
 
-        mvc.perform(delete("/after/v1/users/{id}", host.getId())
-                        .header("Authorization", "Bearer " + tokens.generateToken("mysql-host")))
+        mockMvc.perform(delete("/after/v1/users/{id}", hostId).header("Authorization", tokenFor("host")))
                 .andExpect(status().isNoContent());
 
-        transactions.executeWithoutResult(status -> {
-            entityManager.clear();
-            assertTrue(users.findById(host.getId()).isEmpty());
-            assertTrue(events.findById(id).isEmpty());
-            assertTrue(users.findById(guest.getId()).isPresent());
-        });
+        assertFalse(eventRepository.existsById(eventId));
+        assertTrue(userRepository.existsById(guestId));
+    }
+
+    // ---------- requests at the same time ----------
+
+    @Test
+    void shouldAdmitOnlyOneGuestWhenManyJoinTheLastPlace() throws Exception {
+        createUser("host");
+        Long eventId = createEvent(tokenFor("host"), "One place", 1);
+        List<Callable<Integer>> requests = new ArrayList<>();
+        for (int i = 1; i <= 10; i++) {
+            String guest = "guest" + i;
+            createUser(guest);
+            requests.add(() -> join(eventId, guest));
+        }
+
+        List<Integer> statuses = sendAtTheSameTime(requests);
+
+        assertEquals(1, count(statuses, 200));
+        assertEquals(9, count(statuses, 400));
+        assertEquals(1, usersCount(eventId, tokenFor("host")));
     }
 
     @Test
-    void shouldNeverAdmitTwoGuestsIntoTheLastPlace() throws Exception {
-        Users host = createUser("mysql-host");
-        createUser("mysql-guest-one");
-        createUser("mysql-guest-two");
-        Events event = createEvent(host);
-        event.setCapacity(1);
-        Long id = events.saveAndFlush(event).getId();
+    void shouldAdmitOnlyOneOfTwoInvitationsForTheLastPlace() throws Exception {
+        createUser("host", "PREMIUM");
+        Long firstId = createUser("first").getId();
+        Long secondId = createUser("second").getId();
+        Long eventId = createEvent(tokenFor("host"), "One place", 1);
 
-        assertOneSuccessAndOneFull(runConcurrently(id,
-                () -> join(id, "mysql-guest-one"),
-                () -> join(id, "mysql-guest-two")));
+        List<Integer> statuses = sendAtTheSameTime(List.of(
+                () -> invite(eventId, firstId),
+                () -> invite(eventId, secondId)));
 
-        assertAttendeeCount(id, 1);
+        assertEquals(1, count(statuses, 200));
+        assertEquals(1, usersCount(eventId, tokenFor("host")));
     }
 
     @Test
-    void shouldNeverAdmitTwoInvitationsIntoTheLastPlace() throws Exception {
-        Users host = createUser("mysql-host", "PREMIUM");
-        Users firstGuest = createUser("mysql-guest-one");
-        Users secondGuest = createUser("mysql-guest-two");
-        Events event = createEvent(host);
-        event.setCapacity(1);
-        Long id = events.saveAndFlush(event).getId();
+    void shouldAdmitOnlyOneWhenJoinAndInvitationRaceForTheLastPlace() throws Exception {
+        createUser("host", "PREMIUM");
+        createUser("joining");
+        Long invitedId = createUser("invited").getId();
+        Long eventId = createEvent(tokenFor("host"), "One place", 1);
 
-        assertOneSuccessAndOneFull(runConcurrently(id,
-                () -> invite(id, firstGuest.getId()),
-                () -> invite(id, secondGuest.getId())));
-        assertAttendeeCount(id, 1);
+        List<Integer> statuses = sendAtTheSameTime(List.of(
+                () -> join(eventId, "joining"),
+                () -> invite(eventId, invitedId)));
+
+        assertEquals(1, count(statuses, 200));
+        assertEquals(1, usersCount(eventId, tokenFor("host")));
     }
 
     @Test
-    void shouldNeverAdmitJoinAndInvitationIntoTheLastPlace() throws Exception {
-        Users host = createUser("mysql-host", "PREMIUM");
-        createUser("mysql-joining-guest");
-        Users invited = createUser("mysql-invited-guest");
-        Events event = createEvent(host);
-        event.setCapacity(1);
-        Long id = events.saveAndFlush(event).getId();
+    void shouldNeverHaveMoreAttendeesThanCapacityWhenCapacityIsReducedDuringJoin() throws Exception {
+        createUser("host");
+        createUser("attending");
+        createUser("joining");
+        Long eventId = createEvent(tokenFor("host"), "Two places", 2);
+        assertEquals(200, join(eventId, "attending"));
 
-        assertOneSuccessAndOneFull(runConcurrently(id,
-                () -> join(id, "mysql-joining-guest"),
-                () -> invite(id, invited.getId())));
-        assertAttendeeCount(id, 1);
+        List<Integer> statuses = sendAtTheSameTime(List.of(
+                () -> updateCapacity(eventId, 1),
+                () -> join(eventId, "joining")));
+
+        assertEquals(1, count(statuses, 200));
+        assertTrue(usersCount(eventId, tokenFor("host")) <= capacity(eventId));
     }
 
     @Test
-    void shouldKeepCapacityValidWhenReductionRacesWithJoin() throws Exception {
-        Users host = createUser("mysql-host");
-        Users attending = createUser("mysql-attending-guest");
-        createUser("mysql-joining-guest");
-        Events event = createEvent(host);
-        event.setCapacity(2);
-        event.getUsers().add(attending);
-        Long id = events.saveAndFlush(event).getId();
+    void shouldAlwaysRemoveLeavingGuestWhenSomeoneJoinsAtTheSameTime() throws Exception {
+        createUser("host");
+        Long leavingId = createUser("leaving").getId();
+        createUser("joining");
+        Long eventId = createEvent(tokenFor("host"), "One place", 1);
+        assertEquals(200, join(eventId, "leaving"));
 
-        List<Integer> results = runConcurrently(id,
-                () -> updateCapacity(id, 1),
-                () -> join(id, "mysql-joining-guest"));
-        assertOneSuccessAndOneFull(results);
+        List<Integer> statuses = sendAtTheSameTime(List.of(
+                () -> leave(eventId, "leaving"),
+                () -> join(eventId, "joining")));
 
-        transactions.executeWithoutResult(status -> {
-            entityManager.clear();
-            Events loaded = events.findById(id).orElseThrow();
-            assertEquals(results.get(0) == 200 ? 1 : 2, loaded.getCapacity());
-            assertEquals(loaded.getCapacity(), loaded.getUsers().size());
-        });
+        assertEquals(200, statuses.get(0));
+        assertTrue(eventRepository.findDistinctByUsers_Id(leavingId).isEmpty());
+        int expectedAttendees = statuses.get(1) == 200 ? 1 : 0;
+        assertEquals(expectedAttendees, usersCount(eventId, tokenFor("host")));
     }
 
     @Test
-    void shouldPreserveAttendanceWhenLeaveRacesWithJoin() throws Exception {
-        Users host = createUser("mysql-host");
-        Users leaving = createUser("mysql-leaving-guest");
-        Users joining = createUser("mysql-joining-guest");
-        Events event = createEvent(host);
-        event.setCapacity(1);
-        event.getUsers().add(leaving);
-        Long id = events.saveAndFlush(event).getId();
+    void shouldAlwaysRemoveKickedGuestWhenSomeoneJoinsAtTheSameTime() throws Exception {
+        createUser("host");
+        Long kickedId = createUser("kicked").getId();
+        createUser("joining");
+        Long eventId = createEvent(tokenFor("host"), "One place", 1);
+        assertEquals(200, join(eventId, "kicked"));
 
-        List<Integer> results = runConcurrently(id,
-                () -> leave(id, "mysql-leaving-guest"),
-                () -> join(id, "mysql-joining-guest"));
-        assertEquals(200, results.get(0));
-        assertTrue(results.get(1) == 200 || results.get(1) == 400);
-        assertDepartureAndPossibleJoin(id, leaving.getId(), joining.getId(), results.get(1));
+        List<Integer> statuses = sendAtTheSameTime(List.of(
+                () -> kick(eventId, kickedId),
+                () -> join(eventId, "joining")));
+
+        assertEquals(200, statuses.get(0));
+        assertTrue(eventRepository.findDistinctByUsers_Id(kickedId).isEmpty());
+        int expectedAttendees = statuses.get(1) == 200 ? 1 : 0;
+        assertEquals(expectedAttendees, usersCount(eventId, tokenFor("host")));
     }
 
     @Test
-    void shouldPreserveAttendanceWhenKickRacesWithJoin() throws Exception {
-        Users host = createUser("mysql-host");
-        Users kicked = createUser("mysql-kicked-guest");
-        Users joining = createUser("mysql-joining-guest");
-        Events event = createEvent(host);
-        event.setCapacity(1);
-        event.getUsers().add(kicked);
-        Long id = events.saveAndFlush(event).getId();
+    void shouldDeleteEventEvenIfSomeoneJoinsAtTheSameTime() throws Exception {
+        createUser("host");
+        Long guestId = createUser("guest").getId();
+        Long eventId = createEvent(tokenFor("host"), "Party", 3);
 
-        List<Integer> results = runConcurrently(id,
-                () -> kick(id, kicked.getId()),
-                () -> join(id, "mysql-joining-guest"));
-        assertEquals(200, results.get(0));
-        assertTrue(results.get(1) == 200 || results.get(1) == 400);
-        assertDepartureAndPossibleJoin(id, kicked.getId(), joining.getId(), results.get(1));
+        List<Integer> statuses = sendAtTheSameTime(List.of(
+                () -> deleteEvent(eventId),
+                () -> join(eventId, "guest")));
+
+        assertEquals(204, statuses.get(0));
+        assertFalse(eventRepository.existsById(eventId));
+        assertTrue(userRepository.existsById(guestId));
     }
 
-    @Test
-    void shouldDeleteEventSafelyWhenJoinRacesWithDeletion() throws Exception {
-        Users host = createUser("mysql-host");
-        Users guest = createUser("mysql-joining-guest");
-        Long id = createEvent(host).getId();
+    // ---------- helpers ----------
 
-        List<Integer> results = runConcurrently(id,
-                () -> deleteEvent(id),
-                () -> join(id, "mysql-joining-guest"));
-        assertEquals(204, results.get(0));
-        assertTrue(results.get(1) == 200 || results.get(1) == 404);
-
-        transactions.executeWithoutResult(status -> {
-            entityManager.clear();
-            assertTrue(events.findById(id).isEmpty());
-            assertTrue(users.findById(guest.getId()).isPresent());
-        });
-    }
-
-    private List<Integer> runConcurrently(Long id, Callable<Integer> first, Callable<Integer> second) throws Exception {
-        CountDownLatch ready = new CountDownLatch(2);
-        doAnswer(invocation -> {
-            ready.countDown();
-            assertTrue(ready.await(10, TimeUnit.SECONDS));
-            return invocation.callRealMethod();
-        }).when(eventLoader).getEventForUpdate(id);
-
-        try (var executor = Executors.newFixedThreadPool(2)) {
-            var one = executor.submit(first);
-            var two = executor.submit(second);
-            return List.of(one.get(20, TimeUnit.SECONDS), two.get(20, TimeUnit.SECONDS));
+    /** Runs every request in its own thread at the same time and returns the HTTP status codes in order. */
+    private List<Integer> sendAtTheSameTime(List<Callable<Integer>> requests) throws Exception {
+        ExecutorService executor = Executors.newFixedThreadPool(requests.size());
+        try {
+            List<Integer> statuses = new ArrayList<>();
+            for (Future<Integer> result : executor.invokeAll(requests)) {
+                statuses.add(result.get());
+            }
+            return statuses;
+        } finally {
+            executor.shutdown();
         }
     }
 
-    private void assertOneSuccessAndOneFull(List<Integer> results) {
-        assertEquals(1, results.stream().filter(status -> status == 200).count());
-        assertEquals(1, results.stream().filter(status -> status == 400).count());
+    private long count(List<Integer> statuses, int status) {
+        return statuses.stream().filter(s -> s == status).count();
     }
 
-    private void assertAttendeeCount(Long id, int expected) {
-        transactions.executeWithoutResult(status -> {
-            entityManager.clear();
-            assertEquals(expected, events.findById(id).orElseThrow().getUsers().size());
-        });
+    private int capacity(Long eventId) throws Exception {
+        String response = mockMvc.perform(get("/after/v1/events/{id}", eventId)
+                        .header("Authorization", tokenFor("host")))
+                .andReturn().getResponse().getContentAsString();
+        return JsonPath.read(response, "$.capacity");
     }
 
-    private void assertDepartureAndPossibleJoin(Long id, Long departedId, Long joiningId, int joinStatus) {
-        transactions.executeWithoutResult(status -> {
-            entityManager.clear();
-            Events loaded = events.findById(id).orElseThrow();
-            assertTrue(loaded.getUsers().stream().noneMatch(user -> user.getId().equals(departedId)));
-            assertEquals(joinStatus == 200 ? 1 : 0, loaded.getUsers().size());
-            assertEquals(joinStatus == 200,
-                    loaded.getUsers().stream().anyMatch(user -> user.getId().equals(joiningId)));
-        });
-    }
-
-    private int join(Long id, String username) throws Exception {
-        return mvc.perform(patch("/after/v1/events/{id}/join", id)
-                        .header("Authorization", "Bearer " + tokens.generateToken(username)))
+    private int join(Long eventId, String username) throws Exception {
+        return mockMvc.perform(patch("/after/v1/events/{id}/join", eventId)
+                        .header("Authorization", tokenFor(username)))
                 .andReturn().getResponse().getStatus();
     }
 
-    private int invite(Long id, Long userId) throws Exception {
-        return mvc.perform(patch("/after/v1/events/{id}/invite/user/{userId}", id, userId)
-                        .header("Authorization", "Bearer " + tokens.generateToken("mysql-host")))
+    private int leave(Long eventId, String username) throws Exception {
+        return mockMvc.perform(patch("/after/v1/events/{id}/leave", eventId)
+                        .header("Authorization", tokenFor(username)))
                 .andReturn().getResponse().getStatus();
     }
 
-    private int updateCapacity(Long id, int capacity) throws Exception {
-        return mvc.perform(patch("/after/v1/events/{id}", id)
-                        .header("Authorization", "Bearer " + tokens.generateToken("mysql-host"))
+    private int invite(Long eventId, Long userId) throws Exception {
+        return mockMvc.perform(patch("/after/v1/events/{id}/invite/user/{userId}", eventId, userId)
+                        .header("Authorization", tokenFor("host")))
+                .andReturn().getResponse().getStatus();
+    }
+
+    private int kick(Long eventId, Long userId) throws Exception {
+        return mockMvc.perform(delete("/after/v1/events/{id}/kick/user/{userId}", eventId, userId)
+                        .header("Authorization", tokenFor("host")))
+                .andReturn().getResponse().getStatus();
+    }
+
+    private int updateCapacity(Long eventId, int capacity) throws Exception {
+        return mockMvc.perform(patch("/after/v1/events/{id}", eventId)
+                        .header("Authorization", tokenFor("host"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"capacity\":" + capacity + "}"))
+                        .content("{\"capacity\": " + capacity + "}"))
                 .andReturn().getResponse().getStatus();
     }
 
-    private int leave(Long id, String username) throws Exception {
-        return mvc.perform(patch("/after/v1/events/{id}/leave", id)
-                        .header("Authorization", "Bearer " + tokens.generateToken(username)))
+    private int deleteEvent(Long eventId) throws Exception {
+        return mockMvc.perform(delete("/after/v1/events/{id}", eventId)
+                        .header("Authorization", tokenFor("host")))
                 .andReturn().getResponse().getStatus();
-    }
-
-    private int kick(Long id, Long userId) throws Exception {
-        return mvc.perform(delete("/after/v1/events/{id}/kick/user/{userId}", id, userId)
-                        .header("Authorization", "Bearer " + tokens.generateToken("mysql-host")))
-                .andReturn().getResponse().getStatus();
-    }
-
-    private int deleteEvent(Long id) throws Exception {
-        return mvc.perform(delete("/after/v1/events/{id}", id)
-                        .header("Authorization", "Bearer " + tokens.generateToken("mysql-host")))
-                .andReturn().getResponse().getStatus();
-    }
-
-    private Users createUser(String username) {
-        return createUser(username, "FREE");
-    }
-
-    private Users createUser(String username, String roleName) {
-        Users user = new Users();
-        user.setDisplayName(username);
-        user.setUserRole(roles.findByRoleName(roleName).orElseThrow());
-        UserAccess access = new UserAccess();
-        access.setUsername(username);
-        access.setPassword("unused");
-        access.setUser(user);
-        return accesses.saveAndFlush(access).getUser();
-    }
-
-    private Events createEvent(Users host) {
-        Events event = new Events();
-        event.setName("MySQL event");
-        event.setDescription("Persistence test");
-        event.setDateTime(LocalDateTime.now().plusDays(1));
-        event.setCapacity(3);
-        event.setEventType(EventType.AFTER);
-        event.setMusicStyle(MusicStyle.TECHNO);
-        event.setHost(host);
-        Address address = new Address();
-        address.setCity("Barcelona");
-        event.setAddress(address);
-        return events.saveAndFlush(event);
     }
 }

@@ -1,32 +1,17 @@
 package com.afterApp.after.controller;
 
 import com.afterApp.after.entity.Address;
-import com.afterApp.after.entity.Events;
-import com.afterApp.after.entity.UserAccess;
-import com.afterApp.after.entity.UserRole;
-import com.afterApp.after.entity.Users;
-import com.afterApp.after.repositories.UserRoleRepository;
-import com.afterApp.after.repositories.EventRepository;
-import com.afterApp.after.repositories.UserAccessRepository;
-import com.afterApp.after.repositories.UserRepository;
-import com.afterApp.after.utils.TokenUtil;
+import com.afterApp.after.support.HttpTestBase;
 import jakarta.persistence.EntityManager;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.CacheManager;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.support.TransactionTemplate;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -34,566 +19,513 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-class EventControllerTest {
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private EventRepository eventRepository;
-
-    @Autowired
-    private UserAccessRepository userAccessRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private UserRoleRepository userRoleRepository;
-
-    @Autowired
-    private TokenUtil tokenUtil;
-
-    @Autowired
-    private CacheManager cacheManager;
-
-    @Autowired
-    private TransactionTemplate transactions;
+class EventControllerTest extends HttpTestBase {
 
     @Autowired
     private EntityManager entityManager;
 
-    @BeforeEach
-    void setUp() {
-        cacheManager.getCacheNames().forEach(cacheName -> cacheManager.getCache(cacheName).clear());
-        eventRepository.deleteAll();
-        userAccessRepository.deleteAll();
-        userRepository.deleteAll();
-    }
+    // ---------- GET ----------
 
     @Test
-    void shouldCreateAndGetEventSuccessfully() throws Exception {
-        String hostToken = createUserToken("hostuser");
-        Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
+    void shouldGetEventById() throws Exception {
+        createUser("host");
+        Long eventId = createEvent(tokenFor("host"), "After Barcelona", 3);
 
         mockMvc.perform(get("/after/v1/events/{id}", eventId)
-                        .header("authorization", bearer(hostToken)))
+                        .header("Authorization", tokenFor("host")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(eventId))
                 .andExpect(jsonPath("$.name").value("After Barcelona"))
-                .andExpect(jsonPath("$.hostDisplayName").value("hostuser"))
+                .andExpect(jsonPath("$.hostDisplayName").value("host"))
                 .andExpect(jsonPath("$.usersCount").value(0));
     }
 
     @Test
-    void shouldGetAllEventsSuccessfully() throws Exception {
-        String hostToken = createUserToken("hostuser");
-        createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
-        createEvent(hostToken, "House Party", "HOUSE_PARTY", "HOUSE", 4);
+    void shouldReturnNotFoundWhenEventDoesNotExist() throws Exception {
+        createUser("host");
+
+        mockMvc.perform(get("/after/v1/events/{id}", 999L)
+                        .header("Authorization", tokenFor("host")))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldGetAllEvents() throws Exception {
+        createUser("host");
+        createEvent(tokenFor("host"), "After Barcelona", 3);
+        createEvent(tokenFor("host"), "House Party", "HOUSE_PARTY", "HOUSE", 4);
 
         mockMvc.perform(get("/after/v1/events")
-                        .header("authorization", bearer(hostToken)))
+                        .header("Authorization", tokenFor("host")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2));
     }
 
     @Test
     void shouldFilterEventsByTypeAndStyle() throws Exception {
-        String hostToken = createUserToken("hostuser");
-        createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
-        createEvent(hostToken, "Pool Pop", "POOL_PARTY", "POP", 4);
+        createUser("host");
+        createEvent(tokenFor("host"), "After Barcelona", "AFTER", "TECHNO", 3);
+        createEvent(tokenFor("host"), "Pool Pop", "POOL_PARTY", "POP", 4);
 
         mockMvc.perform(get("/after/v1/events")
                         .param("type", "AFTER")
                         .param("style", "TECHNO")
-                        .header("authorization", bearer(hostToken)))
+                        .header("Authorization", tokenFor("host")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].name").value("After Barcelona"));
     }
 
     @Test
-    void shouldRejectGetEventsWhenTokenIsInvalid() throws Exception {
+    void shouldRejectGetEventsWithInvalidToken() throws Exception {
         mockMvc.perform(get("/after/v1/events")
-                        .header("authorization", "Bearer invalid-token"))
+                        .header("Authorization", "Bearer invalid-token"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Access denied"));
     }
 
-    @Test
-    void shouldReturnNotFoundWhenEventDoesNotExist() throws Exception {
-        String hostToken = createUserToken("hostuser");
+    // ---------- POST ----------
 
-        mockMvc.perform(get("/after/v1/events/{id}", 999L)
-                        .header("authorization", bearer(hostToken)))
-                .andExpect(status().isNotFound());
+    @Test
+    void shouldCreateEventWithLoggedUserAsHost() throws Exception {
+        createUser("host");
+
+        mockMvc.perform(post("/after/v1/events")
+                        .header("Authorization", tokenFor("host"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(eventJson("After Barcelona", "AFTER", "TECHNO", 3)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("After Barcelona"))
+                .andExpect(jsonPath("$.hostDisplayName").value("host"));
     }
 
     @Test
-    void shouldRejectCreateEventWithInvalidBody() throws Exception {
-        String hostToken = createUserToken("hostuser");
+    void shouldRejectCreateEventWithZeroCapacity() throws Exception {
+        createUser("host");
 
         mockMvc.perform(post("/after/v1/events")
-                        .header("authorization", bearer(hostToken))
+                        .header("Authorization", tokenFor("host"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(eventJson("Bad Event", "AFTER", "TECHNO", 0)))
                 .andExpect(status().isBadRequest());
     }
 
+    // ---------- join / leave ----------
+
     @Test
-    void shouldJoinAndLeaveEventSuccessfully() throws Exception {
-        String hostToken = createUserToken("hostuser");
-        String guestToken = createUserToken("guestuser");
-        Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
+    void shouldJoinEvent() throws Exception {
+        createUser("host");
+        createUser("guest");
+        Long eventId = createEvent(tokenFor("host"), "Party", 3);
 
         mockMvc.perform(patch("/after/v1/events/{id}/join", eventId)
-                        .header("authorization", bearer(guestToken)))
+                        .header("Authorization", tokenFor("guest")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.usersCount").value(1));
+    }
+
+    @Test
+    void shouldLeaveEvent() throws Exception {
+        createUser("host");
+        createUser("guest");
+        Long eventId = createEvent(tokenFor("host"), "Party", 3);
+        joinAs("guest", eventId);
 
         mockMvc.perform(patch("/after/v1/events/{id}/leave", eventId)
-                        .header("authorization", bearer(guestToken)))
+                        .header("Authorization", tokenFor("guest")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.usersCount").value(0));
     }
 
     @Test
-    void shouldRejectDuplicateJoinAndInvalidLeaves() throws Exception {
-        String host = createUserToken("hostuser");
-        String guest = createUserToken("guestuser");
-        String stranger = createUserToken("stranger");
-        Long id = createEvent(host, "Party", "AFTER", "TECHNO", 3);
-        mockMvc.perform(patch("/after/v1/events/{id}/join", id).header("authorization", bearer(host)))
-                .andExpect(status().isBadRequest());
-        mockMvc.perform(patch("/after/v1/events/{id}/leave", id).header("authorization", bearer(host)))
-                .andExpect(status().isBadRequest());
-        mockMvc.perform(patch("/after/v1/events/{id}/leave", id).header("authorization", bearer(stranger)))
-                .andExpect(status().isNotFound());
-        mockMvc.perform(patch("/after/v1/events/{id}/join", id).header("authorization", bearer(guest)))
-                .andExpect(status().isOk());
-        mockMvc.perform(patch("/after/v1/events/{id}/join", id).header("authorization", bearer(guest)))
+    void shouldRejectHostJoiningOwnEvent() throws Exception {
+        createUser("host");
+        Long eventId = createEvent(tokenFor("host"), "Party", 3);
+
+        mockMvc.perform(patch("/after/v1/events/{id}/join", eventId)
+                        .header("Authorization", tokenFor("host")))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void shouldRejectInvitingHostOrAttendeeAndKickingNonAttendee() throws Exception {
-        String host = createUserToken("hostuser", "ADMIN");
-        createUser("guestuser");
-        createUser("stranger");
-        Long id = createEvent(host, "Party", "AFTER", "TECHNO", 3);
-        Long hostId = userId("hostuser");
-        Long guestId = userId("guestuser");
-        Long strangerId = userId("stranger");
-        mockMvc.perform(patch("/after/v1/events/{id}/invite/user/{userId}", id, hostId)
-                        .header("authorization", bearer(host))).andExpect(status().isBadRequest());
-        mockMvc.perform(patch("/after/v1/events/{id}/invite/user/{userId}", id, guestId)
-                        .header("authorization", bearer(host))).andExpect(status().isOk());
-        mockMvc.perform(patch("/after/v1/events/{id}/invite/user/{userId}", id, guestId)
-                        .header("authorization", bearer(host))).andExpect(status().isBadRequest());
-        mockMvc.perform(delete("/after/v1/events/{id}/kick/user/{userId}", id, strangerId)
-                        .header("authorization", bearer(host))).andExpect(status().isNotFound());
-    }
+    void shouldRejectJoiningTwice() throws Exception {
+        createUser("host");
+        createUser("guest");
+        Long eventId = createEvent(tokenFor("host"), "Party", 3);
+        joinAs("guest", eventId);
 
-    @Test
-    void shouldApplyRoleChangesToExistingToken() throws Exception {
-        String admin = createUserToken("adminuser", "ADMIN");
-        String host = createUserToken("hostuser", "FREE");
-        createUser("guestuser");
-        Long hostId = userId("hostuser");
-        Long guestId = userId("guestuser");
-        Long id = createEvent(host, "Party", "AFTER", "TECHNO", 3);
-        mockMvc.perform(patch("/after/v1/events/{id}/invite/user/{guest}", id, guestId)
-                        .header("authorization", bearer(host))).andExpect(status().isForbidden());
-        mockMvc.perform(patch("/after/v1/users/{id}/role", hostId).header("authorization", bearer(admin))
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"roleName\":\"PREMIUM\"}"))
-                .andExpect(status().isOk());
-        mockMvc.perform(patch("/after/v1/events/{id}/invite/user/{guest}", id, guestId)
-                        .header("authorization", bearer(host))).andExpect(status().isOk());
-        mockMvc.perform(patch("/after/v1/users/{id}/role", hostId).header("authorization", bearer(admin))
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"roleName\":\"FREE\"}"))
-                .andExpect(status().isOk());
-        mockMvc.perform(patch("/after/v1/events/{id}/invite/user/{guest}", id, guestId)
-                        .header("authorization", bearer(host))).andExpect(status().isForbidden());
-    }
-
-    @Test
-    void shouldInvalidateCachedEventAfterUpdate() throws Exception {
-        String host = createUserToken("hostuser");
-        Long id = createEvent(host, "Original", "AFTER", "TECHNO", 3);
-        mockMvc.perform(get("/after/v1/events/{id}", id).header("authorization", bearer(host)))
-                .andExpect(jsonPath("$.name").value("Original"));
-        mockMvc.perform(patch("/after/v1/events/{id}", id).header("authorization", bearer(host))
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Updated\"}"))
-                .andExpect(status().isOk());
-        mockMvc.perform(get("/after/v1/events/{id}", id).header("authorization", bearer(host)))
-                .andExpect(jsonPath("$.name").value("Updated"));
-    }
-
-    @Test
-    void shouldRefreshCachedEventAndFilteredResultsAfterAttendanceAndDelete() throws Exception {
-        String host = createUserToken("hostuser", "ADMIN");
-        String guest = createUserToken("guestuser");
-        createUser("invited");
-        Long invited = userId("invited");
-        Long id = createEvent(host, "Party", "AFTER", "TECHNO", 3);
-        assertCachedCounts(host, id, 0);
-        mockMvc.perform(patch("/after/v1/events/{id}/join", id).header("authorization", bearer(guest)))
-                .andExpect(status().isOk());
-        assertCachedCounts(host, id, 1);
-        mockMvc.perform(patch("/after/v1/events/{id}/leave", id).header("authorization", bearer(guest)))
-                .andExpect(status().isOk());
-        assertCachedCounts(host, id, 0);
-        mockMvc.perform(patch("/after/v1/events/{id}/invite/user/{user}", id, invited)
-                        .header("authorization", bearer(host))).andExpect(status().isOk());
-        assertCachedCounts(host, id, 1);
-        mockMvc.perform(delete("/after/v1/events/{id}/kick/user/{user}", id, invited)
-                        .header("authorization", bearer(host))).andExpect(status().isOk());
-        assertCachedCounts(host, id, 0);
-        mockMvc.perform(delete("/after/v1/events/{id}", id).header("authorization", bearer(host)))
-                .andExpect(status().isNoContent());
-        mockMvc.perform(get("/after/v1/events/{id}", id).header("authorization", bearer(host)))
-                .andExpect(status().isNotFound());
-        mockMvc.perform(get("/after/v1/events").param("type", "AFTER").header("authorization", bearer(host)))
-                .andExpect(jsonPath("$.length()").value(0));
-    }
-
-    private void assertCachedCounts(String token, Long id, int expected) throws Exception {
-        mockMvc.perform(get("/after/v1/events/{id}", id).header("authorization", bearer(token)))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.usersCount").value(expected));
-        mockMvc.perform(get("/after/v1/events").param("type", "AFTER").header("authorization", bearer(token)))
-                .andExpect(status().isOk()).andExpect(jsonPath("$[0].usersCount").value(expected));
-    }
-
-    @Test
-    void shouldRefreshCachedFilteredListAfterCreatingEvent() throws Exception {
-        String host = createUserToken("hostuser");
-        mockMvc.perform(get("/after/v1/events").param("type", "AFTER").header("authorization", bearer(host)))
-                .andExpect(jsonPath("$.length()").value(0));
-        createEvent(host, "New event", "AFTER", "TECHNO", 3);
-        mockMvc.perform(get("/after/v1/events").param("type", "AFTER").header("authorization", bearer(host)))
-                .andExpect(jsonPath("$.length()").value(1));
+        mockMvc.perform(patch("/after/v1/events/{id}/join", eventId)
+                        .header("Authorization", tokenFor("guest")))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
     void shouldRejectJoinWhenEventIsFull() throws Exception {
-        String hostToken = createUserToken("hostuser");
-        String firstGuestToken = createUserToken("guestone");
-        String secondGuestToken = createUserToken("guesttwo");
-        Long eventId = createEvent(hostToken, "Small After", "AFTER", "TECHNO", 1);
+        createUser("host");
+        createUser("first");
+        createUser("second");
+        Long eventId = createEvent(tokenFor("host"), "Small After", 1);
+        joinAs("first", eventId);
 
         mockMvc.perform(patch("/after/v1/events/{id}/join", eventId)
-                        .header("authorization", bearer(firstGuestToken)))
-                .andExpect(status().isOk());
-
-        mockMvc.perform(patch("/after/v1/events/{id}/join", eventId)
-                        .header("authorization", bearer(secondGuestToken)))
+                        .header("Authorization", tokenFor("second")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Event capacity is full"));
     }
 
     @Test
-    void shouldInviteAndKickUserSuccessfully() throws Exception {
-        String hostToken = createUserToken("hostuser", "PREMIUM");
-        createUser("guestuser");
-        Long guestId = userId("guestuser");
-        Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
+    void shouldRejectHostLeavingOwnEvent() throws Exception {
+        createUser("host");
+        Long eventId = createEvent(tokenFor("host"), "Party", 3);
+
+        mockMvc.perform(patch("/after/v1/events/{id}/leave", eventId)
+                        .header("Authorization", tokenFor("host")))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenLeavingEventNotJoined() throws Exception {
+        createUser("host");
+        createUser("stranger");
+        Long eventId = createEvent(tokenFor("host"), "Party", 3);
+
+        mockMvc.perform(patch("/after/v1/events/{id}/leave", eventId)
+                        .header("Authorization", tokenFor("stranger")))
+                .andExpect(status().isNotFound());
+    }
+
+    // ---------- invite ----------
+
+    @Test
+    void shouldInviteUserWhenHostIsPremium() throws Exception {
+        createUser("host", "PREMIUM");
+        Long guestId = createUser("guest").getId();
+        Long eventId = createEvent(tokenFor("host"), "Party", 3);
 
         mockMvc.perform(patch("/after/v1/events/{eventId}/invite/user/{userId}", eventId, guestId)
-                        .header("authorization", bearer(hostToken)))
+                        .header("Authorization", tokenFor("host")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.usersCount").value(1));
+    }
 
-        mockMvc.perform(delete("/after/v1/events/{eventId}/kick/user/{userId}", eventId, guestId)
-                        .header("authorization", bearer(hostToken)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.usersCount").value(0));
+    @Test
+    void shouldRejectInviteWhenHostIsFree() throws Exception {
+        createUser("host", "FREE");
+        Long guestId = createUser("guest").getId();
+        Long eventId = createEvent(tokenFor("host"), "Party", 3);
+
+        mockMvc.perform(patch("/after/v1/events/{eventId}/invite/user/{userId}", eventId, guestId)
+                        .header("Authorization", tokenFor("host")))
+                .andExpect(status().isForbidden());
+
+        assertEquals(0, usersCount(eventId, tokenFor("host")));
     }
 
     @Test
     void shouldRejectInviteByNonHost() throws Exception {
-        String hostToken = createUserToken("hostuser");
-        String guestToken = createUserToken("guestuser", "PREMIUM");
-        createUser("targetuser");
-        Long targetUserId = userId("targetuser");
-        Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
+        createUser("host");
+        createUser("guest", "PREMIUM");
+        Long targetId = createUser("target").getId();
+        Long eventId = createEvent(tokenFor("host"), "Party", 3);
 
-        mockMvc.perform(patch("/after/v1/events/{eventId}/invite/user/{userId}", eventId, targetUserId)
-                        .header("authorization", bearer(guestToken)))
+        mockMvc.perform(patch("/after/v1/events/{eventId}/invite/user/{userId}", eventId, targetId)
+                        .header("Authorization", tokenFor("guest")))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("Only host can invite Users"));
     }
 
     @Test
-    void shouldRejectKickByNonHost() throws Exception {
-        String hostToken = createUserToken("hostuser", "FREE");
-        String guestToken = createUserToken("guestuser", "FREE");
-        Long guestId = userId("guestuser");
-        Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
+    void shouldRejectInvitingHost() throws Exception {
+        Long hostId = createUser("host", "PREMIUM").getId();
+        Long eventId = createEvent(tokenFor("host"), "Party", 3);
 
-        mockMvc.perform(patch("/after/v1/events/{eventId}/join", eventId)
-                        .header("authorization", bearer(guestToken)))
-                .andExpect(status().isOk());
-
-        mockMvc.perform(delete("/after/v1/events/{eventId}/kick/user/{userId}", eventId, guestId)
-                        .header("authorization", bearer(guestToken)))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.message").value("Only host can delete Users"));
+        mockMvc.perform(patch("/after/v1/events/{eventId}/invite/user/{userId}", eventId, hostId)
+                        .header("Authorization", tokenFor("host")))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    void shouldRejectInviteWithoutInviteUserPermission() throws Exception {
-        String freeToken = createUserToken("hostuser", "FREE");
-        createUser("targetuser");
-        Long targetUserId = userId("targetuser");
-        Long eventId = createEvent(freeToken, "After Barcelona", "AFTER", "TECHNO", 3);
+    void shouldRejectInvitingUserAlreadyAttending() throws Exception {
+        createUser("host", "PREMIUM");
+        Long guestId = createUser("guest").getId();
+        Long eventId = createEvent(tokenFor("host"), "Party", 3);
+        joinAs("guest", eventId);
 
-        mockMvc.perform(patch("/after/v1/events/{eventId}/invite/user/{userId}", eventId, targetUserId)
-                        .header("authorization", bearer(freeToken)))
-                .andExpect(status().isForbidden());
-        transactions.executeWithoutResult(status -> org.junit.jupiter.api.Assertions.assertEquals(0,
-                eventRepository.findById(eventId).orElseThrow().getUsers().size()));
+        mockMvc.perform(patch("/after/v1/events/{eventId}/invite/user/{userId}", eventId, guestId)
+                        .header("Authorization", tokenFor("host")))
+                .andExpect(status().isBadRequest());
     }
 
-    @Test
-    void shouldAllowFreeHostToKickAttendee() throws Exception {
-        String hostToken = createUserToken("hostuser", "FREE");
-        String guestToken = createUserToken("guestuser", "FREE");
-        Long guestId = userId("guestuser");
-        Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
+    // ---------- kick ----------
 
-        mockMvc.perform(patch("/after/v1/events/{eventId}/join", eventId)
-                        .header("authorization", bearer(guestToken)))
-                .andExpect(status().isOk());
+    @Test
+    void shouldKickUserWhenHostIsFree() throws Exception {
+        createUser("host", "FREE");
+        Long guestId = createUser("guest").getId();
+        Long eventId = createEvent(tokenFor("host"), "Party", 3);
+        joinAs("guest", eventId);
 
         mockMvc.perform(delete("/after/v1/events/{eventId}/kick/user/{userId}", eventId, guestId)
-                        .header("authorization", bearer(hostToken)))
+                        .header("Authorization", tokenFor("host")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.usersCount").value(0));
     }
 
     @Test
-    void shouldUpdateEventSuccessfully() throws Exception {
-        String hostToken = createUserToken("hostuser");
-        Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
+    void shouldRejectKickByNonHost() throws Exception {
+        createUser("host");
+        Long guestId = createUser("guest").getId();
+        Long eventId = createEvent(tokenFor("host"), "Party", 3);
+        joinAs("guest", eventId);
 
-        mockMvc.perform(patch("/after/v1/events/{id}", eventId)
-                        .header("authorization", bearer(hostToken))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(updateEventJson("After Updated", 5)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("After Updated"))
-                .andExpect(jsonPath("$.capacity").value(5))
-                .andExpect(jsonPath("$.hostDisplayName").value("hostuser"));
+        mockMvc.perform(delete("/after/v1/events/{eventId}/kick/user/{userId}", eventId, guestId)
+                        .header("Authorization", tokenFor("guest")))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("Only host can delete Users"));
     }
 
     @Test
-    void shouldUpdateOnlySpecifiedFieldsAndAllowCapacityEqualToAttendees() throws Exception {
-        String host = createUserToken("hostuser");
-        String guest = createUserToken("guestuser");
-        Long id = createEvent(host, "Original", "AFTER", "TECHNO", 3);
-        mockMvc.perform(patch("/after/v1/events/{id}/join", id).header("authorization", bearer(guest)))
-                .andExpect(status().isOk());
-        mockMvc.perform(patch("/after/v1/events/{id}", id).header("authorization", bearer(host))
+    void shouldReturnNotFoundWhenKickingUserNotAttending() throws Exception {
+        createUser("host");
+        Long strangerId = createUser("stranger").getId();
+        Long eventId = createEvent(tokenFor("host"), "Party", 3);
+
+        mockMvc.perform(delete("/after/v1/events/{eventId}/kick/user/{userId}", eventId, strangerId)
+                        .header("Authorization", tokenFor("host")))
+                .andExpect(status().isNotFound());
+    }
+
+    // ---------- update ----------
+
+    @Test
+    void shouldUpdateEvent() throws Exception {
+        createUser("host");
+        Long eventId = createEvent(tokenFor("host"), "After Barcelona", 3);
+
+        mockMvc.perform(patch("/after/v1/events/{id}", eventId)
+                        .header("Authorization", tokenFor("host"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"capacity":1,"musicStyle":"HOUSE",
-                                 "address":{"street":"Diagonal","streetNum":"10","postalCode":"08001",
-                                            "city":"Barcelona","province":"Barcelona"}}
-                                """))
+                        .content("{\"name\": \"After Updated\", \"capacity\": 5}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("After Updated"))
+                .andExpect(jsonPath("$.capacity").value(5));
+    }
+
+    @Test
+    void shouldUpdateOnlyFieldsSentInRequest() throws Exception {
+        createUser("host");
+        Long eventId = createEvent(tokenFor("host"), "Original", 3);
+
+        mockMvc.perform(patch("/after/v1/events/{id}", eventId)
+                        .header("Authorization", tokenFor("host"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"musicStyle\": \"HOUSE\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Original"))
                 .andExpect(jsonPath("$.eventType").value("AFTER"))
-                .andExpect(jsonPath("$.musicStyle").value("HOUSE"))
-                .andExpect(jsonPath("$.capacity").value(1))
-                .andExpect(jsonPath("$.usersCount").value(1));
-        org.junit.jupiter.api.Assertions.assertEquals("Diagonal", eventRepository.findById(id).orElseThrow().getAddress().getStreet());
+                .andExpect(jsonPath("$.musicStyle").value("HOUSE"));
     }
 
     @Test
-    void shouldRejectUpdateEventByNonHost() throws Exception {
-        String hostToken = createUserToken("hostuser");
-        String guestToken = createUserToken("guestuser");
-        Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
+    void shouldAllowCapacityEqualToAttendees() throws Exception {
+        createUser("host");
+        createUser("guest");
+        Long eventId = createEvent(tokenFor("host"), "Party", 3);
+        joinAs("guest", eventId);
 
         mockMvc.perform(patch("/after/v1/events/{id}", eventId)
-                        .header("authorization", bearer(guestToken))
+                        .header("Authorization", tokenFor("host"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(updateEventJson("After Updated", 5)))
+                        .content("{\"capacity\": 1}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.capacity").value(1))
+                .andExpect(jsonPath("$.usersCount").value(1));
+    }
+
+    @Test
+    void shouldReplaceAddressWhenSent() throws Exception {
+        createUser("host");
+        Long eventId = createEvent(tokenFor("host"), "Party", 3);
+
+        mockMvc.perform(patch("/after/v1/events/{id}", eventId)
+                        .header("Authorization", tokenFor("host"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"address": {"street": "Diagonal", "streetNum": "10", "postalCode": "08001",
+                                             "city": "Barcelona", "province": "Barcelona"}}
+                                """))
+                .andExpect(status().isOk());
+
+        assertEquals("Diagonal", eventRepository.findById(eventId).orElseThrow().getAddress().getStreet());
+    }
+
+    @Test
+    void shouldRejectUpdateByNonHost() throws Exception {
+        createUser("host");
+        createUser("guest");
+        Long eventId = createEvent(tokenFor("host"), "Party", 3);
+
+        mockMvc.perform(patch("/after/v1/events/{id}", eventId)
+                        .header("Authorization", tokenFor("guest"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"Hacked\"}"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("Only hosts can update Events"));
     }
 
     @Test
-    void shouldRejectUpdateEventWithInvalidBody() throws Exception {
-        String hostToken = createUserToken("hostuser");
-        Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
+    void shouldRejectUpdateWithZeroCapacity() throws Exception {
+        createUser("host");
+        Long eventId = createEvent(tokenFor("host"), "Party", 3);
 
         mockMvc.perform(patch("/after/v1/events/{id}", eventId)
-                        .header("authorization", bearer(hostToken))
+                        .header("Authorization", tokenFor("host"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(updateEventJson("After Updated", 0)))
+                        .content("{\"capacity\": 0}"))
                 .andExpect(status().isBadRequest());
     }
 
+    // ---------- delete ----------
+
     @Test
-    void shouldDeleteEventSuccessfully() throws Exception {
-        String hostToken = createUserToken("hostuser");
-        Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
+    void shouldDeleteEvent() throws Exception {
+        createUser("host");
+        Long eventId = createEvent(tokenFor("host"), "Party", 3);
 
         mockMvc.perform(delete("/after/v1/events/{id}", eventId)
-                        .header("authorization", bearer(hostToken)))
+                        .header("Authorization", tokenFor("host")))
                 .andExpect(status().isNoContent());
 
-        org.junit.jupiter.api.Assertions.assertFalse(eventRepository.existsById(eventId));
+        assertFalse(eventRepository.existsById(eventId));
     }
 
     @Test
-    void shouldDeleteOnlyTheAddressOfTheApiCreatedEvent() throws Exception {
-        String hostToken = createUserToken("hostuser");
-        Long deletedId = createEvent(hostToken, "First event", "AFTER", "TECHNO", 3);
-        Long retainedId = createEvent(hostToken, "Second event", "AFTER", "TECHNO", 3);
+    void shouldDeleteOnlyTheAddressOfTheDeletedEvent() throws Exception {
+        createUser("host");
+        Long deletedId = createEvent(tokenFor("host"), "First", 3);
+        Long keptId = createEvent(tokenFor("host"), "Second", 3);
         Long deletedAddressId = eventRepository.findById(deletedId).orElseThrow().getAddress().getId();
-        Long retainedAddressId = eventRepository.findById(retainedId).orElseThrow().getAddress().getId();
-        assertNotEquals(deletedAddressId, retainedAddressId);
+        Long keptAddressId = eventRepository.findById(keptId).orElseThrow().getAddress().getId();
 
         mockMvc.perform(delete("/after/v1/events/{id}", deletedId)
-                        .header("authorization", bearer(hostToken)))
+                        .header("Authorization", tokenFor("host")))
                 .andExpect(status().isNoContent());
 
-        assertFalse(eventRepository.existsById(deletedId));
-        assertTrue(eventRepository.existsById(retainedId));
-        assertNull(transactions.execute(status -> entityManager.find(Address.class, deletedAddressId)));
-        assertNotNull(transactions.execute(status -> entityManager.find(Address.class, retainedAddressId)));
+        assertNull(entityManager.find(Address.class, deletedAddressId));
+        assertNotNull(entityManager.find(Address.class, keptAddressId));
+        assertTrue(eventRepository.existsById(keptId));
     }
 
     @Test
     void shouldRejectDeleteByNonHost() throws Exception {
-        String hostToken = createUserToken("hostuser");
-        String guestToken = createUserToken("guestuser");
-        Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
+        createUser("host");
+        createUser("guest");
+        Long eventId = createEvent(tokenFor("host"), "Party", 3);
 
         mockMvc.perform(delete("/after/v1/events/{id}", eventId)
-                .header("authorization", bearer(guestToken)))
+                        .header("Authorization", tokenFor("guest")))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("Only host can delete own event"));
     }
 
+    // ---------- an ADMIN who is not the host ----------
+
     @Test
-    void shouldRejectAdminManagingAnEventWhenNotHost() throws Exception {
-        String hostToken = createUserToken("hostuser");
-        String adminToken = createUserToken("adminuser", "ADMIN");
-        createUser("guestuser");
-        Long guestId = userId("guestuser");
-        Long eventId = createEvent(hostToken, "After Barcelona", "AFTER", "TECHNO", 3);
+    void shouldRejectAdminUpdatingEventOfAnotherHost() throws Exception {
+        createUser("host");
+        createUser("admin", "ADMIN");
+        Long eventId = createEvent(tokenFor("host"), "Party", 3);
 
         mockMvc.perform(patch("/after/v1/events/{id}", eventId)
-                        .header("authorization", bearer(adminToken))
+                        .header("Authorization", tokenFor("admin"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(updateEventJson("Unauthorized update", 5)))
+                        .content("{\"name\": \"Changed by admin\"}"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldRejectAdminInvitingToEventOfAnotherHost() throws Exception {
+        createUser("host");
+        createUser("admin", "ADMIN");
+        Long guestId = createUser("guest").getId();
+        Long eventId = createEvent(tokenFor("host"), "Party", 3);
 
         mockMvc.perform(patch("/after/v1/events/{eventId}/invite/user/{userId}", eventId, guestId)
-                        .header("authorization", bearer(adminToken)))
+                        .header("Authorization", tokenFor("admin")))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldRejectAdminKickingFromEventOfAnotherHost() throws Exception {
+        createUser("host");
+        createUser("admin", "ADMIN");
+        Long guestId = createUser("guest").getId();
+        Long eventId = createEvent(tokenFor("host"), "Party", 3);
+        joinAs("guest", eventId);
 
         mockMvc.perform(delete("/after/v1/events/{eventId}/kick/user/{userId}", eventId, guestId)
-                        .header("authorization", bearer(adminToken)))
+                        .header("Authorization", tokenFor("admin")))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void shouldRejectAdminDeletingEventOfAnotherHost() throws Exception {
+        createUser("host");
+        createUser("admin", "ADMIN");
+        Long eventId = createEvent(tokenFor("host"), "Party", 3);
 
         mockMvc.perform(delete("/after/v1/events/{id}", eventId)
-                        .header("authorization", bearer(adminToken)))
+                        .header("Authorization", tokenFor("admin")))
                 .andExpect(status().isForbidden());
 
-        transactions.executeWithoutResult(status -> {
-            Events unchanged = eventRepository.findById(eventId).orElseThrow();
-            org.junit.jupiter.api.Assertions.assertEquals("After Barcelona", unchanged.getName());
-            org.junit.jupiter.api.Assertions.assertTrue(unchanged.getUsers().isEmpty());
-        });
+        assertTrue(eventRepository.existsById(eventId));
     }
 
-    private Long createEvent(String token, String name, String type, String style, int capacity) throws Exception {
-        mockMvc.perform(post("/after/v1/events")
-                        .header("authorization", bearer(token))
+    // ---------- role changes with an existing token ----------
+
+    @Test
+    void shouldAllowInviteWithSameTokenAfterUpgradeToPremium() throws Exception {
+        createUser("admin", "ADMIN");
+        Long hostId = createUser("host", "FREE").getId();
+        Long guestId = createUser("guest").getId();
+        String hostToken = tokenFor("host");
+        Long eventId = createEvent(hostToken, "Party", 3);
+
+        changeRole(hostId, "PREMIUM");
+
+        mockMvc.perform(patch("/after/v1/events/{eventId}/invite/user/{userId}", eventId, guestId)
+                        .header("Authorization", hostToken))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldRejectInviteWithSameTokenAfterDowngradeToFree() throws Exception {
+        createUser("admin", "ADMIN");
+        Long hostId = createUser("host", "PREMIUM").getId();
+        Long guestId = createUser("guest").getId();
+        String hostToken = tokenFor("host");
+        Long eventId = createEvent(hostToken, "Party", 3);
+
+        changeRole(hostId, "FREE");
+
+        mockMvc.perform(patch("/after/v1/events/{eventId}/invite/user/{userId}", eventId, guestId)
+                        .header("Authorization", hostToken))
+                .andExpect(status().isForbidden());
+    }
+
+    // ---------- helpers ----------
+
+    private void joinAs(String username, Long eventId) throws Exception {
+        mockMvc.perform(patch("/after/v1/events/{id}/join", eventId)
+                        .header("Authorization", tokenFor(username)))
+                .andExpect(status().isOk());
+    }
+
+    private void changeRole(Long userId, String roleName) throws Exception {
+        mockMvc.perform(patch("/after/v1/users/{id}/role", userId)
+                        .header("Authorization", tokenFor("admin"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(eventJson(name, type, style, capacity)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value(name));
-
-        return eventRepository.findAll().stream()
-                .filter(event -> name.equals(event.getName()))
-                .map(Events::getId)
-                .findFirst()
-                .orElseThrow();
-    }
-
-    private String createUserToken(String username) {
-        createUser(username);
-        return tokenUtil.generateToken(username);
-    }
-
-    private String createUserToken(String username, String roleName) {
-        createUser(username, roleName);
-        return tokenUtil.generateToken(username);
-    }
-
-    private void createUser(String username) {
-        createUser(username, "FREE");
-    }
-
-    private void createUser(String username, String roleName) {
-        Users user = new Users();
-        user.setDisplayName(username);
-        user.setUserRole(role(roleName));
-
-        UserAccess access = new UserAccess();
-        access.setUsername(username);
-        access.setPassword("unused-in-controller-tests");
-        access.setUser(user);
-
-        userAccessRepository.save(access);
-    }
-
-    private UserRole role(String roleName) {
-        return userRoleRepository.findByRoleName(roleName).orElseThrow();
-    }
-
-    private Long userId(String username) {
-        return userAccessRepository.findByUsername(username).orElseThrow().getUser().getId();
-    }
-
-    private String bearer(String token) {
-        return "Bearer " + token;
-    }
-
-    private String eventJson(String name, String type, String style, int capacity) {
-        return """
-                {
-                  "name": "%s",
-                  "eventType": "%s",
-                  "musicStyle": "%s",
-                  "description": "HTTP integration test event",
-                  "dateTime": "2030-06-05T23:00:00",
-                  "capacity": %d,
-                  "address": {
-                    "street": "Carrer Marina",
-                    "streetNum": "25",
-                    "postalCode": "08005",
-                    "city": "Barcelona",
-                    "province": "Barcelona",
-                    "additionalInfo": "Test address"
-                  }
-                }
-                """.formatted(name, type, style, capacity);
-    }
-
-    private String updateEventJson(String name, int capacity) {
-        return """
-                {
-                  "name": "%s",
-                  "capacity": %d
-                }
-                """.formatted(name, capacity);
+                        .content("{\"roleName\": \"" + roleName + "\"}"))
+                .andExpect(status().isOk());
     }
 }

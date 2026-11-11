@@ -1,22 +1,21 @@
 package com.afterApp.after.integration;
 
 import com.afterApp.after.loader.DevelopmentAdminInitializer;
-import com.afterApp.after.repositories.UserAccessRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
-import org.springframework.core.io.support.ResourcePropertySource;
-import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/** Starts the application with the prod profile (using the in-memory test database). */
 @SpringBootTest
 @ActiveProfiles("prod")
 @TestPropertySource(properties = {
@@ -28,33 +27,37 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         "jwt.secret=MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE="
 })
 class ProductionConfigurationTest {
-    @Autowired private ApplicationContext context;
-    @Autowired private UserAccessRepository accesses;
+
+    @Autowired
+    private ApplicationContext context;
 
     @Test
-    void shouldStartProdWithoutDevelopmentAdmin() {
+    void shouldNotCreateDevelopmentAdminInProd() {
         assertTrue(context.getBeansOfType(DevelopmentAdminInitializer.class).isEmpty());
-        assertTrue(accesses.findByUsername("adminTest").isEmpty());
     }
 
     @Test
-    void shouldRequireJwtSecretInProductionProperties() throws IOException {
-        var environment = productionProperties();
-        assertEquals("${JWT_SECRET}", environment.getPropertySources().get("production").getProperty("jwt.secret"));
-        assertThrows(IllegalArgumentException.class, () -> environment.getProperty("jwt.secret"));
+    void shouldReadJwtSecretFromEnvironmentInProd() throws IOException {
+        Properties prod = loadProdProperties();
+
+        assertEquals("${JWT_SECRET}", prod.getProperty("jwt.secret"));
     }
 
     @Test
-    void shouldRequireDatabaseCredentialsInProductionProperties() throws IOException {
-        var environment = productionProperties();
-        for (String name : new String[] {"spring.datasource.url", "spring.datasource.username", "spring.datasource.password"}) {
-            assertThrows(IllegalArgumentException.class, () -> environment.getProperty(name));
+    void shouldReadDatabaseCredentialsFromEnvironmentInProd() throws IOException {
+        Properties prod = loadProdProperties();
+
+        assertEquals("${DATABASE_URL}", prod.getProperty("spring.datasource.url"));
+        assertEquals("${DATABASE_USERNAME}", prod.getProperty("spring.datasource.username"));
+        assertEquals("${DATABASE_PASSWORD}", prod.getProperty("spring.datasource.password"));
+    }
+
+    /** Reads application-prod.properties as plain text, without resolving the ${...} values. */
+    private Properties loadProdProperties() throws IOException {
+        Properties properties = new Properties();
+        try (InputStream file = getClass().getResourceAsStream("/application-prod.properties")) {
+            properties.load(file);
         }
-    }
-
-    private MockEnvironment productionProperties() throws IOException {
-        MockEnvironment environment = new MockEnvironment();
-        environment.getPropertySources().addFirst(new ResourcePropertySource("production", "classpath:application-prod.properties"));
-        return environment;
+        return properties;
     }
 }

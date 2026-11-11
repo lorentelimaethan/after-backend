@@ -1,28 +1,28 @@
-# MySQL integration test
+# Tests
 
-The regular test suite uses an in-memory HSQLDB database. The optional
-`MySqlPersistenceTest` runs only when `AFTER_MYSQL_TEST_URL` is set to exactly
-`jdbc:mysql://localhost:3306/after_test` or
-`jdbc:mysql://127.0.0.1:3306/after_test`.
+| Package | What it tests | Type |
+|---|---|---|
+| `service` | Business rules of the services, with Mockito mocks | Unit |
+| `mappers` | Entity ↔ DTO mapping | Unit |
+| `loader` | Role and development admin initialization | Unit / Spring |
+| `utils` | JWT generation and validation | Spring |
+| `controller` | HTTP endpoints, status codes, validation and cache | HTTP (MockMvc + Spring) |
+| `security` | Authentication and Actuator protection | HTTP |
+| `integration` | Account deletion, prod profile and real MySQL | Integration |
+| `support` | `HttpTestBase`: shared setup for the HTTP tests | — |
 
-Create a separate, disposable `after_test` database and a dedicated user before
-running it. **The test uses `create-drop` and destroys tables in that database.**
-Never point it at an application database or a database containing valuable data.
-
-Set `AFTER_MYSQL_TEST_URL`, `AFTER_MYSQL_TEST_USERNAME`, and
-`AFTER_MYSQL_TEST_PASSWORD` in the environment, then run:
+The regular suite uses an in-memory HSQLDB database (`application-test.properties`), so no local MySQL is needed:
 
 ```sh
-./mvnw -Dtest=MySqlPersistenceTest test
+./mvnw test
 ```
 
-The database and its credentials are not created or managed by this test.
-
-`MySqlContainerTest` uses an isolated, disposable MySQL instance through
-Testcontainers. It runs in CI and can be run locally with Docker running:
+`MySqlContainerTest` starts a real MySQL with Testcontainers (Docker must be running). It checks persistence and that event capacity is never exceeded when several requests arrive at the same time. It runs in CI and locally with:
 
 ```sh
 AFTER_RUN_MYSQL_TESTS=true ./mvnw -Dtest=MySqlContainerTest test
 ```
+
+Environment variables override `application-test.properties`. Tests that need the JWT secret or the development admin read them with `@Value`, so they work with or without those variables exported.
 
 `./mvnw verify` generates a JaCoCo report in `target/site/jacoco/index.html`.

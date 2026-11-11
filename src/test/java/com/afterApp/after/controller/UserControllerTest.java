@@ -1,146 +1,130 @@
 package com.afterApp.after.controller;
 
-import com.afterApp.after.entity.UserAccess;
-import com.afterApp.after.entity.UserRole;
-import com.afterApp.after.entity.Users;
-import com.afterApp.after.repositories.EventRepository;
-import com.afterApp.after.repositories.UserAccessRepository;
-import com.afterApp.after.repositories.UserRepository;
-import com.afterApp.after.repositories.UserRoleRepository;
-import com.afterApp.after.utils.TokenUtil;
-import org.junit.jupiter.api.BeforeEach;
+import com.afterApp.after.support.HttpTestBase;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-class UserControllerTest {
+class UserControllerTest extends HttpTestBase {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private EventRepository eventRepository;
-
-    @Autowired
-    private UserAccessRepository userAccessRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private UserRoleRepository userRoleRepository;
-
-    @Autowired
-    private TokenUtil tokenUtil;
-
-    @BeforeEach
-    void setUp() {
-        eventRepository.deleteAll();
-        userAccessRepository.deleteAll();
-        userRepository.deleteAll();
-    }
+    // ---------- GET profile ----------
 
     @Test
-    void shouldGetUserByIdSuccessfully() throws Exception {
-        String token = createUserToken("ethanlo");
-        Long userId = userId("ethanlo");
+    void shouldGetUserById() throws Exception {
+        Long userId = createUser("ethan").getId();
 
         mockMvc.perform(get("/after/v1/users/{id}", userId)
-                        .header("authorization", bearer(token)))
+                        .header("Authorization", tokenFor("ethan")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(userId))
-                .andExpect(jsonPath("$.displayName").value("ethanlo"));
+                .andExpect(jsonPath("$.displayName").value("ethan"));
     }
 
     @Test
-    void shouldReturnPrivateProfileOnlyToItsOwnerInEitherOrder() throws Exception {
-        String ownerToken = createUserToken("owner");
-        String otherToken = createUserToken("other");
-        Long ownerId = userId("owner");
-        mockMvc.perform(put("/after/v1/users/{id}", ownerId)
-                        .header("authorization", bearer(ownerToken))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"name":"Owner","lastname":"Example","email":"owner@example.com","phoneNumber":"123456789"}
-                                """))
+    void shouldShowPrivateDataToOwner() throws Exception {
+        Long ownerId = createUserWithPersonalData("owner");
+
+        mockMvc.perform(get("/after/v1/users/{id}", ownerId)
+                        .header("Authorization", tokenFor("owner")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Owner"))
+                .andExpect(jsonPath("$.email").value("owner@example.com"))
+                .andExpect(jsonPath("$.phoneNumber").value("123456789"));
+    }
+
+    @Test
+    void shouldHidePrivateDataFromOtherUsers() throws Exception {
+        Long ownerId = createUserWithPersonalData("owner");
+        createUser("other");
+
+        mockMvc.perform(get("/after/v1/users/{id}", ownerId)
+                        .header("Authorization", tokenFor("other")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.displayName").value("owner"))
+                .andExpect(jsonPath("$.name").doesNotExist())
+                .andExpect(jsonPath("$.lastname").doesNotExist())
+                .andExpect(jsonPath("$.email").doesNotExist())
+                .andExpect(jsonPath("$.phoneNumber").doesNotExist())
+                .andExpect(jsonPath("$.roleName").doesNotExist());
+    }
+
+    @Test
+    void shouldHidePrivateDataFromOtherUsersEvenAfterOwnerReadIt() throws Exception {
+        Long ownerId = createUserWithPersonalData("owner");
+        createUser("other");
+        mockMvc.perform(get("/after/v1/users/{id}", ownerId)
+                        .header("Authorization", tokenFor("owner")))
                 .andExpect(status().isOk());
 
-        for (int i = 0; i < 2; i++) {
-            mockMvc.perform(get("/after/v1/users/{id}", ownerId)
-                            .header("authorization", bearer(otherToken)))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.displayName").value("owner"))
-                    .andExpect(jsonPath("$.name").doesNotExist())
-                    .andExpect(jsonPath("$.lastname").doesNotExist())
-                    .andExpect(jsonPath("$.email").doesNotExist())
-                    .andExpect(jsonPath("$.phoneNumber").doesNotExist())
-                    .andExpect(jsonPath("$.roleName").doesNotExist());
-            mockMvc.perform(get("/after/v1/users/{id}", ownerId)
-                            .header("authorization", bearer(ownerToken)))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.name").value("Owner"))
-                    .andExpect(jsonPath("$.email").value("owner@example.com"))
-                    .andExpect(jsonPath("$.phoneNumber").value("123456789"));
-        }
+        mockMvc.perform(get("/after/v1/users/{id}", ownerId)
+                        .header("Authorization", tokenFor("other")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").doesNotExist());
     }
 
     @Test
-    void shouldRejectGetUserWhenTokenIsInvalid() throws Exception {
-        createUser("ethanlo");
-        Long userId = userId("ethanlo");
+    void shouldShowPrivateDataToOwnerEvenAfterOtherUserReadIt() throws Exception {
+        Long ownerId = createUserWithPersonalData("owner");
+        createUser("other");
+        mockMvc.perform(get("/after/v1/users/{id}", ownerId)
+                        .header("Authorization", tokenFor("other")))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/after/v1/users/{id}", ownerId)
+                        .header("Authorization", tokenFor("owner")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("owner@example.com"));
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenUserDoesNotExist() throws Exception {
+        createUser("ethan");
+
+        mockMvc.perform(get("/after/v1/users/{id}", 999L)
+                        .header("Authorization", tokenFor("ethan")))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldRejectGetUserWithInvalidToken() throws Exception {
+        Long userId = createUser("ethan").getId();
 
         mockMvc.perform(get("/after/v1/users/{id}", userId)
-                        .header("authorization", "Bearer invalid-token"))
+                        .header("Authorization", "Bearer invalid-token"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Access denied"));
     }
 
     @Test
-    void shouldRejectGetUserWhenTokenIsMissing() throws Exception {
-        createUser("ethanlo");
-        Long userId = userId("ethanlo");
+    void shouldRejectGetUserWithoutToken() throws Exception {
+        Long userId = createUser("ethan").getId();
 
         mockMvc.perform(get("/after/v1/users/{id}", userId))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Access denied"));
     }
 
-    @Test
-    void shouldReturnNotFoundWhenUserDoesNotExist() throws Exception {
-        String token = createUserToken("ethanlo");
-
-        mockMvc.perform(get("/after/v1/users/{id}", 999L)
-                        .header("authorization", bearer(token)))
-                .andExpect(status().isNotFound());
-    }
+    // ---------- PUT profile ----------
 
     @Test
-    void shouldUpdateOwnUserProfileSuccessfully() throws Exception {
-        String token = createUserToken("ethanlo");
-        Long userId = userId("ethanlo");
+    void shouldUpdateOwnProfile() throws Exception {
+        Long userId = createUser("ethan").getId();
 
         mockMvc.perform(put("/after/v1/users/{id}", userId)
-                        .header("authorization", bearer(token))
+                        .header("Authorization", tokenFor("ethan"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {
-                                  "name": "Ethan",
-                                  "lastname": "Lorente",
-                                  "email": "ethan@example.com",
-                                  "phoneNumber": "+34612345678"
-                                }
+                                {"name": "Ethan", "lastname": "Lorente",
+                                 "email": "ethan@example.com", "phoneNumber": "+34612345678"}
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Ethan"))
@@ -150,250 +134,182 @@ class UserControllerTest {
     }
 
     @Test
-    void shouldRejectUpdateUserWithInvalidEmail() throws Exception {
-        String token = createUserToken("ethanlo");
-        Long userId = userId("ethanlo");
+    void shouldRejectProfileUpdateWithInvalidEmail() throws Exception {
+        Long userId = createUser("ethan").getId();
 
         mockMvc.perform(put("/after/v1/users/{id}", userId)
-                        .header("authorization", bearer(token))
+                        .header("Authorization", tokenFor("ethan"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "email": "not-an-email"
-                                }
-                                """))
+                        .content("{\"email\": \"not-an-email\"}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void shouldRejectUpdateOtherUserProfile() throws Exception {
-        String token = createUserToken("ethanlo");
-        createUser("otheruser");
-        Long otherUserId = userId("otheruser");
+    void shouldRejectUpdatingAnotherProfile() throws Exception {
+        createUser("ethan");
+        Long otherId = createUser("other").getId();
 
-        mockMvc.perform(put("/after/v1/users/{id}", otherUserId)
-                        .header("authorization", bearer(token))
+        mockMvc.perform(put("/after/v1/users/{id}", otherId)
+                        .header("Authorization", tokenFor("ethan"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "name": "Intruder"
-                                }
-                                """))
+                        .content("{\"name\": \"Intruder\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("You can only update your own profile"));
     }
 
+    // ---------- PATCH display name ----------
+
     @Test
-    void shouldUpdateDisplayNameSuccessfully() throws Exception {
-        String token = createUserToken("ethanlo");
-        Long userId = userId("ethanlo");
+    void shouldUpdateDisplayName() throws Exception {
+        Long userId = createUser("ethan").getId();
 
         mockMvc.perform(patch("/after/v1/users/{id}/display-name", userId)
-                        .header("authorization", bearer(token))
+                        .header("Authorization", tokenFor("ethan"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "displayName": "after.host"
-                                }
-                                """))
+                        .content("{\"displayName\": \"after.host\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.displayName").value("after.host"));
     }
 
     @Test
     void shouldRejectInvalidDisplayName() throws Exception {
-        String token = createUserToken("ethanlo");
-        Long userId = userId("ethanlo");
+        Long userId = createUser("ethan").getId();
 
         mockMvc.perform(patch("/after/v1/users/{id}/display-name", userId)
-                        .header("authorization", bearer(token))
+                        .header("Authorization", tokenFor("ethan"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "displayName": "_bad"
-                                }
-                                """))
+                        .content("{\"displayName\": \"_bad\"}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void shouldReturnConflictWhenDisplayNameAlreadyExists() throws Exception {
-        String token = createUserToken("ethanlo");
+    void shouldReturnConflictWhenDisplayNameIsTaken() throws Exception {
+        Long userId = createUser("ethan").getId();
         createUser("takenname");
-        Long userId = userId("ethanlo");
 
         mockMvc.perform(patch("/after/v1/users/{id}/display-name", userId)
-                        .header("authorization", bearer(token))
+                        .header("Authorization", tokenFor("ethan"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "displayName": "takenname"
-                                }
-                                """))
+                        .content("{\"displayName\": \"takenname\"}"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("Already Existing username"));
     }
 
-    @Test
-    void shouldUpdateUserRoleSuccessfully() throws Exception {
-        String adminToken = createUserToken("adminuser", "ADMIN");
-        createUser("targetuser", "FREE");
-        Long targetUserId = userId("targetuser");
+    // ---------- PATCH role ----------
 
-        mockMvc.perform(patch("/after/v1/users/{id}/role", targetUserId)
-                        .header("authorization", bearer(adminToken))
+    @Test
+    void shouldUpdateRoleAsAdmin() throws Exception {
+        createUser("admin", "ADMIN");
+        Long targetId = createUser("target", "FREE").getId();
+
+        mockMvc.perform(patch("/after/v1/users/{id}/role", targetId)
+                        .header("Authorization", tokenFor("admin"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "roleName": "PREMIUM"
-                                }
-                                """))
+                        .content("{\"roleName\": \"PREMIUM\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(targetUserId))
-                .andExpect(jsonPath("$.displayName").value("targetuser"))
+                .andExpect(jsonPath("$.id").value(targetId))
                 .andExpect(jsonPath("$.roleName").value("PREMIUM"));
     }
 
     @Test
-    void shouldRejectUpdateRoleWhenRequesterDoesNotHavePermission() throws Exception {
-        String freeToken = createUserToken("freeuser", "FREE");
-        createUser("targetuser", "FREE");
-        Long targetUserId = userId("targetuser");
+    void shouldRejectRoleUpdateWithoutPermission() throws Exception {
+        createUser("free", "FREE");
+        Long targetId = createUser("target", "FREE").getId();
 
-        mockMvc.perform(patch("/after/v1/users/{id}/role", targetUserId)
-                        .header("authorization", bearer(freeToken))
+        mockMvc.perform(patch("/after/v1/users/{id}/role", targetId)
+                        .header("Authorization", tokenFor("free"))
                         .contentType(MediaType.APPLICATION_JSON)
-                .content("""
-                                {
-                                  "roleName": "PREMIUM"
-                                }
-                                """))
+                        .content("{\"roleName\": \"PREMIUM\"}"))
                 .andExpect(status().isForbidden());
-        org.junit.jupiter.api.Assertions.assertEquals("FREE",
-                userRepository.findById(targetUserId).orElseThrow().getUserRole().getRoleName());
+
+        assertEquals("FREE", userRepository.findById(targetId).orElseThrow().getUserRole().getRoleName());
     }
 
     @Test
-    void shouldRejectUpdateRoleWithInvalidBody() throws Exception {
-        String adminToken = createUserToken("adminuser", "ADMIN");
-        createUser("targetuser", "FREE");
-        Long targetUserId = userId("targetuser");
+    void shouldRejectRoleUpdateWithEmptyRoleName() throws Exception {
+        createUser("admin", "ADMIN");
+        Long targetId = createUser("target").getId();
 
-        mockMvc.perform(patch("/after/v1/users/{id}/role", targetUserId)
-                        .header("authorization", bearer(adminToken))
+        mockMvc.perform(patch("/after/v1/users/{id}/role", targetId)
+                        .header("Authorization", tokenFor("admin"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "roleName": ""
-                                }
-                                """))
+                        .content("{\"roleName\": \"\"}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void shouldReturnNotFoundWhenUpdatingToUnknownRole() throws Exception {
-        String adminToken = createUserToken("adminuser", "ADMIN");
-        createUser("targetuser", "FREE");
-        Long targetUserId = userId("targetuser");
+    void shouldReturnNotFoundForUnknownRole() throws Exception {
+        createUser("admin", "ADMIN");
+        Long targetId = createUser("target").getId();
 
-        mockMvc.perform(patch("/after/v1/users/{id}/role", targetUserId)
-                        .header("authorization", bearer(adminToken))
+        mockMvc.perform(patch("/after/v1/users/{id}/role", targetId)
+                        .header("Authorization", tokenFor("admin"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "roleName": "UNKNOWN"
-                                }
-                                """))
+                        .content("{\"roleName\": \"UNKNOWN\"}"))
                 .andExpect(status().isNotFound());
     }
 
+    // ---------- DELETE account ----------
+
     @Test
-    void shouldDeleteOwnUserProfileSuccessfully() throws Exception {
-        String token = createUserToken("ethanlo");
-        Long userId = userId("ethanlo");
+    void shouldDeleteOwnAccount() throws Exception {
+        Long userId = createUser("ethan").getId();
 
         mockMvc.perform(delete("/after/v1/users/{id}", userId)
-                        .header("authorization", bearer(token)))
+                        .header("Authorization", tokenFor("ethan")))
                 .andExpect(status().isNoContent());
 
-        org.junit.jupiter.api.Assertions.assertFalse(userRepository.existsById(userId));
+        assertFalse(userRepository.existsById(userId));
     }
 
     @Test
-    void shouldRejectTokenAfterUserIsDeleted() throws Exception {
-        String token = createUserToken("deleteduser");
-        Long userId = userId("deleteduser");
+    void shouldRejectTokenOfDeletedUser() throws Exception {
+        Long userId = createUser("deleted").getId();
+        String token = tokenFor("deleted");
         mockMvc.perform(delete("/after/v1/users/{id}", userId)
-                        .header("authorization", bearer(token)))
+                        .header("Authorization", token))
                 .andExpect(status().isNoContent());
+
         mockMvc.perform(get("/after/v1/users/{id}", userId)
-                        .header("authorization", bearer(token)))
+                        .header("Authorization", token))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    void shouldRejectDeletingAnotherUserProfile() throws Exception {
-        String token = createUserToken("ethanlo");
-        createUser("otheruser");
-        Long otherUserId = userId("otheruser");
+    void shouldRejectDeletingAnotherAccount() throws Exception {
+        createUser("ethan");
+        Long otherId = createUser("other").getId();
 
-        mockMvc.perform(delete("/after/v1/users/{id}", otherUserId)
-                        .header("authorization", bearer(token)))
+        mockMvc.perform(delete("/after/v1/users/{id}", otherId)
+                        .header("Authorization", tokenFor("ethan")))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("You can only delete your own profile"));
 
-        org.junit.jupiter.api.Assertions.assertTrue(userRepository.existsById(otherUserId));
+        assertTrue(userRepository.existsById(otherId));
     }
 
     @Test
-    void shouldRejectDeleteUserWhenTokenIsInvalid() throws Exception {
-        createUser("ethanlo");
-        Long userId = userId("ethanlo");
+    void shouldRejectDeleteWithInvalidToken() throws Exception {
+        Long userId = createUser("ethan").getId();
 
         mockMvc.perform(delete("/after/v1/users/{id}", userId)
-                        .header("authorization", "Bearer invalid-token"))
+                        .header("Authorization", "Bearer invalid-token"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Access denied"));
     }
 
-    private String createUserToken(String username) {
-        createUser(username);
-        return tokenUtil.generateToken(username);
-    }
+    // ---------- helpers ----------
 
-    private String createUserToken(String username, String roleName) {
-        createUser(username, roleName);
-        return tokenUtil.generateToken(username);
-    }
-
-    private void createUser(String username) {
-        createUser(username, "FREE");
-    }
-
-    private void createUser(String username, String roleName) {
-        Users user = new Users();
-        user.setDisplayName(username);
-        if (roleName != null) {
-            user.setUserRole(role(roleName));
-        }
-
-        UserAccess access = new UserAccess();
-        access.setUsername(username);
-        access.setPassword("unused-in-controller-tests");
-        access.setUser(user);
-
-        userAccessRepository.save(access);
-    }
-
-    private UserRole role(String roleName) {
-        return userRoleRepository.findByRoleName(roleName).orElseThrow();
-    }
-
-    private Long userId(String username) {
-        return userAccessRepository.findByUsername(username).orElseThrow().getUser().getId();
-    }
-
-    private String bearer(String token) {
-        return "Bearer " + token;
+    private Long createUserWithPersonalData(String username) throws Exception {
+        Long userId = createUser(username).getId();
+        mockMvc.perform(put("/after/v1/users/{id}", userId)
+                        .header("Authorization", tokenFor(username))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name": "Owner", "lastname": "Example",
+                                 "email": "owner@example.com", "phoneNumber": "123456789"}
+                                """))
+                .andExpect(status().isOk());
+        return userId;
     }
 }
