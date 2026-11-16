@@ -207,7 +207,7 @@ Tests use JUnit 5, Mockito, and MockMvc. Maven activates the `test` profile, so 
 | `unit` | Service rules with Mockito, entity ↔ DTO mapping, role initialization and direct exception handler calls |
 | `integration` | HTTP endpoints, security, JWT configuration, application startup, development admin, account deletion with events, the `prod` profile and real MySQL |
 
-HTTP tests extend `integration/HttpTestBase`, which cleans the database before each test and creates users, tokens and events. Environment variables override `application-test.properties`, so tests that need the JWT secret or the development admin read them with `@Value` and pass whether or not `JWT_SECRET` and `AFTER_ADMIN_*` are exported.
+HTTP tests extend `integration/HttpTestBase`, a helper (not a test class) that cleans the database before each test and creates users, tokens and events. Environment variables override `application-test.properties`, so tests that need the JWT secret or the development admin read them with `@Value` and pass whether or not `JWT_SECRET` and `AFTER_ADMIN_*` are exported.
 
 `MySqlContainerTest` uses Testcontainers and requires a running Docker daemon. It covers persistence, account deletion with event relationships, and requests sent at the same time to the same event: ten guests joining the last place, two invitations, join + invitation, capacity reduction + join, leave + join, kick + join, and event deletion + join. Run it locally with:
 
@@ -215,6 +215,6 @@ HTTP tests extend `integration/HttpTestBase`, which cleans the database before e
 AFTER_RUN_MYSQL_TESTS=true ./mvnw -Dtest=MySqlContainerTest test
 ```
 
-Run the entire suite, including MySQL, with `AFTER_RUN_MYSQL_TESTS=true ./mvnw test`. The GitHub Actions workflow in `.github/workflows/ci.yml` runs `./mvnw clean verify` on Java 21 with the MySQL tests enabled, Maven dependency caching, and a downloadable JaCoCo coverage report, and then builds the Docker image to check that the Dockerfile still works. `./mvnw verify` writes the local report to `target/site/jacoco/index.html`. More detail about the test layout is in `src/test/README.md`.
+Run the entire suite, including MySQL, with `AFTER_RUN_MYSQL_TESTS=true ./mvnw test`. The GitHub Actions workflow in `.github/workflows/ci.yml` runs `./mvnw clean verify` on Java 21 with the MySQL tests enabled, Maven dependency caching, and a downloadable JaCoCo coverage report, and then builds the Docker image to check that the Dockerfile still works. `./mvnw verify` writes the local report to `target/site/jacoco/index.html`.
 
 The local application uses Hibernate `ddl-auto=update`. JWTs expire after one hour; logout adds tokens to an in-memory blocklist, which is lost on restart and is not shared between instances. Event and user reads use an in-memory cache, so this configuration targets a single application instance. Database migrations, shared token revocation, and multi-instance cache coordination are not implemented here.

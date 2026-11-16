@@ -2,7 +2,6 @@ package com.afterApp.after.controller;
 
 import com.afterApp.after.dto.ErrorResponseDTO;
 import com.afterApp.after.exceptions.*;
-import com.afterApp.after.service.UserServices;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

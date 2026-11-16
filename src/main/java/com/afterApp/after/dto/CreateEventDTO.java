@@ -1,6 +1,5 @@
 package com.afterApp.after.dto;
 
-import com.afterApp.after.entity.Address;
 import com.afterApp.after.enums.EventType;
 import com.afterApp.after.enums.MusicStyle;
 import jakarta.validation.Valid;
