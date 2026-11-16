@@ -1,5 +1,6 @@
-package com.afterApp.after.controller;
+package com.afterApp.after.unit;
 
+import com.afterApp.after.controller.GlobalExceptionHandler;
 import com.afterApp.after.dto.ErrorResponseDTO;
 import com.afterApp.after.exceptions.AlreadyExistsException;
 import com.afterApp.after.exceptions.BadRequestException;

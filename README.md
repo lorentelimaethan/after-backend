@@ -204,15 +204,10 @@ Tests use JUnit 5, Mockito, and MockMvc. Maven activates the `test` profile, so 
 
 | Package | What it covers |
 |---|---|
-| `service` | Business rules of the services (join, leave, invite, kick, update, delete, profiles, roles, registration, login) with Mockito mocks |
-| `mappers` | Entity ↔ DTO mapping and partial updates |
-| `loader` | Role initialization and the development admin |
-| `utils` | JWT generation, validation, expiry, wrong signature and logout |
-| `controller` | HTTP endpoints, status codes, validation, privacy of user profiles and event cache refresh |
-| `security` | Missing, malformed, expired and forged tokens, and Actuator access |
-| `integration` | Account deletion with events, the `prod` profile and real MySQL |
+| `unit` | Service rules with Mockito, entity ↔ DTO mapping, role initialization and direct exception handler calls |
+| `integration` | HTTP endpoints, security, JWT configuration, application startup, development admin, account deletion with events, the `prod` profile and real MySQL |
 
-HTTP tests extend `support/HttpTestBase`, which cleans the database before each test and creates users, tokens and events. Environment variables override `application-test.properties`, so tests that need the JWT secret or the development admin read them with `@Value` and pass whether or not `JWT_SECRET` and `AFTER_ADMIN_*` are exported.
+HTTP tests extend `integration/HttpTestBase`, which cleans the database before each test and creates users, tokens and events. Environment variables override `application-test.properties`, so tests that need the JWT secret or the development admin read them with `@Value` and pass whether or not `JWT_SECRET` and `AFTER_ADMIN_*` are exported.
 
 `MySqlContainerTest` uses Testcontainers and requires a running Docker daemon. It covers persistence, account deletion with event relationships, and requests sent at the same time to the same event: ten guests joining the last place, two invitations, join + invitation, capacity reduction + join, leave + join, kick + join, and event deletion + join. Run it locally with:
 

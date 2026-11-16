@@ -1,5 +1,6 @@
-package com.afterApp.after.utils;
+package com.afterApp.after.integration;
 
+import com.afterApp.after.utils.TokenUtil;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;

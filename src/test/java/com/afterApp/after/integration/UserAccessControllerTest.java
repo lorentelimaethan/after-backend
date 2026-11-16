@@ -1,7 +1,6 @@
-package com.afterApp.after.controller;
+package com.afterApp.after.integration;
 
 import com.afterApp.after.entity.UserAccess;
-import com.afterApp.after.support.HttpTestBase;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;

@@ -2,7 +2,6 @@ package com.afterApp.after.integration;
 
 import com.afterApp.after.entity.Address;
 import com.afterApp.after.enums.EventType;
-import com.afterApp.after.support.HttpTestBase;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

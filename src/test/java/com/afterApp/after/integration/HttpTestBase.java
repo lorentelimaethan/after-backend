@@ -1,4 +1,4 @@
-package com.afterApp.after.support;
+package com.afterApp.after.integration;
 
 import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.entity.Users;

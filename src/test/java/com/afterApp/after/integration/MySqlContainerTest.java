@@ -1,6 +1,5 @@
 package com.afterApp.after.integration;
 
-import com.afterApp.after.support.HttpTestBase;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
