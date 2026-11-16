@@ -25,7 +25,6 @@ public class CustomUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException{
         UserAccess userAccess = userAccessRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException(username));
 
-        System.out.println("UserAccess authorization " + userAccess.getUser().getUserRole());
         List<GrantedAuthority> authorities = userAccess.getUser()
                 .getUserRole()
                 .getResources()

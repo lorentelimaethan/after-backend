@@ -6,7 +6,6 @@ import com.afterApp.after.dto.UpdateUserDTO;
 import com.afterApp.after.dto.UserPublicResponseDTO;
 import com.afterApp.after.entity.Users;
 import com.afterApp.after.service.UserServices;
-import com.afterApp.after.utils.UserUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -26,9 +25,6 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     @Autowired
     private UserServices userServices;
-
-    @Autowired
-    private UserUtil userUtil;
 
     @PreAuthorize("hasAuthority('VIEW_USER')")
     @GetMapping("/{id}")

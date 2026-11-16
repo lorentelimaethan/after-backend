@@ -3,7 +3,6 @@ package com.afterApp.after.service;
 import com.afterApp.after.dto.CreateEventDTO;
 import com.afterApp.after.dto.EventResponseDTO;
 import com.afterApp.after.dto.UpdateEventDTO;
-import com.afterApp.after.entity.Address;
 import com.afterApp.after.entity.Events;
 import com.afterApp.after.entity.Users;
 import com.afterApp.after.entity.UserAccess;
@@ -14,7 +13,6 @@ import com.afterApp.after.exceptions.NotFoundException;
 import com.afterApp.after.exceptions.UnauthorizedException;
 import com.afterApp.after.loader.EventLoader;
 import com.afterApp.after.mappers.EventMapper;
-import com.afterApp.after.repositories.EventRepository;
 import com.afterApp.after.repositories.UserAccessRepository;
 import com.afterApp.after.repositories.UserRepository;
 import com.afterApp.after.utils.TokenUtil;
@@ -50,7 +48,7 @@ public class EventServices {
     }
 
     @Cacheable(value = "events", key = "#id")
-    public EventResponseDTO getEvent(Long id) throws RuntimeException{
+    public EventResponseDTO getEvent(Long id){
         Events e = eventLoader.getEventById(id);
 
         return toDto(e);
@@ -242,7 +240,7 @@ public class EventServices {
             @CacheEvict(value = "eventsByTypeStyle", allEntries = true)
     })
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public void deleteEvent(Long id, String authorization) throws RuntimeException{
+    public void deleteEvent(Long id, String authorization){
         Users user = extractUser(authorization);
 
         Events e = eventLoader.getEventForUpdate(id);

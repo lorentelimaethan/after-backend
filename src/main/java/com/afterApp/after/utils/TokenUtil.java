@@ -1,7 +1,5 @@
 package com.afterApp.after.utils;
 
-import com.afterApp.after.entity.UserAccess;
-import com.afterApp.after.entity.Users;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;

@@ -3,11 +3,6 @@ package com.afterApp.after.entity;
 import com.afterApp.after.enums.EventType;
 import com.afterApp.after.enums.MusicStyle;
 import jakarta.persistence.*;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Future;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -62,20 +57,3 @@ public class Events {
     @Getter @Setter
     private Address address;
 }
-
-/**
- * FALTA
- * Vibes
- * UNDERGROUND
- * LUXURY
- * CASUAL
- * RAVE
- *
- * o incluso tags dinámicos:
- *
- * rooftop
- * pool
- * sunset
- * students
- * erasmus
- */

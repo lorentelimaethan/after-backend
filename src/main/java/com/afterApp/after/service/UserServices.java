@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -58,7 +57,7 @@ public class UserServices {
     }
 
 
-    public UserPublicResponseDTO getUserById(Long id, String authorization) throws RuntimeException{
+    public UserPublicResponseDTO getUserById(Long id, String authorization){
         log.info("getting user with Id = {}", id);
 
         Users requester = extractUser(authorization);
@@ -73,7 +72,7 @@ public class UserServices {
         return toPublicDto(u);
     }
 
-    public Users getUserEntityById(Long id) throws RuntimeException{
+    public Users getUserEntityById(Long id){
         return userLoader.findById(id);
     }
 
