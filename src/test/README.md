@@ -1,15 +1,11 @@
 # Tests
 
-| Package | What it tests | Type |
-|---|---|---|
-| `service` | Business rules of the services, with Mockito mocks | Unit |
-| `mappers` | Entity ↔ DTO mapping | Unit |
-| `loader` | Role and development admin initialization | Unit / Spring |
-| `utils` | JWT generation and validation | Spring |
-| `controller` | HTTP endpoints, status codes, validation and cache | HTTP (MockMvc + Spring) |
-| `security` | Authentication and Actuator protection | HTTP |
-| `integration` | Account deletion, prod profile and real MySQL | Integration |
-| `support` | `HttpTestBase`: shared setup for the HTTP tests | — |
+| Package | What it tests |
+|---|---|
+| `unit` | Services with Mockito mocks, mappers, role initialization and exception handling without starting Spring |
+| `integration` | HTTP endpoints, security, JWT configuration, application startup, development admin, account deletion, production profile and MySQL |
+
+`integration/HttpTestBase` is a helper for the HTTP tests. It starts Spring with MockMvc, cleans the test database and creates users, tokens and events. It is not a test class.
 
 The regular suite uses an in-memory HSQLDB database (`application-test.properties`), so no local MySQL is needed:
 

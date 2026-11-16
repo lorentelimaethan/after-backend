@@ -1,5 +1,6 @@
-package com.afterApp.after.loader;
+package com.afterApp.after.integration;
 
+import com.afterApp.after.loader.DevelopmentAdminInitializer;
 import com.afterApp.after.entity.UserAccess;
 import com.afterApp.after.repositories.UserAccessRepository;
 import org.junit.jupiter.api.Test;

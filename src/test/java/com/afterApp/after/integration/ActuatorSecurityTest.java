@@ -1,6 +1,5 @@
-package com.afterApp.after.security;
+package com.afterApp.after.integration;
 
-import com.afterApp.after.support.HttpTestBase;
 import org.junit.jupiter.api.Test;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;

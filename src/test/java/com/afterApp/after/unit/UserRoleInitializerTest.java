@@ -1,5 +1,6 @@
-package com.afterApp.after.loader;
+package com.afterApp.after.unit;
 
+import com.afterApp.after.loader.UserRoleInitializer;
 import com.afterApp.after.entity.UserRole;
 import com.afterApp.after.entity.Users;
 import com.afterApp.after.enums.Resources;

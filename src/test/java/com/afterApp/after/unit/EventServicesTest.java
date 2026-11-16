@@ -1,5 +1,6 @@
-package com.afterApp.after.service;
+package com.afterApp.after.unit;
 
+import com.afterApp.after.service.EventServices;
 import com.afterApp.after.dto.AddressDTO;
 import com.afterApp.after.dto.CreateEventDTO;
 import com.afterApp.after.dto.EventResponseDTO;

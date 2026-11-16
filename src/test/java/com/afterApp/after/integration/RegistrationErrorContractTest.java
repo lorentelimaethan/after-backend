@@ -1,4 +1,4 @@
-package com.afterApp.after.controller;
+package com.afterApp.after.integration;
 
 import com.afterApp.after.dto.RegisterDTO;
 import com.afterApp.after.exceptions.AlreadyExistsException;

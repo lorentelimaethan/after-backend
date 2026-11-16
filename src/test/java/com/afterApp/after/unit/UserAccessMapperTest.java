@@ -1,5 +1,6 @@
-package com.afterApp.after.mappers;
+package com.afterApp.after.unit;
 
+import com.afterApp.after.mappers.UserAccessMapper;
 import com.afterApp.after.dto.LoginDTO;
 import com.afterApp.after.dto.RegisterDTO;
 import com.afterApp.after.entity.UserAccess;

@@ -1,5 +1,6 @@
-package com.afterApp.after.mappers;
+package com.afterApp.after.unit;
 
+import com.afterApp.after.mappers.UserMapper;
 import com.afterApp.after.dto.RegisterDTO;
 import com.afterApp.after.dto.UpdateUserDTO;
 import com.afterApp.after.dto.UserPrivateResponseDTO;

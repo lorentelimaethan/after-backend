@@ -1,6 +1,5 @@
-package com.afterApp.after.security;
+package com.afterApp.after.integration;
 
-import com.afterApp.after.support.HttpTestBase;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
